@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/models.dart';
 import 'database_helper.dart';
+import '../utils/database_exporter.dart';
 
 class AppStore extends ChangeNotifier {
   static final AppStore _instance = AppStore._internal();
@@ -94,6 +95,9 @@ class AppStore extends ChangeNotifier {
     
     // Update local state but don't auto-login
     _accounts = await dbHelper.getAllUsers();
+    
+    // Export account information to text file
+    await DatabaseExporter.exportUserAccount(account);
     
     notifyListeners();
     return true;
