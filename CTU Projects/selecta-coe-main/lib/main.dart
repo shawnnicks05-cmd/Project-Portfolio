@@ -5,7 +5,6 @@ import 'package:provider/provider.dart';
 import 'data/app_store.dart';
 import 'screens/auth_screen.dart';
 import 'screens/home_screen.dart';
-import 'screens/notification_screen.dart';
 import 'theme.dart';
 
 void main() async {
@@ -36,7 +35,6 @@ class SelectaCOEApp extends StatelessWidget {
         routes: {
           '/': (_) => const AuthScreen(),
           '/home': (_) => const HomeScreen(),
-          '/notifications': (_) => const NotificationScreen(),
         },
       ),
     );

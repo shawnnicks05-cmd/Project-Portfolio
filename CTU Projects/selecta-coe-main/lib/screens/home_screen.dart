@@ -1,4 +1,3 @@
-// lib/screens/home_screen.dart
 import 'dart:io';
 import 'package:flutter/material.dart';
 import '../data/app_store.dart';
@@ -7,7 +6,6 @@ import '../theme.dart';
 import 'database_screen.dart';
 import 'profile_screen.dart';
 import 'search_screen.dart';
-import 'notification_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -29,7 +27,6 @@ class _HomeScreenState extends State<HomeScreen>
         DatabaseScreen(),
         SearchScreen(),
         ProfileScreen(),
-        NotificationScreen(),
       ];
 
   @override
@@ -318,16 +315,6 @@ class _SideDrawer extends StatelessWidget {
               onTap: () => onSelect(2),
             ),
             _NavItem(
-              icon: Icons.notifications_outlined,
-              activeIcon: Icons.notifications,
-              label: 'Notifications',
-              isSelected: selectedIndex == 4,
-              onTap: () {
-                onSelect(4);
-                Navigator.pushNamed(context, '/notifications');
-              },
-            ),
-            _NavItem(
               icon: Icons.person_outline,
               activeIcon: Icons.person,
               label: 'Profile',
@@ -614,6 +601,13 @@ class _StatsRow extends StatelessWidget {
           label: 'Certs',
           icon: Icons.military_tech_outlined,
           color: const Color(0xFFF97316),
+        ),
+        const SizedBox(width: 10),
+        _StatCard(
+          value: '${user.profileLikes}',
+          label: 'Likes',
+          icon: Icons.favorite_outline,
+          color: Colors.pink,
         ),
       ],
     );

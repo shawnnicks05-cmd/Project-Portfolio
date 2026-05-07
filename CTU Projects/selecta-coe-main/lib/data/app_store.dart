@@ -2,7 +2,6 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:uuid/uuid.dart';
 import '../models/models.dart';
 import 'database_helper.dart';
 import '../utils/database_exporter.dart';
@@ -35,16 +34,7 @@ class AppStore extends ChangeNotifier {
     }
 
     // Load users from SQLite database
-    try {
-      final dbHelper = DatabaseHelper();
-      final db = await dbHelper.database;
-      final users = await db.query('users');
-      final dbUsers = users.map((json) => UserAccount.fromJson(json)).toList();
-      _accounts.addAll(dbUsers);
-    } catch (e) {
-      print('Error loading database users: $e');
-      // Continue with demo account only
-    }
+    await _loadAccountsFromDatabase();
 
     // Get current user from SharedPreferences
     final uid = prefs.getString('currentUserId');
@@ -58,11 +48,8 @@ class AppStore extends ChangeNotifier {
       await prefs.setString('currentUserId', _currentUser!.id);
     }
 
-    // Load notifications from SharedPreferences
-    final notificationsJson = prefs.getString('notifications') ?? '[]';
-    final notificationsList = jsonDecode(notificationsJson) as List;
-    _notifications =
-        notificationsList.map((n) => NotificationModel.fromJson(n)).toList();
+    // Load recently viewed profiles
+    await loadRecentlyViewedProfiles();
   }
 
   Future<void> _save() async {
@@ -111,8 +98,10 @@ class AppStore extends ChangeNotifier {
     try {
       final dbHelper = DatabaseHelper();
       await dbHelper.insertUser(account);
-      _accounts.add(account);
-
+      
+      // Refresh accounts list from database to ensure synchronization
+      await _loadAccountsFromDatabase();
+      
       // Export account information to text file
       await DatabaseExporter.exportUserAccount(account);
 
@@ -121,6 +110,26 @@ class AppStore extends ChangeNotifier {
     } catch (e) {
       print('Error creating account: $e');
       return false;
+    }
+  }
+
+  Future<void> _loadAccountsFromDatabase() async {
+    try {
+      final dbHelper = DatabaseHelper();
+      final db = await dbHelper.database;
+      final users = await db.query('users');
+      final dbUsers = users.map((json) => UserAccount.fromJson(json)).toList();
+      
+      // Keep demo account and add database users
+      _accounts.clear();
+      _accounts.addAll(dbUsers);
+      
+      // Add demo account if not already present
+      if (!_accounts.any((a) => a.id == 'demo-001')) {
+        _accounts.add(_demoAccount());
+      }
+    } catch (e) {
+      print('Error loading database users: $e');
     }
   }
 
@@ -139,107 +148,8 @@ class AppStore extends ChangeNotifier {
     return await dbHelper.getUserById(id);
   }
 
-  // Permission methods
-  Future<bool> requestPermission(String targetUserId, String message) async {
-    final dbHelper = DatabaseHelper();
-    final currentUser = AppStore().currentUser;
-
-    if (currentUser == null) return false;
-
-    // Check if request already exists
-    final existingRequests =
-        await dbHelper.getMyPermissionRequests(currentUser.id);
-    final hasExistingRequest = existingRequests.any(
-        (req) => req.targetUserId == targetUserId && req.status == 'pending');
-
-    if (hasExistingRequest) return false;
-
-    final request = PermissionRequest(
-      id: const Uuid().v4(),
-      requesterId: currentUser.id,
-      targetUserId: targetUserId,
-      requestDate: DateTime.now(),
-      status: 'pending',
-      message: message,
-    );
-
-    await dbHelper.insertPermissionRequest(request);
-
-    // Add notification for target user
-    await _addNotification(
-      targetUserId,
-      'New Permission Request',
-      '${_getUserName(currentUser.id)} wants to view your profile. Message: $message',
-      'request',
-    );
-
-    notifyListeners();
-    return true;
-  }
-
-  Future<List<PermissionRequest>> getPermissionRequests() async {
-    final dbHelper = DatabaseHelper();
-    final currentUser = AppStore().currentUser;
-
-    if (currentUser == null) return [];
-
-    return await dbHelper.getPermissionRequestsForUser(currentUser.id);
-  }
-
-  Future<List<PermissionRequest>> getMyPermissionRequests() async {
-    final dbHelper = DatabaseHelper();
-    final currentUser = AppStore().currentUser;
-
-    if (currentUser == null) return [];
-
-    return await dbHelper.getMyPermissionRequests(currentUser.id);
-  }
-
-  Future<void> approvePermissionRequest(String requestId) async {
-    final dbHelper = DatabaseHelper();
-    final request = await dbHelper
-        .getPermissionRequestsForUser(AppStore().currentUser!.id)
-        .then((requests) => requests.firstWhere((req) => req.id == requestId));
-
-    // Update request status
-    await dbHelper.updatePermissionRequestStatus(requestId, 'approved');
-
-    // Add to approved viewers
-    await dbHelper.addApprovedViewer(request.targetUserId, request.requesterId);
-
-    // Add notification for the requester
-    await _addNotification(
-      request.requesterId,
-      'Permission Request Approved',
-      'Your permission request to view ${_getUserName(request.targetUserId)}\'s profile has been approved!',
-      'approval',
-    );
-
-    notifyListeners();
-  }
-
-  Future<void> denyPermissionRequest(String requestId) async {
-    final dbHelper = DatabaseHelper();
-    final request = await dbHelper
-        .getPermissionRequestsForUser(AppStore().currentUser!.id)
-        .then((requests) => requests.firstWhere((req) => req.id == requestId));
-
-    // Update request status
-    await dbHelper.updatePermissionRequestStatus(requestId, 'denied');
-
-    // Add notification for requester
-    await _addNotification(
-      request.requesterId,
-      'Permission Request Denied',
-      'Your permission request to view ${_getUserName(request.targetUserId)}\'s profile has been denied.',
-      'denial',
-    );
-
-    notifyListeners();
-  }
-
   Future<bool> canViewSkills(String viewerId, String targetUserId) async {
-    // Can view if it's their own profile or if they have permission
+    // Can view if it's their own profile
     if (viewerId == targetUserId) return true;
 
     final dbHelper = DatabaseHelper();
@@ -247,10 +157,11 @@ class AppStore extends ChangeNotifier {
 
     if (targetUser == null || !targetUser.skillsPrivate) return true;
 
-    return await dbHelper.hasPermission(viewerId, targetUserId);
+    return false; // Private profile - cannot view
   }
 
   Future<bool> canViewProjects(String viewerId, String targetUserId) async {
+    // Can view if it's their own profile
     if (viewerId == targetUserId) return true;
 
     final dbHelper = DatabaseHelper();
@@ -258,11 +169,12 @@ class AppStore extends ChangeNotifier {
 
     if (targetUser == null || !targetUser.projectsPrivate) return true;
 
-    return await dbHelper.hasPermission(viewerId, targetUserId);
+    return false; // Private profile - cannot view
   }
 
   Future<bool> canViewCertifications(
       String viewerId, String targetUserId) async {
+    // Can view if it's their own profile
     if (viewerId == targetUserId) return true;
 
     final dbHelper = DatabaseHelper();
@@ -270,7 +182,120 @@ class AppStore extends ChangeNotifier {
 
     if (targetUser == null || !targetUser.certificationsPrivate) return true;
 
-    return await dbHelper.hasPermission(viewerId, targetUserId);
+    return false; // Private profile - cannot view
+  }
+
+  Future<void> toggleProfilePrivacy(String profileType) async {
+    if (_currentUser == null) return;
+
+    switch (profileType.toLowerCase()) {
+      case 'skills':
+        _currentUser!.skillsPrivate = !_currentUser!.skillsPrivate;
+        break;
+      case 'projects':
+        _currentUser!.projectsPrivate = !_currentUser!.projectsPrivate;
+        break;
+      case 'certifications':
+        _currentUser!.certificationsPrivate =
+            !_currentUser!.certificationsPrivate;
+        break;
+      case 'all':
+        final isCurrentlyPrivate = _currentUser!.skillsPrivate &&
+            _currentUser!.projectsPrivate &&
+            _currentUser!.certificationsPrivate;
+        _currentUser!.skillsPrivate = !isCurrentlyPrivate;
+        _currentUser!.projectsPrivate = !isCurrentlyPrivate;
+        _currentUser!.certificationsPrivate = !isCurrentlyPrivate;
+        break;
+    }
+
+    await updateCurrentUser(_currentUser!);
+  }
+
+  // Profile viewing and recently viewed functionality
+  List<String> _recentlyViewedProfiles = [];
+  List<String> get recentlyViewedProfiles =>
+      List.unmodifiable(_recentlyViewedProfiles);
+
+  Future<void> recordProfileView(String viewedUserId) async {
+    if (_currentUser == null || viewedUserId == _currentUser!.id) return;
+
+    // Increment view count for the viewed user
+    final viewedUser = await getUserById(viewedUserId);
+    if (viewedUser != null) {
+      viewedUser.profileViews++;
+      await updateCurrentUser(viewedUser);
+    }
+
+    // Remove if already exists, then add to beginning
+    _recentlyViewedProfiles.remove(viewedUserId);
+    _recentlyViewedProfiles.insert(0, viewedUserId);
+
+    // Keep only last 10 viewed profiles
+    if (_recentlyViewedProfiles.length > 10) {
+      _recentlyViewedProfiles = _recentlyViewedProfiles.take(10).toList();
+    }
+
+    // Save to SharedPreferences
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList(
+        'recentlyViewedProfiles', _recentlyViewedProfiles);
+
+    notifyListeners();
+  }
+
+  Future<bool> toggleProfileLike(String targetUserId) async {
+    if (_currentUser == null || targetUserId == _currentUser!.id) return false;
+
+    final targetUser = await getUserById(targetUserId);
+    if (targetUser == null) return false;
+
+    final isLiked = targetUser.likedBy.contains(_currentUser!.id);
+
+    if (isLiked) {
+      // Unlike
+      targetUser.likedBy.remove(_currentUser!.id);
+      targetUser.profileLikes--;
+    } else {
+      // Like
+      targetUser.likedBy.add(_currentUser!.id);
+      targetUser.profileLikes++;
+    }
+
+    await updateCurrentUser(targetUser);
+    notifyListeners();
+    return !isLiked; // Return new like status
+  }
+
+  Future<bool> isProfileLiked(String targetUserId) async {
+    if (_currentUser == null) return false;
+    final targetUser = await getUserById(targetUserId);
+    return targetUser?.likedBy.contains(_currentUser!.id) ?? false;
+  }
+
+  Future<void> loadRecentlyViewedProfiles() async {
+    final prefs = await SharedPreferences.getInstance();
+    _recentlyViewedProfiles =
+        prefs.getStringList('recentlyViewedProfiles') ?? [];
+    notifyListeners();
+  }
+
+  Future<List<UserAccount>> getRecentlyViewedUsers() async {
+    final List<UserAccount> users = [];
+    for (final userId in _recentlyViewedProfiles) {
+      final user = await getUserById(userId);
+      if (user != null) {
+        users.add(user);
+      }
+    }
+    return users;
+  }
+
+  Future<void> clearRecentlyViewedProfiles() async {
+    _recentlyViewedProfiles.clear();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('recentlyViewedProfiles');
+    notifyListeners();
   }
 
   Future<bool> addSkillToCurrentUserFromRecord(
@@ -357,63 +382,21 @@ class AppStore extends ChangeNotifier {
     return await dbHelper.searchRecords(query);
   }
 
-  // Notification system methods
-  List<NotificationModel> _notifications = [];
-  List<NotificationModel> get notifications =>
-      List.unmodifiable(_notifications);
+  bool canUserViewPrivateContent(String targetUserId, String viewerId) {
+    final targetUser = _accounts.where((a) => a.id == targetUserId).firstOrNull;
+    if (targetUser == null) return false;
 
-  String _getUserName(String userId) {
-    final user = _accounts.where((a) => a.id == userId).firstOrNull;
-    return user?.name ?? 'Unknown User';
-  }
+    // User can view their own content
+    if (targetUserId == viewerId) return true;
 
-  Future<void> _addNotification(
-      String userId, String title, String message, String type) async {
-    final notification = NotificationModel(
-      id: const Uuid().v4(),
-      userId: userId,
-      title: title,
-      message: message,
-      type: type,
-      timestamp: DateTime.now(),
-      isRead: false,
-    );
-
-    _notifications.insert(0, notification); // Add to beginning of list
-
-    // Save to SharedPreferences for persistence
-    final prefs = await SharedPreferences.getInstance();
-    final notificationsJson = prefs.getString('notifications') ?? '[]';
-    final notificationsList = jsonDecode(notificationsJson) as List;
-    notificationsList.insert(0, notification.toJson());
-    await prefs.setString('notifications', jsonEncode(notificationsList));
-
-    notifyListeners();
-  }
-
-  Future<void> markNotificationAsRead(String notificationId) async {
-    final index = _notifications.indexWhere((n) => n.id == notificationId);
-    if (index != -1) {
-      _notifications[index].isRead = true;
-
-      // Update in SharedPreferences
-      final prefs = await SharedPreferences.getInstance();
-      final notificationsJson =
-          jsonEncode(_notifications.map((n) => n.toJson()).toList());
-      await prefs.setString('notifications', notificationsJson);
-
-      notifyListeners();
+    // Check if profile is public
+    if (!targetUser.skillsPrivate &&
+        !targetUser.projectsPrivate &&
+        !targetUser.certificationsPrivate) {
+      return true;
     }
-  }
 
-  Future<void> clearNotifications() async {
-    _notifications.clear();
-
-    // Clear from SharedPreferences
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('notifications');
-
-    notifyListeners();
+    return false;
   }
 
   UserAccount _demoAccount() {

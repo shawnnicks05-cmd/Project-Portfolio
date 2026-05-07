@@ -1,85 +1,5 @@
 // lib/models/models.dart
 
-class PermissionRequest {
-  String id;
-  String requesterId;
-  String targetUserId;
-  DateTime requestDate;
-  String status; // 'pending', 'approved', 'denied'
-  String? message;
-
-  PermissionRequest({
-    required this.id,
-    required this.requesterId,
-    required this.targetUserId,
-    required this.requestDate,
-    required this.status,
-    this.message,
-  });
-
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'requesterId': requesterId,
-      'targetUserId': targetUserId,
-      'requestDate': requestDate.toIso8601String(),
-      'status': status,
-      'message': message,
-    };
-  }
-
-  factory PermissionRequest.fromJson(Map<String, dynamic> json) {
-    return PermissionRequest(
-      id: json['id'],
-      requesterId: json['requesterId'],
-      targetUserId: json['targetUserId'],
-      requestDate: DateTime.parse(json['requestDate']),
-      status: json['status'],
-      message: json['message'],
-    );
-  }
-}
-
-class NotificationModel {
-  String id;
-  String userId;
-  String title;
-  String message;
-  String type; // 'request', 'approval', 'denial'
-  DateTime timestamp;
-  bool isRead;
-
-  NotificationModel({
-    required this.id,
-    required this.userId,
-    required this.title,
-    required this.message,
-    required this.type,
-    required this.timestamp,
-    this.isRead = false,
-  });
-
-  factory NotificationModel.fromJson(Map<String, dynamic> json) => NotificationModel(
-    id: json['id'],
-    userId: json['userId'],
-    title: json['title'],
-    message: json['message'],
-    type: json['type'],
-    timestamp: DateTime.parse(json['timestamp']),
-    isRead: json['isRead'] ?? false,
-  );
-
-  Map<String, dynamic> toJson() => {
-    'id': id,
-    'userId': userId,
-    'title': title,
-    'message': message,
-    'type': type,
-    'timestamp': timestamp.toIso8601String(),
-    'isRead': isRead,
-  };
-}
-
 class UserAccount {
   String id;
   String name;
@@ -103,34 +23,37 @@ class UserAccount {
   bool projectsPrivate;
   bool certificationsPrivate;
   List<String> approvedViewers; // User IDs that can view private data
+  int profileViews;
+  int profileLikes;
+  List<String> likedBy; // List of user IDs who liked this profile
 
   UserAccount({
     required this.id,
     required this.name,
     required this.email,
-    required this.phone,
     required this.password,
     required this.userType,
-    required this.course,
-    required this.yearLevel,
-    required this.studentId,
-    required this.location,
-    required this.avatarInitials,
+    this.phone = '',
+    this.course = '',
+    this.yearLevel = '',
+    this.studentId = '',
+    this.location = '',
+    this.avatarInitials = '',
     this.avatarUrl = '',
     this.bio = '',
     this.instagramUrl = '',
     this.facebookUrl = '',
+    this.skillCategories = const [],
+    this.projects = const [],
+    this.certifications = const [],
     this.skillsPrivate = false,
     this.projectsPrivate = false,
     this.certificationsPrivate = false,
-    List<String>? approvedViewers,
-    List<SkillCategory>? skillCategories,
-    List<Project>? projects,
-    List<Certification>? certifications,
-  })  : skillCategories = skillCategories ?? [],
-        projects = projects ?? [],
-        certifications = certifications ?? [],
-        approvedViewers = approvedViewers ?? [];
+    this.approvedViewers = const [],
+    this.profileViews = 0,
+    this.profileLikes = 0,
+    this.likedBy = const [],
+  });
 
   int get totalSkills =>
       skillCategories.fold(0, (sum, cat) => sum + cat.skills.length);
@@ -161,37 +84,55 @@ class UserAccount {
         'projectsPrivate': projectsPrivate,
         'certificationsPrivate': certificationsPrivate,
         'approvedViewers': approvedViewers,
-        'skillCategories': skillCategories.map((s) => s.toJson()).toList(),
-        'projects': projects.map((p) => p.toJson()).toList(),
-        'certifications': certifications.map((c) => c.toJson()).toList(),
+        'profileViews': profileViews,
+        'profileLikes': profileLikes,
+        'likedBy': likedBy,
       };
 
-  factory UserAccount.fromJson(Map<String, dynamic> json) => UserAccount(
-        id: json['id'],
-        name: json['name'],
-        email: json['email'],
-        phone: json['phone'],
-        password: json['password'] ?? '',
-        userType: json['userType'] ?? 'Student',
-        course: json['course'],
-        yearLevel: json['yearLevel'],
-        studentId: json['studentId'],
-        location: json['location'],
-        avatarInitials: json['avatarInitials'],
-        avatarUrl: json['avatarUrl'] ?? '',
-        bio: json['bio'] ?? '',
-        instagramUrl: json['instagramUrl'] ?? '',
-        facebookUrl: json['facebookUrl'] ?? '',
-        skillCategories: (json['skillCategories'] as List? ?? [])
-            .map((s) => SkillCategory.fromJson(s))
-            .toList(),
-        projects: (json['projects'] as List? ?? [])
-            .map((p) => Project.fromJson(p))
-            .toList(),
-        certifications: (json['certifications'] as List? ?? [])
-            .map((c) => Certification.fromJson(c))
-            .toList(),
-      );
+  factory UserAccount.fromJson(Map<String, dynamic> json) {
+    return UserAccount(
+      id: json['id'],
+      name: json['name'],
+      email: json['email'],
+      phone: json['phone'] ?? '',
+      password: json['password'],
+      userType: json['userType'] ?? 'Student',
+      course: json['course'] ?? '',
+      yearLevel: json['yearLevel'] ?? '',
+      studentId: json['studentId'] ?? '',
+      location: json['location'] ?? '',
+      avatarInitials: json['avatarInitials'] ?? '',
+      avatarUrl: json['avatarUrl'] ?? '',
+      bio: json['bio'] ?? '',
+      instagramUrl: json['instagramUrl'] ?? '',
+      facebookUrl: json['facebookUrl'] ?? '',
+      skillCategories: (json['skillCategories'] as List<dynamic>?)
+              ?.map((e) => SkillCategory.fromJson(e))
+              .toList() ??
+          [],
+      projects: (json['projects'] as List<dynamic>?)
+              ?.map((e) => Project.fromJson(e))
+              .toList() ??
+          [],
+      certifications: (json['certifications'] as List<dynamic>?)
+              ?.map((e) => Certification.fromJson(e))
+              .toList() ??
+          [],
+      skillsPrivate: json['skillsPrivate'] ?? false,
+      projectsPrivate: json['projectsPrivate'] ?? false,
+      certificationsPrivate: json['certificationsPrivate'] ?? false,
+      approvedViewers: (json['approvedViewers'] as List<dynamic>?)
+              ?.map((e) => e.toString())
+              .toList() ??
+          <String>[],
+      profileViews: (json['profileViews'] as int?) ?? 0,
+      profileLikes: (json['profileLikes'] as int?) ?? 0,
+      likedBy: (json['likedBy'] as List<dynamic>?)
+              ?.map((e) => e.toString())
+              .toList() ??
+          <String>[],
+    );
+  }
 }
 
 class SkillCategory {
@@ -211,9 +152,10 @@ class SkillCategory {
   factory SkillCategory.fromJson(Map<String, dynamic> json) => SkillCategory(
         id: json['id'],
         name: json['name'],
-        skills: (json['skills'] as List? ?? [])
-            .map((s) => Skill.fromJson(s))
-            .toList(),
+        skills: (json['skills'] as List<dynamic>?)
+                ?.map((e) => Skill.fromJson(e))
+                .toList() ??
+            [],
       );
 }
 

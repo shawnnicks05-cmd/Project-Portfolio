@@ -13,7 +13,7 @@ class DatabaseHelper {
   Database? _database;
 
   static const String _dbName = 'selecta_coe.db';
-  static const int _dbVersion = 2;
+  static const int _dbVersion = 3;
 
   // Table names
   static const String usersTable = 'users';
@@ -21,7 +21,6 @@ class DatabaseHelper {
   static const String skillsTable = 'skills';
   static const String projectsTable = 'projects';
   static const String certificationsTable = 'certifications';
-  static const String permissionRequestsTable = 'permission_requests';
 
   Future<Database> get database async {
     if (_database != null) return _database!;
@@ -50,20 +49,23 @@ class DatabaseHelper {
         email TEXT UNIQUE NOT NULL,
         phone TEXT,
         password TEXT NOT NULL,
-        userType TEXT DEFAULT 'Student',
+        userType TEXT NOT NULL,
         course TEXT,
         yearLevel TEXT,
         studentId TEXT,
         location TEXT,
         avatarInitials TEXT,
-        avatarUrl TEXT DEFAULT '',
-        bio TEXT DEFAULT '',
-        instagramUrl TEXT DEFAULT '',
-        facebookUrl TEXT DEFAULT '',
+        avatarUrl TEXT,
+        bio TEXT,
+        instagramUrl TEXT,
+        facebookUrl TEXT,
         skillsPrivate INTEGER DEFAULT 0,
         projectsPrivate INTEGER DEFAULT 0,
         certificationsPrivate INTEGER DEFAULT 0,
-        approvedViewers TEXT DEFAULT '[]'
+        approvedViewers TEXT DEFAULT '[]',
+        profileViews INTEGER DEFAULT 0,
+        profileLikes INTEGER DEFAULT 0,
+        likedBy TEXT DEFAULT '[]'
       )
     ''');
 
@@ -116,20 +118,6 @@ class DatabaseHelper {
       )
     ''');
 
-    // Create permission_requests table
-    await db.execute('''
-      CREATE TABLE $permissionRequestsTable (
-        id TEXT PRIMARY KEY,
-        requesterId TEXT NOT NULL,
-        targetUserId TEXT NOT NULL,
-        requestDate TEXT NOT NULL,
-        status TEXT NOT NULL,
-        message TEXT,
-        FOREIGN KEY (requesterId) REFERENCES $usersTable (id) ON DELETE CASCADE,
-        FOREIGN KEY (targetUserId) REFERENCES $usersTable (id) ON DELETE CASCADE
-      )
-    ''');
-
     // Create indexes for better performance
     await db.execute('CREATE INDEX idx_users_email ON $usersTable(email)');
     await db.execute(
@@ -140,10 +128,6 @@ class DatabaseHelper {
         .execute('CREATE INDEX idx_projects_user ON $projectsTable(userId)');
     await db.execute(
         'CREATE INDEX idx_certifications_user ON $certificationsTable(userId)');
-    await db.execute(
-        'CREATE INDEX idx_permission_requests_target ON $permissionRequestsTable(targetUserId)');
-    await db.execute(
-        'CREATE INDEX idx_permission_requests_requester ON $permissionRequestsTable(requesterId)');
   }
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
@@ -161,6 +145,18 @@ class DatabaseHelper {
         // Try alternative approach
         await db.execute('ALTER TABLE $usersTable ADD COLUMN userType TEXT');
         print('userType column added with alternative approach');
+      }
+    }
+    
+    if (oldVersion < 3) {
+      print('Adding profile views and likes columns...');
+      try {
+        await db.execute('ALTER TABLE $usersTable ADD COLUMN profileViews INTEGER DEFAULT 0');
+        await db.execute('ALTER TABLE $usersTable ADD COLUMN profileLikes INTEGER DEFAULT 0');
+        await db.execute('ALTER TABLE $usersTable ADD COLUMN likedBy TEXT DEFAULT \'[]\'');
+        print('Profile views and likes columns added successfully');
+      } catch (e) {
+        print('Error adding profile views and likes columns: $e');
       }
     }
   }
@@ -406,6 +402,13 @@ class DatabaseHelper {
       'bio': user.bio,
       'instagramUrl': user.instagramUrl,
       'facebookUrl': user.facebookUrl,
+      'skillsPrivate': user.skillsPrivate ? 1 : 0,
+      'projectsPrivate': user.projectsPrivate ? 1 : 0,
+      'certificationsPrivate': user.certificationsPrivate ? 1 : 0,
+      'approvedViewers': json.encode(user.approvedViewers),
+      'profileViews': user.profileViews,
+      'profileLikes': user.profileLikes,
+      'likedBy': json.encode(user.likedBy),
     };
   }
 
@@ -426,6 +429,17 @@ class DatabaseHelper {
       bio: map['bio'] ?? '',
       instagramUrl: map['instagramUrl'] ?? '',
       facebookUrl: map['facebookUrl'] ?? '',
+      skillsPrivate: (map['skillsPrivate'] as int? ?? 0) == 1,
+      projectsPrivate: (map['projectsPrivate'] as int? ?? 0) == 1,
+      certificationsPrivate: (map['certificationsPrivate'] as int? ?? 0) == 1,
+      approvedViewers: map['approvedViewers'] != null 
+          ? List<String>.from(json.decode(map['approvedViewers']))
+          : <String>[],
+      profileViews: (map['profileViews'] as int?) ?? 0,
+      profileLikes: (map['profileLikes'] as int?) ?? 0,
+      likedBy: map['likedBy'] != null 
+          ? List<String>.from(json.decode(map['likedBy']))
+          : <String>[],
     );
   }
 
@@ -649,114 +663,7 @@ class DatabaseHelper {
     return text.toLowerCase().contains(query.toLowerCase());
   }
 
-  // Permission request methods
-  Future<int> insertPermissionRequest(PermissionRequest request) async {
-    final db = await database;
-    return await db.insert(
-        permissionRequestsTable, _permissionRequestToMap(request));
-  }
-
-  Future<List<PermissionRequest>> getPermissionRequestsForUser(
-      String userId) async {
-    final db = await database;
-    final List<Map<String, dynamic>> maps = await db.query(
-      permissionRequestsTable,
-      where: 'targetUserId = ?',
-      whereArgs: [userId],
-      orderBy: 'requestDate DESC',
-    );
-
-    return maps.map((map) => _mapToPermissionRequest(map)).toList();
-  }
-
-  Future<List<PermissionRequest>> getMyPermissionRequests(String userId) async {
-    final db = await database;
-    final List<Map<String, dynamic>> maps = await db.query(
-      permissionRequestsTable,
-      where: 'requesterId = ?',
-      whereArgs: [userId],
-      orderBy: 'requestDate DESC',
-    );
-
-    return maps.map((map) => _mapToPermissionRequest(map)).toList();
-  }
-
-  Future<void> updatePermissionRequestStatus(
-      String requestId, String status) async {
-    final db = await database;
-    await db.update(
-      permissionRequestsTable,
-      {'status': status},
-      where: 'id = ?',
-      whereArgs: [requestId],
-    );
-  }
-
-  Future<bool> hasPermission(String viewerId, String targetUserId) async {
-    // Check if viewer is in approved list
-    final db = await database;
-    final List<Map<String, dynamic>> maps = await db.query(
-      usersTable,
-      columns: ['approvedViewers'],
-      where: 'id = ?',
-      whereArgs: [targetUserId],
-    );
-
-    if (maps.isEmpty) return false;
-
-    final approvedViewers = maps.first['approvedViewers'] as String? ?? '[]';
-    final viewersList = List<String>.from(json.decode(approvedViewers));
-
-    return viewersList.contains(viewerId);
-  }
-
-  Future<void> addApprovedViewer(String targetUserId, String viewerId) async {
-    final db = await database;
-    final List<Map<String, dynamic>> maps = await db.query(
-      usersTable,
-      columns: ['approvedViewers'],
-      where: 'id = ?',
-      whereArgs: [targetUserId],
-    );
-
-    if (maps.isEmpty) return;
-
-    final approvedViewers = maps.first['approvedViewers'] as String? ?? '[]';
-    final viewersList = List<String>.from(json.decode(approvedViewers));
-
-    if (!viewersList.contains(viewerId)) {
-      viewersList.add(viewerId);
-      await db.update(
-        usersTable,
-        {'approvedViewers': json.encode(viewersList)},
-        where: 'id = ?',
-        whereArgs: [targetUserId],
-      );
-    }
-  }
-
-  Map<String, dynamic> _permissionRequestToMap(PermissionRequest request) {
-    return {
-      'id': request.id,
-      'requesterId': request.requesterId,
-      'targetUserId': request.targetUserId,
-      'requestDate': request.requestDate.toIso8601String(),
-      'status': request.status,
-      'message': request.message,
-    };
-  }
-
-  PermissionRequest _mapToPermissionRequest(Map<String, dynamic> map) {
-    return PermissionRequest(
-      id: map['id'],
-      requesterId: map['requesterId'],
-      targetUserId: map['targetUserId'],
-      requestDate: DateTime.parse(map['requestDate']),
-      status: map['status'],
-      message: map['message'],
-    );
-  }
-
+  
   // Close database
   Future<void> close() async {
     final db = _database;

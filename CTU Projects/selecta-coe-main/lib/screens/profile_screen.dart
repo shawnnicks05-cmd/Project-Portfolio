@@ -45,6 +45,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool _editing = false;
   UserAccount? _displayUser;
   bool _canEdit = false; // New variable to track if editing is allowed
+  bool _isLiked = false; // Track like status to avoid async issues
 
   // Picked image file (local, before save)
   File? _pickedImageFile;
@@ -94,9 +95,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ? await AppStore().getUserById(widget.userId!) ?? AppStore().currentUser
         : AppStore().currentUser;
 
+    // Record profile view if viewing someone else's profile
+    if (widget.userId != null && displayUser != null) {
+      final currentUser = AppStore().currentUser;
+      if (currentUser != null && widget.userId != currentUser.id) {
+        await AppStore().recordProfileView(widget.userId!);
+      }
+    }
+
+    // Load like status if viewing someone else's profile
+    if (widget.userId != null && displayUser != null) {
+      final currentUser = AppStore().currentUser;
+      if (currentUser != null && widget.userId != currentUser.id) {
+        _isLiked = await AppStore().isProfileLiked(widget.userId!);
+      }
+    }
+
     setState(() {
       _displayUser = displayUser;
-      // Only allow editing if it's the user's own profile and not in viewOnly mode
+      // Only allow editing if it's user's own profile and not in viewOnly mode
       final currentUser = AppStore().currentUser;
       _canEdit = (widget.userId == null ||
               (currentUser != null && widget.userId == currentUser.id)) &&
@@ -261,94 +278,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),
-    );
-  }
-
-  void _showRequestPermissionDialog() {
-    final messageController = TextEditingController();
-
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          backgroundColor: AppTheme.surface,
-          title: const Text(
-            'Request Permission',
-            style: TextStyle(
-              color: AppTheme.textPrimary,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Send a permission request to view ${_displayUser!.name}\'s private profile information.',
-                style: const TextStyle(
-                  color: AppTheme.textSecondary,
-                  fontSize: 14,
-                ),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: messageController,
-                maxLines: 3,
-                style: const TextStyle(color: AppTheme.textPrimary),
-                decoration: InputDecoration(
-                  labelText: 'Message (optional)',
-                  hintText: 'Explain why you need access to their profile...',
-                  hintStyle: const TextStyle(color: AppTheme.textMuted),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: const BorderSide(color: AppTheme.border),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: const BorderSide(color: AppTheme.primary),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                if (_displayUser != null) {
-                  await AppStore().requestPermission(
-                    _displayUser!.id,
-                    messageController.text.trim().isEmpty
-                        ? 'I would like to request access to view your profile information.'
-                        : messageController.text.trim(),
-                  );
-                  if (context.mounted) {
-                    Navigator.pop(context);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content:
-                            const Text('Permission request sent successfully'),
-                        backgroundColor: AppTheme.success,
-                        behavior: SnackBarBehavior.floating,
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8)),
-                      ),
-                    );
-                  }
-                }
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.primary,
-                foregroundColor: Colors.white,
-              ),
-              child: const Text('Send Request'),
-            ),
-          ],
-        );
-      },
     );
   }
 
@@ -593,22 +522,106 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
           const SizedBox(height: 20),
 
-          //  Request Permission button (only when viewing other users' profiles)
-          if (widget.viewOnly && !_canEdit && _displayUser != null) ...[
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: _showRequestPermissionDialog,
-                icon: const Icon(Icons.send_outlined, size: 18),
-                label: const Text('Request Permission'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primary,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 13),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10)),
-                  elevation: 0,
-                ),
+          // Profile stats and like button (only show when viewing other users)
+          if (widget.viewOnly && _displayUser != null) ...[
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: AppTheme.surface,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppTheme.border),
+              ),
+              child: Row(
+                children: [
+                  // Views counter
+                  Expanded(
+                    child: Column(
+                      children: [
+                        Icon(Icons.visibility_outlined,
+                            color: AppTheme.textMuted, size: 20),
+                        const SizedBox(height: 4),
+                        Text(
+                          _displayUser!.profileViews.toString(),
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: AppTheme.textPrimary,
+                          ),
+                        ),
+                        const Text(
+                          'Views',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AppTheme.textMuted,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  // Like button
+                  GestureDetector(
+                    onTap: () async {
+                      final appStore = AppStore();
+                      final newLikeStatus =
+                          await appStore.toggleProfileLike(_displayUser!.id);
+
+                      // Update local state
+                      if (mounted) {
+                        setState(() {
+                          _isLiked = newLikeStatus;
+                        });
+
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(newLikeStatus
+                                ? 'Profile liked!'
+                                : 'Profile unliked'),
+                            backgroundColor: newLikeStatus
+                                ? Colors.pink
+                                : AppTheme.textMuted,
+                            behavior: SnackBarBehavior.floating,
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8)),
+                          ),
+                        );
+                      }
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: _isLiked
+                            ? Colors.pink.withOpacity(0.1)
+                            : AppTheme.primary.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: _isLiked
+                              ? Colors.pink.withOpacity(0.3)
+                              : AppTheme.primary.withOpacity(0.3),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            _isLiked ? Icons.favorite : Icons.favorite_border,
+                            color: _isLiked ? Colors.pink : AppTheme.primary,
+                            size: 18,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            _displayUser!.profileLikes.toString(),
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: _isLiked ? Colors.pink : AppTheme.primary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
             const SizedBox(height: 16),
@@ -669,6 +682,78 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                 ],
               ),
+            const SizedBox(height: 16),
+          ],
+
+          //  Privacy Settings card
+          if (_canEdit) ...[
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: AppTheme.surface,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppTheme.border),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Privacy Settings',
+                      style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 14,
+                          color: AppTheme.textPrimary)),
+                  const SizedBox(height: 16),
+
+                  // Master toggle for all profile sections
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          'Make Profile Private',
+                          style: TextStyle(
+                            color: AppTheme.textPrimary,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                      Switch(
+                        value: _displayUser?.skillsPrivate == true &&
+                            _displayUser?.projectsPrivate == true &&
+                            _displayUser?.certificationsPrivate == true,
+                        onChanged: (value) async {
+                          await AppStore().toggleProfilePrivacy('all');
+                          await _initControllers(); // Refresh display
+                        },
+                        activeColor: AppTheme.primary,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Individual section toggles
+                  _buildPrivacyToggle(
+                      'Skills', _displayUser?.skillsPrivate == true, 'skills'),
+                  const SizedBox(height: 8),
+                  _buildPrivacyToggle('Projects',
+                      _displayUser?.projectsPrivate == true, 'projects'),
+                  const SizedBox(height: 8),
+                  _buildPrivacyToggle(
+                      'Certifications',
+                      _displayUser?.certificationsPrivate == true,
+                      'certifications'),
+
+                  const SizedBox(height: 12),
+                  Text(
+                    'Private sections are only visible to you. Public sections can be seen by everyone.',
+                    style: TextStyle(
+                      color: AppTheme.textMuted,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+            ),
             const SizedBox(height: 16),
           ],
 
@@ -824,9 +909,339 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
           ),
 
+          // Add skills section if not private or viewing own profile
+          if (!user.skillsPrivate || _canEdit) ...[
+            _buildSkillsSection(user),
+            const SizedBox(height: 16),
+          ],
+
+          // Add projects section if not private or viewing own profile
+          if (!user.projectsPrivate || _canEdit) ...[
+            _buildProjectsSection(user),
+            const SizedBox(height: 16),
+          ],
+
+          // Add certifications section if not private or viewing own profile
+          if (!user.certificationsPrivate || _canEdit) ...[
+            _buildCertificationsSection(user),
+            const SizedBox(height: 16),
+          ],
+
           const SizedBox(height: 24),
         ],
       ),
+    );
+  }
+
+  Widget _buildSkillsSection(UserAccount user) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppTheme.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppTheme.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.psychology, color: AppTheme.primary, size: 20),
+              const SizedBox(width: 8),
+              const Text('Skills',
+                  style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 14,
+                      color: AppTheme.textPrimary)),
+              if (!user.skillsPrivate && !_canEdit) ...[
+                const SizedBox(width: 8),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: Colors.green.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Text('Public',
+                      style: TextStyle(
+                          color: Colors.green,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600)),
+                ),
+              ],
+            ],
+          ),
+          const SizedBox(height: 12),
+          if (user.skillCategories.isEmpty)
+            const Text('No skills added yet',
+                style: TextStyle(color: AppTheme.textMuted, fontSize: 14))
+          else ...[
+            for (final category in user.skillCategories) ...[
+              Text(category.name,
+                  style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                      color: AppTheme.textPrimary)),
+              const SizedBox(height: 6),
+              Wrap(
+                spacing: 8,
+                runSpacing: 4,
+                children: category.skills
+                    .map((skill) => Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: AppTheme.primary.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                                color: AppTheme.primary.withOpacity(0.3)),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(skill.name,
+                                  style: const TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600,
+                                      color: AppTheme.primary)),
+                              Text(
+                                  '${skill.level} • ${skill.proficiencyPercent}%',
+                                  style: const TextStyle(
+                                      fontSize: 9, color: AppTheme.textMuted)),
+                            ],
+                          ),
+                        ))
+                    .toList(),
+              ),
+              const SizedBox(height: 12),
+            ],
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProjectsSection(UserAccount user) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppTheme.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppTheme.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.work, color: AppTheme.warning, size: 20),
+              const SizedBox(width: 8),
+              const Text('Projects',
+                  style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 14,
+                      color: AppTheme.textPrimary)),
+              if (!user.projectsPrivate && !_canEdit) ...[
+                const SizedBox(width: 8),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: Colors.green.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Text('Public',
+                      style: TextStyle(
+                          color: Colors.green,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600)),
+                ),
+              ],
+            ],
+          ),
+          const SizedBox(height: 12),
+          if (user.projects.isEmpty)
+            const Text('No projects added yet',
+                style: TextStyle(color: AppTheme.textMuted, fontSize: 14))
+          else ...[
+            for (final project in user.projects) ...[
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                margin: const EdgeInsets.only(bottom: 8),
+                decoration: BoxDecoration(
+                  color: AppTheme.background,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: AppTheme.border),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(project.title,
+                        style: const TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 13,
+                            color: AppTheme.textPrimary)),
+                    if (project.description.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Text(project.description,
+                          style: const TextStyle(
+                              fontSize: 12, color: AppTheme.textSecondary)),
+                    ],
+                    if (project.date.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Text(project.date,
+                          style: const TextStyle(
+                              fontSize: 11, color: AppTheme.textMuted)),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCertificationsSection(UserAccount user) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppTheme.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppTheme.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.verified, color: Color(0xFFF97316), size: 20),
+              const SizedBox(width: 8),
+              const Text('Certifications',
+                  style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 14,
+                      color: AppTheme.textPrimary)),
+              if (!user.certificationsPrivate && !_canEdit) ...[
+                const SizedBox(width: 8),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: Colors.green.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Text('Public',
+                      style: TextStyle(
+                          color: Colors.green,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600)),
+                ),
+              ],
+            ],
+          ),
+          const SizedBox(height: 12),
+          if (user.certifications.isEmpty)
+            const Text('No certifications added yet',
+                style: TextStyle(color: AppTheme.textMuted, fontSize: 14))
+          else ...[
+            for (final certification in user.certifications) ...[
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                margin: const EdgeInsets.only(bottom: 8),
+                decoration: BoxDecoration(
+                  color: AppTheme.background,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: AppTheme.border),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(certification.title,
+                        style: const TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 13,
+                            color: AppTheme.textPrimary)),
+                    if (certification.issuer.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Text(certification.issuer,
+                          style: const TextStyle(
+                              fontSize: 12, color: AppTheme.textSecondary)),
+                    ],
+                    if (certification.date.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Text(certification.date,
+                          style: const TextStyle(
+                              fontSize: 11, color: AppTheme.textMuted)),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPrivacyToggle(String title, bool isPrivate, String type) {
+    return Row(
+      children: [
+        Expanded(
+          child: Text(
+            title,
+            style: TextStyle(
+              color: AppTheme.textPrimary,
+              fontSize: 14,
+            ),
+          ),
+        ),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          decoration: BoxDecoration(
+            color: isPrivate
+                ? Colors.red.withOpacity(0.1)
+                : Colors.green.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: isPrivate
+                  ? Colors.red.withOpacity(0.3)
+                  : Colors.green.withOpacity(0.3),
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                isPrivate ? Icons.lock : Icons.public,
+                size: 14,
+                color: isPrivate ? Colors.red : Colors.green,
+              ),
+              const SizedBox(width: 4),
+              Text(
+                isPrivate ? 'Private' : 'Public',
+                style: TextStyle(
+                  color: isPrivate ? Colors.red : Colors.green,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(width: 8),
+        Switch(
+          value: isPrivate,
+          onChanged: (value) async {
+            await AppStore().toggleProfilePrivacy(type);
+            await _initControllers(); // Refresh display
+          },
+          activeColor: AppTheme.primary,
+        ),
+      ],
     );
   }
 }
