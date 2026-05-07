@@ -1,6 +1,7 @@
 // lib/data/app_store.dart
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:uuid/uuid.dart';
 import '../models/models.dart';
 import 'database_helper.dart';
 import '../utils/database_exporter.dart';
@@ -20,29 +21,29 @@ class AppStore extends ChangeNotifier {
   Future<void> init() async {
     final dbHelper = DatabaseHelper();
     final db = await dbHelper.database;
-    
+
     try {
       // Load users from database
       final users = await db.query('users');
       _accounts = users.map((json) => UserAccount.fromJson(json)).toList();
-      
+
       // Get current user from SharedPreferences (still use this for session management)
       final prefs = await SharedPreferences.getInstance();
       final uid = prefs.getString('currentUserId');
       if (uid != null) {
         final user = _accounts.where((a) => a.id == uid).firstOrNull;
-        _currentUser = user ?? (_accounts.isNotEmpty ? _accounts.first : await _createDemoAccount());
+        _currentUser = user;
       }
-      
+
       // If no users exist, create demo account
       if (_accounts.isEmpty) {
-        final demoUser = await _createDemoAccount();
+        final demoUser = await _demoAccount();
         await db.insert('users', demoUser.toJson());
         _accounts.add(demoUser);
       }
     } catch (e) {
       // Fallback to demo account if database fails
-      _accounts.add(await _createDemoAccount());
+      _accounts.add(await _demoAccount());
       _currentUser = _accounts.first;
     }
   }
@@ -59,20 +60,20 @@ class AppStore extends ChangeNotifier {
 
   Future<bool> login(String email, String password) async {
     final dbHelper = DatabaseHelper();
-    
+
     // Try to get user from database first
     final user = await dbHelper.getUserByEmail(email);
     if (user != null && user.password == password) {
       _currentUser = user;
-      
+
       // Update local accounts list
       _accounts = await dbHelper.getAllUsers();
-      
+
       await _save();
       notifyListeners();
       return true;
     }
-    
+
     return false;
   }
 
@@ -85,20 +86,20 @@ class AppStore extends ChangeNotifier {
 
   Future<bool> createAccount(UserAccount account) async {
     final dbHelper = DatabaseHelper();
-    
+
     // Check if user already exists in database
     final existingUser = await dbHelper.getUserByEmail(account.email);
     if (existingUser != null) return false;
-    
+
     // Insert new user into database
     await dbHelper.insertUser(account);
-    
+
     // Update local state but don't auto-login
     _accounts = await dbHelper.getAllUsers();
-    
+
     // Export account information to text file
     await DatabaseExporter.exportUserAccount(account);
-    
+
     notifyListeners();
     return true;
   }
@@ -116,6 +117,109 @@ class AppStore extends ChangeNotifier {
   Future<UserAccount?> getUserById(String id) async {
     final dbHelper = DatabaseHelper();
     return await dbHelper.getUserById(id);
+  }
+
+  // Permission methods
+  Future<bool> requestPermission(String targetUserId, String message) async {
+    final dbHelper = DatabaseHelper();
+    final currentUser = AppStore().currentUser;
+
+    if (currentUser == null) return false;
+
+    // Check if request already exists
+    final existingRequests =
+        await dbHelper.getMyPermissionRequests(currentUser.id);
+    final hasExistingRequest = existingRequests.any(
+        (req) => req.targetUserId == targetUserId && req.status == 'pending');
+
+    if (hasExistingRequest) return false;
+
+    final request = PermissionRequest(
+      id: const Uuid().v4(),
+      requesterId: currentUser.id,
+      targetUserId: targetUserId,
+      requestDate: DateTime.now(),
+      status: 'pending',
+      message: message,
+    );
+
+    await dbHelper.insertPermissionRequest(request);
+    notifyListeners();
+    return true;
+  }
+
+  Future<List<PermissionRequest>> getPermissionRequests() async {
+    final dbHelper = DatabaseHelper();
+    final currentUser = AppStore().currentUser;
+
+    if (currentUser == null) return [];
+
+    return await dbHelper.getPermissionRequestsForUser(currentUser.id);
+  }
+
+  Future<List<PermissionRequest>> getMyPermissionRequests() async {
+    final dbHelper = DatabaseHelper();
+    final currentUser = AppStore().currentUser;
+
+    if (currentUser == null) return [];
+
+    return await dbHelper.getMyPermissionRequests(currentUser.id);
+  }
+
+  Future<void> approvePermissionRequest(String requestId) async {
+    final dbHelper = DatabaseHelper();
+    final request = await dbHelper
+        .getPermissionRequestsForUser(AppStore().currentUser!.id)
+        .then((requests) => requests.firstWhere((req) => req.id == requestId));
+
+    // Update request status
+    await dbHelper.updatePermissionRequestStatus(requestId, 'approved');
+
+    // Add to approved viewers
+    await dbHelper.addApprovedViewer(request.targetUserId, request.requesterId);
+
+    notifyListeners();
+  }
+
+  Future<void> denyPermissionRequest(String requestId) async {
+    final dbHelper = DatabaseHelper();
+    await dbHelper.updatePermissionRequestStatus(requestId, 'denied');
+    notifyListeners();
+  }
+
+  Future<bool> canViewSkills(String viewerId, String targetUserId) async {
+    // Can view if it's their own profile or if they have permission
+    if (viewerId == targetUserId) return true;
+
+    final dbHelper = DatabaseHelper();
+    final targetUser = await dbHelper.getUserById(targetUserId);
+
+    if (targetUser == null || !targetUser.skillsPrivate) return true;
+
+    return await dbHelper.hasPermission(viewerId, targetUserId);
+  }
+
+  Future<bool> canViewProjects(String viewerId, String targetUserId) async {
+    if (viewerId == targetUserId) return true;
+
+    final dbHelper = DatabaseHelper();
+    final targetUser = await dbHelper.getUserById(targetUserId);
+
+    if (targetUser == null || !targetUser.projectsPrivate) return true;
+
+    return await dbHelper.hasPermission(viewerId, targetUserId);
+  }
+
+  Future<bool> canViewCertifications(
+      String viewerId, String targetUserId) async {
+    if (viewerId == targetUserId) return true;
+
+    final dbHelper = DatabaseHelper();
+    final targetUser = await dbHelper.getUserById(targetUserId);
+
+    if (targetUser == null || !targetUser.certificationsPrivate) return true;
+
+    return await dbHelper.hasPermission(viewerId, targetUserId);
   }
 
   Future<bool> addSkillToCurrentUserFromRecord(
@@ -202,7 +306,7 @@ class AppStore extends ChangeNotifier {
     return await dbHelper.searchRecords(query);
   }
 
-  Future<UserAccount> _createDemoAccount() async {
+  UserAccount _demoAccount() {
     return UserAccount(
       id: 'demo-001',
       name: 'Maria Sofia Santos',
@@ -217,6 +321,10 @@ class AppStore extends ChangeNotifier {
       avatarUrl: '',
       bio:
           'I am a 4th year Industrial Engineering student at Cebu Technological University. I love AutoCAD, simulation tools, and building project portfolios.',
+      skillsPrivate: true, // Demo account has private skills
+      projectsPrivate: true, // Demo account has private projects
+      certificationsPrivate: true, // Demo account has private certifications
+      approvedViewers: [], // No approved viewers initially
       skillCategories: [
         SkillCategory(
           id: 'cat-1',

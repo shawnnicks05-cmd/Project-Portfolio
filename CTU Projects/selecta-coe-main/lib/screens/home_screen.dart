@@ -473,7 +473,15 @@ class _DashboardTabState extends State<_DashboardTab> {
   @override
   Widget build(BuildContext context) {
     final store = AppStore();
-    final user = store.currentUser!;
+    final user = store.currentUser;
+
+    // If user is null (logged out), redirect to login
+    if (user == null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
+      });
+      return const Center(child: CircularProgressIndicator());
+    }
 
     return Container(
       color: AppTheme.surfaceVariant,

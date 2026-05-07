@@ -1,5 +1,45 @@
 // lib/models/models.dart
 
+class PermissionRequest {
+  String id;
+  String requesterId;
+  String targetUserId;
+  DateTime requestDate;
+  String status; // 'pending', 'approved', 'denied'
+  String? message;
+
+  PermissionRequest({
+    required this.id,
+    required this.requesterId,
+    required this.targetUserId,
+    required this.requestDate,
+    required this.status,
+    this.message,
+  });
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'requesterId': requesterId,
+      'targetUserId': targetUserId,
+      'requestDate': requestDate.toIso8601String(),
+      'status': status,
+      'message': message,
+    };
+  }
+
+  factory PermissionRequest.fromJson(Map<String, dynamic> json) {
+    return PermissionRequest(
+      id: json['id'],
+      requesterId: json['requesterId'],
+      targetUserId: json['targetUserId'],
+      requestDate: DateTime.parse(json['requestDate']),
+      status: json['status'],
+      message: json['message'],
+    );
+  }
+}
+
 class UserAccount {
   String id;
   String name;
@@ -18,6 +58,10 @@ class UserAccount {
   List<SkillCategory> skillCategories;
   List<Project> projects;
   List<Certification> certifications;
+  bool skillsPrivate;
+  bool projectsPrivate;
+  bool certificationsPrivate;
+  List<String> approvedViewers; // User IDs that can view private data
 
   UserAccount({
     required this.id,
@@ -34,12 +78,17 @@ class UserAccount {
     this.bio = '',
     this.instagramUrl = '',
     this.facebookUrl = '',
+    this.skillsPrivate = false,
+    this.projectsPrivate = false,
+    this.certificationsPrivate = false,
+    List<String>? approvedViewers,
     List<SkillCategory>? skillCategories,
     List<Project>? projects,
     List<Certification>? certifications,
   })  : skillCategories = skillCategories ?? [],
         projects = projects ?? [],
-        certifications = certifications ?? [];
+        certifications = certifications ?? [],
+        approvedViewers = approvedViewers ?? [];
 
   int get totalSkills =>
       skillCategories.fold(0, (sum, cat) => sum + cat.skills.length);
@@ -65,6 +114,10 @@ class UserAccount {
         'bio': bio,
         'instagramUrl': instagramUrl,
         'facebookUrl': facebookUrl,
+        'skillsPrivate': skillsPrivate,
+        'projectsPrivate': projectsPrivate,
+        'certificationsPrivate': certificationsPrivate,
+        'approvedViewers': approvedViewers,
         'skillCategories': skillCategories.map((s) => s.toJson()).toList(),
         'projects': projects.map((p) => p.toJson()).toList(),
         'certifications': certifications.map((c) => c.toJson()).toList(),

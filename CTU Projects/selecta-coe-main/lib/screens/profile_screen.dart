@@ -1,4 +1,4 @@
-// lib/screens/profile_screen.dart
+﻿// lib/screens/profile_screen.dart
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -6,6 +6,27 @@ import 'package:image_picker/image_picker.dart';
 import '../data/app_store.dart';
 import '../models/models.dart';
 import '../theme.dart';
+
+class SummaryItem extends StatelessWidget {
+  final String label, value;
+  final Color color;
+  const SummaryItem(
+      {required this.label, required this.value, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Text(value,
+            style: TextStyle(
+                fontSize: 22, fontWeight: FontWeight.w800, color: color)),
+        const SizedBox(height: 2),
+        Text(label,
+            style: const TextStyle(fontSize: 11, color: AppTheme.textMuted)),
+      ],
+    );
+  }
+}
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key, this.userId, this.viewOnly = false});
@@ -19,21 +40,22 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   bool _editing = false;
-  late UserAccount _displayUser;
+  UserAccount? _displayUser;
+  bool _canEdit = false; // New variable to track if editing is allowed
 
   // Picked image file (local, before save)
   File? _pickedImageFile;
 
-  late TextEditingController _name;
-  late TextEditingController _email;
-  late TextEditingController _phone;
-  late TextEditingController _course;
-  late TextEditingController _studentId;
-  late TextEditingController _location;
-  late TextEditingController _bio;
-  late TextEditingController _instagramUrl;
-  late TextEditingController _facebookUrl;
-  late String _yearLevel;
+  TextEditingController? _name;
+  TextEditingController? _email;
+  TextEditingController? _phone;
+  TextEditingController? _course;
+  TextEditingController? _studentId;
+  TextEditingController? _location;
+  TextEditingController? _bio;
+  TextEditingController? _instagramUrl;
+  TextEditingController? _facebookUrl;
+  TextEditingController? _yearLevelController;
 
   // Snapshot for cancel support
   late String _snapName;
@@ -48,7 +70,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
   late String _snapYearLevel;
   File? _snapPickedImageFile;
 
-  final _years = ['1st Year', '2nd Year', '3rd Year', '4th Year', '5th Year'];
+  final List<String> _years = [
+    '1st Year',
+    '2nd Year',
+    '3rd Year',
+    '4th Year',
+    '5th Year',
+  ];
+
   final _picker = ImagePicker();
 
   @override
@@ -59,57 +88,67 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> _initControllers() async {
     final displayUser = widget.userId != null
-        ? await AppStore().getUserById(widget.userId!) ?? AppStore().currentUser!
-        : AppStore().currentUser!;
+        ? await AppStore().getUserById(widget.userId!) ?? AppStore().currentUser
+        : AppStore().currentUser;
 
     setState(() {
       _displayUser = displayUser;
-      _name = TextEditingController(text: _displayUser.name);
-      _email = TextEditingController(text: _displayUser.email);
-      _phone = TextEditingController(text: _displayUser.phone);
-      _course = TextEditingController(text: _displayUser.course);
-      _studentId = TextEditingController(text: _displayUser.studentId);
-      _location = TextEditingController(text: _displayUser.location);
-      _bio = TextEditingController(text: _displayUser.bio);
-      _instagramUrl = TextEditingController(text: _displayUser.instagramUrl);
-      _facebookUrl = TextEditingController(text: _displayUser.facebookUrl);
-      _yearLevel = _years.contains(_displayUser.yearLevel)
-          ? _displayUser.yearLevel
-          : '1st Year';
+      // Only allow editing if it's the user's own profile and not in viewOnly mode
+      final currentUser = AppStore().currentUser;
+      _canEdit = (widget.userId == null ||
+              (currentUser != null && widget.userId == currentUser.id)) &&
+          !widget.viewOnly;
+
+      if (_displayUser != null) {
+        _name = TextEditingController(text: _displayUser!.name);
+        _email = TextEditingController(text: _displayUser!.email);
+        _phone = TextEditingController(text: _displayUser!.phone);
+        _course = TextEditingController(text: _displayUser!.course);
+        _studentId = TextEditingController(text: _displayUser!.studentId);
+        _location = TextEditingController(text: _displayUser!.location);
+        _bio = TextEditingController(text: _displayUser!.bio);
+        _instagramUrl = TextEditingController(text: _displayUser!.instagramUrl);
+        _facebookUrl = TextEditingController(text: _displayUser!.facebookUrl);
+        _yearLevelController = TextEditingController(
+            text: _years.contains(_displayUser!.yearLevel)
+                ? _displayUser!.yearLevel
+                : '1st Year');
+      }
     });
   }
 
   void _takeSnapshot() {
-    _snapName = _name.text;
-    _snapEmail = _email.text;
-    _snapPhone = _phone.text;
-    _snapCourse = _course.text;
-    _snapStudentId = _studentId.text;
-    _snapLocation = _location.text;
-    _snapBio = _bio.text;
-    _snapInstagramUrl = _instagramUrl.text;
-    _snapFacebookUrl = _facebookUrl.text;
-    _snapYearLevel = _yearLevel;
+    _snapName = _name?.text ?? '';
+    _snapEmail = _email?.text ?? '';
+    _snapPhone = _phone?.text ?? '';
+    _snapCourse = _course?.text ?? '';
+    _snapStudentId = _studentId?.text ?? '';
+    _snapLocation = _location?.text ?? '';
+    _snapBio = _bio?.text ?? '';
+    _snapInstagramUrl = _instagramUrl?.text ?? '';
+    _snapFacebookUrl = _facebookUrl?.text ?? '';
     _snapPickedImageFile = _pickedImageFile;
+    _snapYearLevel = _yearLevelController?.text ?? '1st Year';
   }
 
   void _restoreSnapshot() {
-    _name.text = _snapName;
-    _email.text = _snapEmail;
-    _phone.text = _snapPhone;
-    _course.text = _snapCourse;
-    _studentId.text = _snapStudentId;
-    _location.text = _snapLocation;
-    _bio.text = _snapBio;
-    _instagramUrl.text = _snapInstagramUrl;
-    _facebookUrl.text = _snapFacebookUrl;
+    _name?.text = _snapName;
+    _email?.text = _snapEmail;
+    _phone?.text = _snapPhone;
+    _course?.text = _snapCourse;
+    _studentId?.text = _snapStudentId;
+    _location?.text = _snapLocation;
+    _bio?.text = _snapBio;
+    _instagramUrl?.text = _snapInstagramUrl;
+    _facebookUrl?.text = _snapFacebookUrl;
+    _yearLevelController?.text = _snapYearLevel;
     setState(() {
-      _yearLevel = _snapYearLevel;
       _pickedImageFile = _snapPickedImageFile;
     });
   }
 
   void _startEditing() {
+    if (!_canEdit) return;
     _takeSnapshot();
     setState(() => _editing = true);
   }
@@ -121,7 +160,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   /// Show a bottom sheet to choose camera or gallery
   Future<void> _pickImage() async {
-    if (!_editing) return;
+    if (!_editing || !_canEdit) return;
 
     final source = await showModalBottomSheet<ImageSource>(
       context: context,
@@ -129,34 +168,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
-      builder: (_) => SafeArea(
+      builder: (BuildContext context) => SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 12),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Container(
-                width: 40,
-                height: 4,
-                margin: const EdgeInsets.only(bottom: 16),
-                decoration: BoxDecoration(
-                  color: AppTheme.border,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              const Text(
-                'Choose Profile Photo',
-                style: TextStyle(
-                  fontWeight: FontWeight.w700,
-                  fontSize: 15,
-                  color: AppTheme.textPrimary,
-                ),
-              ),
-              const SizedBox(height: 16),
               ListTile(
                 leading: const Icon(Icons.camera_alt_outlined,
                     color: AppTheme.primary),
-                title: const Text('Take a photo',
+                title: const Text('Take Photo',
                     style: TextStyle(color: AppTheme.textPrimary)),
                 onTap: () => Navigator.pop(context, ImageSource.camera),
               ),
@@ -167,7 +188,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     style: TextStyle(color: AppTheme.textPrimary)),
                 onTap: () => Navigator.pop(context, ImageSource.gallery),
               ),
-              if (_pickedImageFile != null || _displayUser.avatarUrl.isNotEmpty)
+              if (_pickedImageFile != null ||
+                  (_displayUser != null &&
+                      _displayUser!.avatarUrl?.isNotEmpty == true))
                 ListTile(
                   leading:
                       const Icon(Icons.delete_outline, color: Colors.redAccent),
@@ -184,17 +207,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
     );
 
-    if (source == null) return;
-
-    final picked = await _picker.pickImage(
-      source: source,
-      imageQuality: 80,
-      maxWidth: 512,
-      maxHeight: 512,
-    );
-
-    if (picked != null) {
-      setState(() => _pickedImageFile = File(picked.path));
+    if (source != null) {
+      final picked = await _picker.getImage(source: source);
+      if (picked != null) {
+        setState(() => _pickedImageFile = File(picked.path));
+      }
     }
   }
 
@@ -203,26 +220,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
     // In a production app you would upload to cloud storage and store the URL.
     final newAvatarUrl = _pickedImageFile != null
         ? _pickedImageFile!.path
-        : _displayUser.avatarUrl;
+        : _displayUser?.avatarUrl ?? '';
 
     final updatedUser = UserAccount(
-      id: _displayUser.id,
-      name: _name.text.trim(),
-      email: _email.text.trim(),
-      phone: _phone.text.trim(),
-      password: _displayUser.password,
-      course: _course.text.trim(),
-      yearLevel: _yearLevel,
-      studentId: _studentId.text.trim(),
-      location: _location.text.trim(),
-      avatarInitials: _displayUser.avatarInitials,
+      id: _displayUser!.id,
+      name: _name?.text.trim() ?? '',
+      email: _email?.text.trim() ?? '',
+      phone: _phone?.text.trim() ?? '',
+      password: _displayUser!.password,
+      course: _course?.text.trim() ?? '',
+      yearLevel: _yearLevelController?.text.trim() ?? '1st Year',
+      studentId: _studentId?.text.trim() ?? '',
+      location: _location?.text.trim() ?? '',
+      avatarInitials: _displayUser!.avatarInitials,
       avatarUrl: newAvatarUrl,
-      bio: _bio.text.trim(),
-      instagramUrl: _instagramUrl.text.trim(),
-      facebookUrl: _facebookUrl.text.trim(),
-      skillCategories: _displayUser.skillCategories,
-      projects: _displayUser.projects,
-      certifications: _displayUser.certifications,
+      bio: _bio?.text.trim() ?? '',
+      instagramUrl: _instagramUrl?.text.trim() ?? '',
+      facebookUrl: _facebookUrl?.text.trim() ?? '',
+      skillCategories: _displayUser!.skillCategories,
+      projects: _displayUser!.projects,
+      certifications: _displayUser!.certifications,
     );
 
     AppStore().updateCurrentUser(updatedUser);
@@ -245,26 +262,105 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   void dispose() {
-    for (final c in [
-      _name,
-      _email,
-      _phone,
-      _course,
-      _studentId,
-      _location,
-      _bio,
-      _instagramUrl,
-      _facebookUrl,
-    ]) {
-      c.dispose();
-    }
+    // Dispose controllers only if they are initialized
+    _name?.dispose();
+    _email?.dispose();
+    _phone?.dispose();
+    _course?.dispose();
+    _studentId?.dispose();
+    _location?.dispose();
+    _bio?.dispose();
+    _instagramUrl?.dispose();
+    _facebookUrl?.dispose();
+    _yearLevelController?.dispose();
     super.dispose();
   }
 
-  // ── Avatar widget ────────────────────────────────────────────────────────
+  //  Avatar widget
+
+  Widget _initialsWidget(String initials) {
+    return Center(
+      child: Text(
+        initials,
+        style: const TextStyle(
+            color: Colors.white, fontSize: 28, fontWeight: FontWeight.w700),
+      ),
+    );
+  }
+
+  Widget _editField(
+    TextEditingController ctrl,
+    String label,
+    IconData icon, {
+    TextInputType? keyboard,
+    int minLines = 1,
+    int maxLines = 1,
+  }) {
+    return TextFormField(
+      controller: ctrl,
+      keyboardType: keyboard,
+      minLines: minLines,
+      maxLines: maxLines,
+      style: const TextStyle(color: Colors.white),
+      decoration: InputDecoration(
+        labelText: label,
+        prefixIcon: Icon(icon, size: 18),
+      ),
+    );
+  }
+
+  Widget _infoRow(IconData icon, String label, String value) {
+    if (value.isEmpty) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 16, color: AppTheme.textMuted),
+          const SizedBox(width: 10),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label,
+                  style:
+                      const TextStyle(fontSize: 11, color: AppTheme.textMuted)),
+              Text(value,
+                  style: const TextStyle(
+                      fontSize: 13, color: AppTheme.textPrimary)),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _socialLinkRow(Widget icon, String label, String url) {
+    if (url.isEmpty) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          icon,
+          const SizedBox(width: 10),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label,
+                  style:
+                      const TextStyle(fontSize: 11, color: AppTheme.textMuted)),
+              Text(url,
+                  style: const TextStyle(
+                      fontSize: 13, color: AppTheme.textPrimary)),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
 
   Widget _buildAvatar(UserAccount user) {
-    // Priority: newly picked file → existing avatarUrl (local or network) → initials
+    // Priority: newly picked file  existing avatarUrl (local or network)  initials
     Widget avatarChild;
 
     if (_pickedImageFile != null) {
@@ -285,20 +381,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
               errorBuilder: (_, __, ___) =>
                   _initialsWidget(user.avatarInitials),
             )
-          : Image.network(
-              user.avatarUrl,
-              fit: BoxFit.cover,
-              width: 96,
-              height: 96,
-              errorBuilder: (_, __, ___) =>
-                  _initialsWidget(user.avatarInitials),
-            );
+          : (Uri.tryParse(user.avatarUrl)?.hasAbsolutePath ?? false)
+              ? Image.network(
+                  user.avatarUrl,
+                  fit: BoxFit.cover,
+                  width: 96,
+                  height: 96,
+                  errorBuilder: (_, __, ___) =>
+                      _initialsWidget(user.avatarInitials),
+                )
+              : _initialsWidget(user.avatarInitials);
     } else {
       avatarChild = _initialsWidget(user.avatarInitials);
     }
 
     return GestureDetector(
-      onTap: _editing ? _pickImage : null,
+      onTap: (_editing && _canEdit) ? _pickImage : null,
       child: Stack(
         children: [
           Container(
@@ -317,8 +415,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
               child: avatarChild,
             ),
           ),
-          // Camera badge — only visible in edit mode
-          if (_editing)
+          // Camera badge  only visible in edit mode and user can edit
+          if (_editing && _canEdit)
             Positioned(
               bottom: 0,
               right: 0,
@@ -339,30 +437,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _initialsWidget(String initials) {
-    return Center(
-      child: Text(
-        initials,
-        style: const TextStyle(
-            color: Colors.white, fontSize: 28, fontWeight: FontWeight.w700),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
-    final user = _displayUser;
+    if (_displayUser == null) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    final user = _displayUser!;
     return Container(
       color: AppTheme.surfaceVariant,
       child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          // ── Avatar + name header ───────────────────────────────────────
+          // Avatar + name header
           Center(
             child: Column(
               children: [
                 _buildAvatar(user),
-                if (_editing)
+                if (_editing && _canEdit)
                   const Padding(
                     padding: EdgeInsets.only(top: 6),
                     child: Text(
@@ -382,7 +473,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       style: TextStyle(
                           fontSize: 13, color: AppTheme.textSecondary)),
                   const SizedBox(height: 4),
-                  Text('${user.course} • ${user.yearLevel}',
+                  Text('${user.course}  ${user.yearLevel}',
                       style: const TextStyle(
                           fontSize: 13, color: AppTheme.textSecondary)),
                   const SizedBox(height: 4),
@@ -410,8 +501,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
           const SizedBox(height: 20),
 
-          // ── Edit / Cancel / Save buttons ───────────────────────────────
-          if (!widget.viewOnly) ...[
+          //  Edit / Cancel / Save buttons
+          if (!widget.viewOnly && _canEdit) ...[
             if (!_editing)
               SizedBox(
                 width: double.infinity,
@@ -468,7 +559,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             const SizedBox(height: 16),
           ],
 
-          // ── Personal Information card ──────────────────────────────────
+          //  Personal Information card
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -485,48 +576,51 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         fontSize: 14,
                         color: AppTheme.textPrimary)),
                 const SizedBox(height: 16),
-                if (_editing) ...[
-                  _editField(_name, 'Full Name', Icons.person_outline),
+                if (_editing && _canEdit) ...[
+                  if (_name != null)
+                    _editField(_name!, 'Full Name', Icons.person_outline),
                   const SizedBox(height: 12),
-                  _editField(_email, 'Email', Icons.email_outlined,
-                      keyboard: TextInputType.emailAddress),
+                  if (_email != null)
+                    _editField(_email!, 'Email', Icons.email_outlined,
+                        keyboard: TextInputType.emailAddress),
                   const SizedBox(height: 12),
-                  _editField(_phone, 'Phone', Icons.phone_outlined,
-                      keyboard: TextInputType.phone),
+                  if (_phone != null)
+                    _editField(_phone!, 'Phone', Icons.phone_outlined,
+                        keyboard: TextInputType.phone),
                   const SizedBox(height: 12),
-                  _editField(_course, 'Course / Program', Icons.book_outlined),
+                  if (_course != null)
+                    _editField(
+                        _course!, 'Course / Program', Icons.book_outlined),
                   const SizedBox(height: 12),
                   Row(children: [
                     Expanded(
-                        child: _editField(
-                            _studentId, 'Student ID', Icons.badge_outlined)),
+                        child: _studentId != null
+                            ? _editField(
+                                _studentId!, 'Student ID', Icons.badge_outlined)
+                            : Container()),
                     const SizedBox(width: 10),
                     Expanded(
-                      child: DropdownButtonFormField<String>(
-                        initialValue: _yearLevel,
-                        decoration:
-                            const InputDecoration(labelText: 'Year Level'),
-                        items: _years
-                            .map((y) => DropdownMenuItem(
-                                value: y,
-                                child: Text(y,
-                                    style: const TextStyle(fontSize: 13))))
-                            .toList(),
-                        onChanged: (v) => setState(() => _yearLevel = v!),
-                      ),
-                    ),
+                        child: _yearLevelController != null
+                            ? _editField(_yearLevelController!, 'Year Level',
+                                Icons.school_outlined)
+                            : Container()),
                   ]),
                   const SizedBox(height: 12),
-                  _editField(_location, 'Location', Icons.location_on_outlined),
+                  if (_location != null)
+                    _editField(
+                        _location!, 'Location', Icons.location_on_outlined),
                   const SizedBox(height: 12),
-                  _editField(_bio, 'Bio', Icons.comment_outlined,
-                      keyboard: TextInputType.text, minLines: 1, maxLines: 1),
+                  if (_bio != null)
+                    _editField(_bio!, 'Bio', Icons.comment_outlined,
+                        keyboard: TextInputType.text, minLines: 1, maxLines: 1),
                   const SizedBox(height: 12),
-                  _editField(_instagramUrl, 'Instagram URL', Icons.camera,
-                      keyboard: TextInputType.url),
+                  if (_instagramUrl != null)
+                    _editField(_instagramUrl!, 'Instagram URL', Icons.camera,
+                        keyboard: TextInputType.url),
                   const SizedBox(height: 12),
-                  _editField(_facebookUrl, 'Facebook URL', Icons.facebook,
-                      keyboard: TextInputType.url),
+                  if (_facebookUrl != null)
+                    _editField(_facebookUrl!, 'Facebook URL', Icons.facebook,
+                        keyboard: TextInputType.url),
                 ] else ...[
                   _infoRow(Icons.email_outlined, 'Email', user.email),
                   _infoRow(Icons.phone_outlined, 'Phone', user.phone),
@@ -564,7 +658,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         user.instagramUrl),
                   if (user.facebookUrl.isNotEmpty)
                     _socialLinkRow(
-                        const Icon(Icons.facebook,
+                        const FaIcon(FontAwesomeIcons.facebook,
                             size: 16, color: AppTheme.textMuted),
                         'Facebook',
                         user.facebookUrl),
@@ -575,7 +669,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
           const SizedBox(height: 16),
 
-          // ── Summary card ──────────────────────────────────────────────
+          //  Summary card
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -595,19 +689,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
-                    _SummaryItem(
+                    SummaryItem(
                         label: 'Skills',
                         value: '${user.totalSkills}',
                         color: AppTheme.primary),
-                    _SummaryItem(
+                    SummaryItem(
                         label: 'Avg',
                         value: '${user.avgCompetency.round()}%',
                         color: AppTheme.success),
-                    _SummaryItem(
+                    SummaryItem(
                         label: 'Projects',
                         value: '${user.projects.length}',
                         color: AppTheme.warning),
-                    _SummaryItem(
+                    SummaryItem(
                         label: 'Certifications',
                         value: '${user.certifications.length}',
                         color: const Color(0xFFF97316)),
@@ -620,100 +714,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
           const SizedBox(height: 24),
         ],
       ),
-    );
-  }
-
-  // ── helpers ─────────────────────────────────────────────────────────────
-
-  Widget _infoRow(IconData icon, String label, String value) {
-    if (value.isEmpty) return const SizedBox.shrink();
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, size: 16, color: AppTheme.textMuted),
-          const SizedBox(width: 10),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(label,
-                  style:
-                      const TextStyle(fontSize: 11, color: AppTheme.textMuted)),
-              Text(value,
-                  style: const TextStyle(
-                      fontSize: 13, color: AppTheme.textPrimary)),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _socialLinkRow(Widget icon, String label, String url) {
-    if (url.isEmpty) return const SizedBox.shrink();
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          icon,
-          const SizedBox(width: 10),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(label,
-                  style:
-                      const TextStyle(fontSize: 11, color: AppTheme.textMuted)),
-              Text(url,
-                  style: const TextStyle(
-                      fontSize: 13, color: AppTheme.textPrimary)),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _editField(
-    TextEditingController ctrl,
-    String label,
-    IconData icon, {
-    TextInputType? keyboard,
-    int minLines = 1,
-    int maxLines = 1,
-  }) {
-    return TextFormField(
-      controller: ctrl,
-      keyboardType: keyboard,
-      minLines: minLines,
-      maxLines: maxLines,
-      style: const TextStyle(color: Colors.white),
-      decoration: InputDecoration(
-        labelText: label,
-        prefixIcon: Icon(icon, size: 18),
-      ),
-    );
-  }
-}
-
-class _SummaryItem extends StatelessWidget {
-  final String label, value;
-  final Color color;
-  const _SummaryItem(
-      {required this.label, required this.value, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Text(value,
-            style: TextStyle(
-                fontSize: 22, fontWeight: FontWeight.w800, color: color)),
-        const SizedBox(height: 2),
-        Text(label,
-            style: const TextStyle(fontSize: 11, color: AppTheme.textMuted)),
-      ],
     );
   }
 }

@@ -28,7 +28,7 @@ class SelectaCOEApp extends StatelessWidget {
       title: 'SELECTA-COE',
       theme: AppTheme.theme,
       debugShowCheckedModeBanner: false,
-      initialRoute: AppStore().isLoggedIn ? '/home' : '/',
+      initialRoute: '/',
       routes: {
         '/': (_) => const AuthScreen(),
         '/home': (_) => const HomeScreen(),
