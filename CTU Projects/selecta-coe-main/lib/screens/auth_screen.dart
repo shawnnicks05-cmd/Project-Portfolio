@@ -311,6 +311,7 @@ class _RegisterFormState extends State<_RegisterForm> {
   final _locationFocus = FocusNode();
   final _bioFocus = FocusNode();
   final _passwordFocus = FocusNode();
+  String _userType = 'Student';
   String _yearLevel = '1st Year';
   bool _loading = false;
   bool _obscure = true;
@@ -318,6 +319,7 @@ class _RegisterFormState extends State<_RegisterForm> {
   String? _success;
 
   final _years = ['1st Year', '2nd Year', '3rd Year', '4th Year', '5th Year'];
+  final _userTypes = ['Student', 'Professor'];
 
   @override
   void dispose() {
@@ -369,6 +371,7 @@ class _RegisterFormState extends State<_RegisterForm> {
       email: _email.text.trim(),
       phone: _phone.text.trim(),
       password: _password.text,
+      userType: _userType,
       course: _course.text.trim(),
       yearLevel: _yearLevel,
       studentId: _studentId.text.trim(),
@@ -393,6 +396,10 @@ class _RegisterFormState extends State<_RegisterForm> {
         _studentId.clear();
         _location.clear();
         _bio.clear();
+        setState(() {
+          _userType = 'Student';
+          _yearLevel = '1st Year';
+        });
         // Switch to login tab
         widget.tabController.animateTo(0);
       });
@@ -426,6 +433,21 @@ class _RegisterFormState extends State<_RegisterForm> {
                 onFieldSubmitted: (_) =>
                     FocusScope.of(context).requestFocus(_emailFocus),
                 validator: (v) => v!.isEmpty ? 'Required' : null),
+            const SizedBox(height: 10),
+            DropdownButtonFormField<String>(
+              initialValue: _userType,
+              decoration: const InputDecoration(labelText: 'User Type'),
+              items: _userTypes
+                  .map((type) => DropdownMenuItem(
+                      value: type,
+                      child: Text(
+                        type,
+                        style: const TextStyle(
+                            fontSize: 13, color: AppTheme.textPrimary),
+                      )))
+                  .toList(),
+              onChanged: (v) => setState(() => _userType = v!),
+            ),
             const SizedBox(height: 10),
             _field(_email, 'Email', Icons.email_outlined,
                 focusNode: _emailFocus,

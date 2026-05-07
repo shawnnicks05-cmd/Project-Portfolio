@@ -40,12 +40,53 @@ class PermissionRequest {
   }
 }
 
+class NotificationModel {
+  String id;
+  String userId;
+  String title;
+  String message;
+  String type; // 'request', 'approval', 'denial'
+  DateTime timestamp;
+  bool isRead;
+
+  NotificationModel({
+    required this.id,
+    required this.userId,
+    required this.title,
+    required this.message,
+    required this.type,
+    required this.timestamp,
+    this.isRead = false,
+  });
+
+  factory NotificationModel.fromJson(Map<String, dynamic> json) => NotificationModel(
+    id: json['id'],
+    userId: json['userId'],
+    title: json['title'],
+    message: json['message'],
+    type: json['type'],
+    timestamp: DateTime.parse(json['timestamp']),
+    isRead: json['isRead'] ?? false,
+  );
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'userId': userId,
+    'title': title,
+    'message': message,
+    'type': type,
+    'timestamp': timestamp.toIso8601String(),
+    'isRead': isRead,
+  };
+}
+
 class UserAccount {
   String id;
   String name;
   String email;
   String phone;
   String password;
+  String userType; // 'Student' or 'Professor'
   String course;
   String yearLevel;
   String studentId;
@@ -69,6 +110,7 @@ class UserAccount {
     required this.email,
     required this.phone,
     required this.password,
+    required this.userType,
     required this.course,
     required this.yearLevel,
     required this.studentId,
@@ -105,6 +147,7 @@ class UserAccount {
         'email': email,
         'phone': phone,
         'password': password,
+        'userType': userType,
         'course': course,
         'yearLevel': yearLevel,
         'studentId': studentId,
@@ -129,6 +172,7 @@ class UserAccount {
         email: json['email'],
         phone: json['phone'],
         password: json['password'] ?? '',
+        userType: json['userType'] ?? 'Student',
         course: json['course'],
         yearLevel: json['yearLevel'],
         studentId: json['studentId'],

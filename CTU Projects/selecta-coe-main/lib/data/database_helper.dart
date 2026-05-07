@@ -13,7 +13,7 @@ class DatabaseHelper {
   Database? _database;
 
   static const String _dbName = 'selecta_coe.db';
-  static const int _dbVersion = 1;
+  static const int _dbVersion = 2;
 
   // Table names
   static const String usersTable = 'users';
@@ -50,6 +50,7 @@ class DatabaseHelper {
         email TEXT UNIQUE NOT NULL,
         phone TEXT,
         password TEXT NOT NULL,
+        userType TEXT DEFAULT 'Student',
         course TEXT,
         yearLevel TEXT,
         studentId TEXT,
@@ -146,15 +147,21 @@ class DatabaseHelper {
   }
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    print('Database upgrade: oldVersion=$oldVersion, newVersion=$newVersion');
     // Handle database migrations here when upgrading versions
-    // For now, we'll recreate tables (this will lose data - implement proper migrations in production)
-    if (oldVersion < newVersion) {
-      await db.execute('DROP TABLE IF EXISTS $certificationsTable');
-      await db.execute('DROP TABLE IF EXISTS $projectsTable');
-      await db.execute('DROP TABLE IF EXISTS $skillsTable');
-      await db.execute('DROP TABLE IF EXISTS $skillCategoriesTable');
-      await db.execute('DROP TABLE IF EXISTS $usersTable');
-      await _onCreate(db, newVersion);
+    if (oldVersion < 2) {
+      print('Adding userType column to existing database...');
+      // Add userType column to existing users table
+      try {
+        await db.execute(
+            'ALTER TABLE $usersTable ADD COLUMN userType TEXT DEFAULT \'Student\'');
+        print('userType column added successfully');
+      } catch (e) {
+        print('Error adding userType column: $e');
+        // Try alternative approach
+        await db.execute('ALTER TABLE $usersTable ADD COLUMN userType TEXT');
+        print('userType column added with alternative approach');
+      }
     }
   }
 
@@ -162,10 +169,10 @@ class DatabaseHelper {
   Future<int> insertUser(UserAccount user) async {
     final db = await database;
     final userId = await db.insert(usersTable, _userToMap(user));
-    
+
     // Save related data (skills, projects, certifications)
     await _saveRelatedData(user);
-    
+
     return userId;
   }
 
@@ -173,17 +180,17 @@ class DatabaseHelper {
     // Save skill categories and skills
     for (final category in user.skillCategories) {
       await insertSkillCategory(category, user.id);
-      
+
       for (final skill in category.skills) {
         await insertSkill(skill, category.id);
       }
     }
-    
+
     // Save projects
     for (final project in user.projects) {
       await insertProject(project, user.id);
     }
-    
+
     // Save certifications
     for (final certification in user.certifications) {
       await insertCertification(certification, user.id);
@@ -209,23 +216,31 @@ class DatabaseHelper {
   }
 
   Future<UserAccount?> getUserByEmail(String email) async {
+    print('Querying database for email: $email');
     final db = await database;
-    final List<Map<String, dynamic>> maps = await db.query(
-      usersTable,
-      where: 'email = ?',
-      whereArgs: [email],
-    );
 
-    if (maps.isEmpty) return null;
+    try {
+      final List<Map<String, dynamic>> maps = await db.query(
+        usersTable,
+        where: 'email = ?',
+        whereArgs: [email],
+      );
+      print('Query returned ${maps.length} results');
 
-    final user = _mapToUser(maps.first);
+      if (maps.isEmpty) return null;
 
-    // Load related data
-    user.skillCategories = await getSkillCategoriesForUser(user.id);
-    user.projects = await getProjectsForUser(user.id);
-    user.certifications = await getCertificationsForUser(user.id);
+      final user = _mapToUser(maps.first);
 
-    return user;
+      // Load related data
+      user.skillCategories = await getSkillCategoriesForUser(user.id);
+      user.projects = await getProjectsForUser(user.id);
+      user.certifications = await getCertificationsForUser(user.id);
+
+      return user;
+    } catch (e) {
+      print('Error in getUserByEmail: $e');
+      return null;
+    }
   }
 
   Future<UserAccount?> getUserById(String id) async {
@@ -316,7 +331,24 @@ class DatabaseHelper {
     final db = await database;
     final map = _skillToMap(skill);
     map['categoryId'] = categoryId;
-    return await db.insert(skillsTable, map);
+
+    try {
+      return await db.insert(skillsTable, map);
+    } catch (e) {
+      // If duplicate ID error, generate new ID
+      if (e.toString().contains('UNIQUE constraint failed')) {
+        final newSkill = Skill(
+          id: 's${DateTime.now().millisecondsSinceEpoch}',
+          name: skill.name,
+          level: skill.level,
+          proficiencyPercent: skill.proficiencyPercent,
+        );
+        final newMap = _skillToMap(newSkill);
+        newMap['categoryId'] = categoryId;
+        return await db.insert(skillsTable, newMap);
+      }
+      rethrow;
+    }
   }
 
   // Project operations
@@ -364,6 +396,7 @@ class DatabaseHelper {
       'email': user.email,
       'phone': user.phone,
       'password': user.password,
+      'userType': user.userType,
       'course': user.course,
       'yearLevel': user.yearLevel,
       'studentId': user.studentId,
@@ -383,6 +416,7 @@ class DatabaseHelper {
       email: map['email'],
       phone: map['phone'] ?? '',
       password: map['password'],
+      userType: map['userType'] ?? 'Student',
       course: map['course'] ?? '',
       yearLevel: map['yearLevel'] ?? '',
       studentId: map['studentId'] ?? '',
@@ -618,10 +652,12 @@ class DatabaseHelper {
   // Permission request methods
   Future<int> insertPermissionRequest(PermissionRequest request) async {
     final db = await database;
-    return await db.insert(permissionRequestsTable, _permissionRequestToMap(request));
+    return await db.insert(
+        permissionRequestsTable, _permissionRequestToMap(request));
   }
 
-  Future<List<PermissionRequest>> getPermissionRequestsForUser(String userId) async {
+  Future<List<PermissionRequest>> getPermissionRequestsForUser(
+      String userId) async {
     final db = await database;
     final List<Map<String, dynamic>> maps = await db.query(
       permissionRequestsTable,
@@ -645,7 +681,8 @@ class DatabaseHelper {
     return maps.map((map) => _mapToPermissionRequest(map)).toList();
   }
 
-  Future<void> updatePermissionRequestStatus(String requestId, String status) async {
+  Future<void> updatePermissionRequestStatus(
+      String requestId, String status) async {
     final db = await database;
     await db.update(
       permissionRequestsTable,
@@ -666,10 +703,10 @@ class DatabaseHelper {
     );
 
     if (maps.isEmpty) return false;
-    
+
     final approvedViewers = maps.first['approvedViewers'] as String? ?? '[]';
     final viewersList = List<String>.from(json.decode(approvedViewers));
-    
+
     return viewersList.contains(viewerId);
   }
 
@@ -683,10 +720,10 @@ class DatabaseHelper {
     );
 
     if (maps.isEmpty) return;
-    
+
     final approvedViewers = maps.first['approvedViewers'] as String? ?? '[]';
     final viewersList = List<String>.from(json.decode(approvedViewers));
-    
+
     if (!viewersList.contains(viewerId)) {
       viewersList.add(viewerId);
       await db.update(

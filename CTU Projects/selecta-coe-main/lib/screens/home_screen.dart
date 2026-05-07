@@ -4,10 +4,10 @@ import 'package:flutter/material.dart';
 import '../data/app_store.dart';
 import '../models/models.dart';
 import '../theme.dart';
-import '../utils/database_debug_final.dart';
 import 'database_screen.dart';
 import 'profile_screen.dart';
 import 'search_screen.dart';
+import 'notification_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -29,6 +29,7 @@ class _HomeScreenState extends State<HomeScreen>
         DatabaseScreen(),
         SearchScreen(),
         ProfileScreen(),
+        NotificationScreen(),
       ];
 
   @override
@@ -123,18 +124,7 @@ class _HomeScreenState extends State<HomeScreen>
             ),
           ],
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.storage),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const DatabaseDebug()),
-              );
-            },
-            tooltip: 'View Database Location',
-          ),
-        ],
+        actions: const [],
       ),
       body: Stack(
         children: [
@@ -326,6 +316,16 @@ class _SideDrawer extends StatelessWidget {
               label: 'Search',
               isSelected: selectedIndex == 2,
               onTap: () => onSelect(2),
+            ),
+            _NavItem(
+              icon: Icons.notifications_outlined,
+              activeIcon: Icons.notifications,
+              label: 'Notifications',
+              isSelected: selectedIndex == 4,
+              onTap: () {
+                onSelect(4);
+                Navigator.pushNamed(context, '/notifications');
+              },
             ),
             _NavItem(
               icon: Icons.person_outline,

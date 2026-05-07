@@ -11,7 +11,10 @@ class SummaryItem extends StatelessWidget {
   final String label, value;
   final Color color;
   const SummaryItem(
-      {required this.label, required this.value, required this.color});
+      {super.key,
+      required this.label,
+      required this.value,
+      required this.color});
 
   @override
   Widget build(BuildContext context) {
@@ -190,7 +193,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               if (_pickedImageFile != null ||
                   (_displayUser != null &&
-                      _displayUser!.avatarUrl?.isNotEmpty == true))
+                      _displayUser!.avatarUrl.isNotEmpty == true))
                 ListTile(
                   leading:
                       const Icon(Icons.delete_outline, color: Colors.redAccent),
@@ -228,6 +231,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       email: _email?.text.trim() ?? '',
       phone: _phone?.text.trim() ?? '',
       password: _displayUser!.password,
+      userType: _displayUser!.userType,
       course: _course?.text.trim() ?? '',
       yearLevel: _yearLevelController?.text.trim() ?? '1st Year',
       studentId: _studentId?.text.trim() ?? '',
@@ -257,6 +261,94 @@ class _ProfileScreenState extends State<ProfileScreen> {
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),
+    );
+  }
+
+  void _showRequestPermissionDialog() {
+    final messageController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: AppTheme.surface,
+          title: const Text(
+            'Request Permission',
+            style: TextStyle(
+              color: AppTheme.textPrimary,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Send a permission request to view ${_displayUser!.name}\'s private profile information.',
+                style: const TextStyle(
+                  color: AppTheme.textSecondary,
+                  fontSize: 14,
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: messageController,
+                maxLines: 3,
+                style: const TextStyle(color: AppTheme.textPrimary),
+                decoration: InputDecoration(
+                  labelText: 'Message (optional)',
+                  hintText: 'Explain why you need access to their profile...',
+                  hintStyle: const TextStyle(color: AppTheme.textMuted),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: const BorderSide(color: AppTheme.border),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: const BorderSide(color: AppTheme.primary),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                if (_displayUser != null) {
+                  await AppStore().requestPermission(
+                    _displayUser!.id,
+                    messageController.text.trim().isEmpty
+                        ? 'I would like to request access to view your profile information.'
+                        : messageController.text.trim(),
+                  );
+                  if (context.mounted) {
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content:
+                            const Text('Permission request sent successfully'),
+                        backgroundColor: AppTheme.success,
+                        behavior: SnackBarBehavior.floating,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8)),
+                      ),
+                    );
+                  }
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primary,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Send Request'),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -500,6 +592,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
 
           const SizedBox(height: 20),
+
+          //  Request Permission button (only when viewing other users' profiles)
+          if (widget.viewOnly && !_canEdit && _displayUser != null) ...[
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: _showRequestPermissionDialog,
+                icon: const Icon(Icons.send_outlined, size: 18),
+                label: const Text('Request Permission'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.primary,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 13),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10)),
+                  elevation: 0,
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
 
           //  Edit / Cancel / Save buttons
           if (!widget.viewOnly && _canEdit) ...[

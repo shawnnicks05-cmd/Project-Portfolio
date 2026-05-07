@@ -1,4 +1,5 @@
 // lib/data/app_store.dart
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
@@ -19,33 +20,49 @@ class AppStore extends ChangeNotifier {
   bool get isLoggedIn => _currentUser != null;
 
   Future<void> init() async {
-    final dbHelper = DatabaseHelper();
-    final db = await dbHelper.database;
+    final prefs = await SharedPreferences.getInstance();
 
-    try {
-      // Load users from database
-      final users = await db.query('users');
-      _accounts = users.map((json) => UserAccount.fromJson(json)).toList();
-
-      // Get current user from SharedPreferences (still use this for session management)
-      final prefs = await SharedPreferences.getInstance();
-      final uid = prefs.getString('currentUserId');
-      if (uid != null) {
-        final user = _accounts.where((a) => a.id == uid).firstOrNull;
-        _currentUser = user;
-      }
-
-      // If no users exist, create demo account
-      if (_accounts.isEmpty) {
-        final demoUser = await _demoAccount();
-        await db.insert('users', demoUser.toJson());
-        _accounts.add(demoUser);
-      }
-    } catch (e) {
-      // Fallback to demo account if database fails
-      _accounts.add(await _demoAccount());
-      _currentUser = _accounts.first;
+    // Load demo account from SharedPreferences
+    final demoJson = prefs.getString('demoAccount');
+    if (demoJson != null) {
+      final demoUser = UserAccount.fromJson(jsonDecode(demoJson));
+      _accounts.add(demoUser);
+    } else {
+      // Create and save demo account to SharedPreferences
+      final demoUser = _demoAccount();
+      await prefs.setString('demoAccount', jsonEncode(demoUser.toJson()));
+      _accounts.add(demoUser);
     }
+
+    // Load users from SQLite database
+    try {
+      final dbHelper = DatabaseHelper();
+      final db = await dbHelper.database;
+      final users = await db.query('users');
+      final dbUsers = users.map((json) => UserAccount.fromJson(json)).toList();
+      _accounts.addAll(dbUsers);
+    } catch (e) {
+      print('Error loading database users: $e');
+      // Continue with demo account only
+    }
+
+    // Get current user from SharedPreferences
+    final uid = prefs.getString('currentUserId');
+    if (uid != null) {
+      _currentUser = _accounts.where((a) => a.id == uid).firstOrNull;
+    }
+
+    // If no current user, default to demo account
+    if (_currentUser == null && _accounts.isNotEmpty) {
+      _currentUser = _accounts.first;
+      await prefs.setString('currentUserId', _currentUser!.id);
+    }
+
+    // Load notifications from SharedPreferences
+    final notificationsJson = prefs.getString('notifications') ?? '[]';
+    final notificationsList = jsonDecode(notificationsJson) as List;
+    _notifications =
+        notificationsList.map((n) => NotificationModel.fromJson(n)).toList();
   }
 
   Future<void> _save() async {
@@ -59,16 +76,15 @@ class AppStore extends ChangeNotifier {
   }
 
   Future<bool> login(String email, String password) async {
-    final dbHelper = DatabaseHelper();
+    // Check in local accounts list (includes SharedPreferences demo + SQLite users)
+    final match = _accounts
+        .where((a) =>
+            a.email.toLowerCase() == email.toLowerCase() &&
+            a.password == password)
+        .toList();
 
-    // Try to get user from database first
-    final user = await dbHelper.getUserByEmail(email);
-    if (user != null && user.password == password) {
-      _currentUser = user;
-
-      // Update local accounts list
-      _accounts = await dbHelper.getAllUsers();
-
+    if (match.isNotEmpty) {
+      _currentUser = match.first;
       await _save();
       notifyListeners();
       return true;
@@ -85,23 +101,27 @@ class AppStore extends ChangeNotifier {
   }
 
   Future<bool> createAccount(UserAccount account) async {
-    final dbHelper = DatabaseHelper();
-
-    // Check if user already exists in database
-    final existingUser = await dbHelper.getUserByEmail(account.email);
+    // Check if user already exists in local accounts
+    final existingUser = _accounts
+        .where((a) => a.email.toLowerCase() == account.email.toLowerCase())
+        .firstOrNull;
     if (existingUser != null) return false;
 
-    // Insert new user into database
-    await dbHelper.insertUser(account);
+    // Save to SQLite database
+    try {
+      final dbHelper = DatabaseHelper();
+      await dbHelper.insertUser(account);
+      _accounts.add(account);
 
-    // Update local state but don't auto-login
-    _accounts = await dbHelper.getAllUsers();
+      // Export account information to text file
+      await DatabaseExporter.exportUserAccount(account);
 
-    // Export account information to text file
-    await DatabaseExporter.exportUserAccount(account);
-
-    notifyListeners();
-    return true;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      print('Error creating account: $e');
+      return false;
+    }
   }
 
   Future<void> updateCurrentUser(UserAccount updated) async {
@@ -144,6 +164,15 @@ class AppStore extends ChangeNotifier {
     );
 
     await dbHelper.insertPermissionRequest(request);
+
+    // Add notification for target user
+    await _addNotification(
+      targetUserId,
+      'New Permission Request',
+      '${_getUserName(currentUser.id)} wants to view your profile. Message: $message',
+      'request',
+    );
+
     notifyListeners();
     return true;
   }
@@ -178,12 +207,34 @@ class AppStore extends ChangeNotifier {
     // Add to approved viewers
     await dbHelper.addApprovedViewer(request.targetUserId, request.requesterId);
 
+    // Add notification for the requester
+    await _addNotification(
+      request.requesterId,
+      'Permission Request Approved',
+      'Your permission request to view ${_getUserName(request.targetUserId)}\'s profile has been approved!',
+      'approval',
+    );
+
     notifyListeners();
   }
 
   Future<void> denyPermissionRequest(String requestId) async {
     final dbHelper = DatabaseHelper();
+    final request = await dbHelper
+        .getPermissionRequestsForUser(AppStore().currentUser!.id)
+        .then((requests) => requests.firstWhere((req) => req.id == requestId));
+
+    // Update request status
     await dbHelper.updatePermissionRequestStatus(requestId, 'denied');
+
+    // Add notification for requester
+    await _addNotification(
+      request.requesterId,
+      'Permission Request Denied',
+      'Your permission request to view ${_getUserName(request.targetUserId)}\'s profile has been denied.',
+      'denial',
+    );
+
     notifyListeners();
   }
 
@@ -306,6 +357,65 @@ class AppStore extends ChangeNotifier {
     return await dbHelper.searchRecords(query);
   }
 
+  // Notification system methods
+  List<NotificationModel> _notifications = [];
+  List<NotificationModel> get notifications =>
+      List.unmodifiable(_notifications);
+
+  String _getUserName(String userId) {
+    final user = _accounts.where((a) => a.id == userId).firstOrNull;
+    return user?.name ?? 'Unknown User';
+  }
+
+  Future<void> _addNotification(
+      String userId, String title, String message, String type) async {
+    final notification = NotificationModel(
+      id: const Uuid().v4(),
+      userId: userId,
+      title: title,
+      message: message,
+      type: type,
+      timestamp: DateTime.now(),
+      isRead: false,
+    );
+
+    _notifications.insert(0, notification); // Add to beginning of list
+
+    // Save to SharedPreferences for persistence
+    final prefs = await SharedPreferences.getInstance();
+    final notificationsJson = prefs.getString('notifications') ?? '[]';
+    final notificationsList = jsonDecode(notificationsJson) as List;
+    notificationsList.insert(0, notification.toJson());
+    await prefs.setString('notifications', jsonEncode(notificationsList));
+
+    notifyListeners();
+  }
+
+  Future<void> markNotificationAsRead(String notificationId) async {
+    final index = _notifications.indexWhere((n) => n.id == notificationId);
+    if (index != -1) {
+      _notifications[index].isRead = true;
+
+      // Update in SharedPreferences
+      final prefs = await SharedPreferences.getInstance();
+      final notificationsJson =
+          jsonEncode(_notifications.map((n) => n.toJson()).toList());
+      await prefs.setString('notifications', notificationsJson);
+
+      notifyListeners();
+    }
+  }
+
+  Future<void> clearNotifications() async {
+    _notifications.clear();
+
+    // Clear from SharedPreferences
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('notifications');
+
+    notifyListeners();
+  }
+
   UserAccount _demoAccount() {
     return UserAccount(
       id: 'demo-001',
@@ -313,6 +423,7 @@ class AppStore extends ChangeNotifier {
       email: 'maria.santos@ctu.edu.ph',
       phone: '+63 912 345 6789',
       password: 'password123',
+      userType: 'Student',
       course: 'BS Industrial Engineering',
       yearLevel: '4th Year',
       studentId: '2023-IE-0001',
