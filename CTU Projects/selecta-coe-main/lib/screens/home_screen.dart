@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../data/app_store.dart';
 import '../models/models.dart';
 import '../theme.dart';
+import '../utils/database_debug_final.dart';
 import 'database_screen.dart';
 import 'profile_screen.dart';
 import 'search_screen.dart';
@@ -122,7 +123,18 @@ class _HomeScreenState extends State<HomeScreen>
             ),
           ],
         ),
-        actions: const [],
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.storage),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const DatabaseDebug()),
+              );
+            },
+            tooltip: 'View Database Location',
+          ),
+        ],
       ),
       body: Stack(
         children: [

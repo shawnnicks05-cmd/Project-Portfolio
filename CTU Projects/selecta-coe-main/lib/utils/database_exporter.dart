@@ -1,21 +1,29 @@
 // lib/utils/database_exporter.dart
 import 'dart:io';
 import 'package:intl/intl.dart';
+import 'package:path_provider/path_provider.dart';
 import '../data/database_helper.dart';
 import '../models/models.dart';
 
 class DatabaseExporter {
   static Future<void> exportUserAccount(UserAccount user) async {
     try {
-      // Create export directory if it doesn't exist
-      final directory = Directory('/storage/emulated/0/Download/SELECTA_COE_Exports');
+      // Use app's internal directory (no permissions needed)
+      final appDir = await getApplicationDocumentsDirectory();
+      final directory = Directory('${appDir.path}/SELECTA_COE_Exports');
+      
+      if (!await directory.exists()) {
+        await directory.create(recursive: true);
+      }
+
       if (!await directory.exists()) {
         await directory.create(recursive: true);
       }
 
       // Generate filename with timestamp
       final timestamp = DateFormat('yyyy-MM-dd_HH-mm-ss').format(DateTime.now());
-      final filename = 'Account_${user.name.replaceAll(' ', '_')}_$timestamp.txt';
+      final cleanName = user.name.replaceAll(RegExp(r'[^\w\s-]'), '_');
+      final filename = 'Account_${cleanName}_$timestamp.txt';
       final file = File('${directory.path}/$filename');
 
       // Get database helper and all data
@@ -57,8 +65,11 @@ class DatabaseExporter {
       await file.writeAsString(content);
       
       print('✅ Account exported to: ${file.path}');
+      print('📁 Directory: ${directory.path}');
+      
     } catch (e) {
       print('❌ Error exporting account: $e');
+      print('📍 Stack trace: ${StackTrace.current}');
     }
   }
 
