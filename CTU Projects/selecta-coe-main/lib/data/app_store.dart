@@ -18,10 +18,12 @@ class AppStore extends ChangeNotifier {
 
   Future<void> init() async {
     final dbHelper = DatabaseHelper();
+    final db = await dbHelper.database;
     
     try {
       // Load users from database
-      _accounts = await dbHelper.getAllUsers();
+      final users = await db.query('users');
+      _accounts = users.map((json) => UserAccount.fromJson(json)).toList();
       
       // Get current user from SharedPreferences (still use this for session management)
       final prefs = await SharedPreferences.getInstance();
@@ -34,8 +36,8 @@ class AppStore extends ChangeNotifier {
       // If no users exist, create demo account
       if (_accounts.isEmpty) {
         final demoUser = await _createDemoAccount();
+        await db.insert('users', demoUser.toJson());
         _accounts.add(demoUser);
-        await dbHelper.insertUser(demoUser);
       }
     } catch (e) {
       // Fallback to demo account if database fails
@@ -45,13 +47,11 @@ class AppStore extends ChangeNotifier {
   }
 
   Future<void> _save() async {
-    final dbHelper = DatabaseHelper();
-    
-    // Save current user session
     final prefs = await SharedPreferences.getInstance();
     if (_currentUser != null) {
       await prefs.setString('currentUserId', _currentUser!.id);
       // Update user in database
+      final dbHelper = DatabaseHelper();
       await dbHelper.updateUser(_currentUser!);
     }
   }
@@ -92,11 +92,9 @@ class AppStore extends ChangeNotifier {
     // Insert new user into database
     await dbHelper.insertUser(account);
     
-    // Update local state
+    // Update local state but don't auto-login
     _accounts = await dbHelper.getAllUsers();
-    _currentUser = account;
     
-    await _save();
     notifyListeners();
     return true;
   }

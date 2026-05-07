@@ -133,9 +133,9 @@ class _AuthScreenState extends State<AuthScreen>
                       height: 480,
                       child: TabBarView(
                         controller: _tab,
-                        children: const [
-                          _LoginForm(),
-                          _RegisterForm(),
+                        children: [
+                          const _LoginForm(),
+                          _RegisterForm(tabController: _tab),
                         ],
                       ),
                     ),
@@ -286,7 +286,8 @@ class _LoginFormState extends State<_LoginForm> {
 }
 
 class _RegisterForm extends StatefulWidget {
-  const _RegisterForm();
+  final TabController tabController;
+  const _RegisterForm({required this.tabController});
 
   @override
   State<_RegisterForm> createState() => _RegisterFormState();
@@ -314,6 +315,7 @@ class _RegisterFormState extends State<_RegisterForm> {
   bool _loading = false;
   bool _obscure = true;
   String? _error;
+  String? _success;
 
   final _years = ['1st Year', '2nd Year', '3rd Year', '4th Year', '5th Year'];
 
@@ -378,10 +380,26 @@ class _RegisterFormState extends State<_RegisterForm> {
     final ok = await AppStore().createAccount(account);
     if (!mounted) return;
     if (ok) {
-      Navigator.pushReplacementNamed(context, '/home');
+      setState(() {
+        _success = 'Account created successfully! You can now sign in.';
+        _error = null;
+        _loading = false;
+        // Clear the registration form
+        _name.clear();
+        _email.clear();
+        _phone.clear();
+        _password.clear();
+        _course.clear();
+        _studentId.clear();
+        _location.clear();
+        _bio.clear();
+        // Switch to login tab
+        widget.tabController.animateTo(0);
+      });
     } else {
       setState(() {
         _error = 'An account with this email already exists.';
+        _success = null;
         _loading = false;
       });
     }
@@ -515,6 +533,18 @@ class _RegisterFormState extends State<_RegisterForm> {
                 child: Text(_error!,
                     style:
                         const TextStyle(color: AppTheme.danger, fontSize: 13)),
+              ),
+            ],
+            if (_success != null) ...[
+              const SizedBox(height: 10),
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.green.withOpacity(0.08),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(_success!,
+                    style: const TextStyle(color: Colors.green, fontSize: 13)),
               ),
             ],
             const SizedBox(height: 16),
