@@ -1,8 +1,8 @@
 // lib/data/app_store.dart
-import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/models.dart';
+import 'database_helper.dart';
 
 class AppStore extends ChangeNotifier {
   static final AppStore _instance = AppStore._internal();
@@ -17,47 +17,61 @@ class AppStore extends ChangeNotifier {
   bool get isLoggedIn => _currentUser != null;
 
   Future<void> init() async {
-    final prefs = await SharedPreferences.getInstance();
-    final raw = prefs.getString('accounts');
-    if (raw != null) {
-      final list = jsonDecode(raw) as List;
-      _accounts = list.map((e) => UserAccount.fromJson(e)).toList();
-    }
-    final uid = prefs.getString('currentUserId');
-    if (uid != null) {
-      _currentUser = _accounts.firstWhere(
-        (a) => a.id == uid,
-        orElse: () => _accounts.isNotEmpty ? _accounts.first : _demoAccount(),
-      );
-    }
-    if (_accounts.isEmpty) {
-      _accounts.add(_demoAccount());
-      await _save();
+    final dbHelper = DatabaseHelper();
+    
+    try {
+      // Load users from database
+      _accounts = await dbHelper.getAllUsers();
+      
+      // Get current user from SharedPreferences (still use this for session management)
+      final prefs = await SharedPreferences.getInstance();
+      final uid = prefs.getString('currentUserId');
+      if (uid != null) {
+        final user = _accounts.where((a) => a.id == uid).firstOrNull;
+        _currentUser = user ?? (_accounts.isNotEmpty ? _accounts.first : await _createDemoAccount());
+      }
+      
+      // If no users exist, create demo account
+      if (_accounts.isEmpty) {
+        final demoUser = await _createDemoAccount();
+        _accounts.add(demoUser);
+        await dbHelper.insertUser(demoUser);
+      }
+    } catch (e) {
+      // Fallback to demo account if database fails
+      _accounts.add(await _createDemoAccount());
+      _currentUser = _accounts.first;
     }
   }
 
   Future<void> _save() async {
+    final dbHelper = DatabaseHelper();
+    
+    // Save current user session
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(
-        'accounts', jsonEncode(_accounts.map((a) => a.toJson()).toList()));
     if (_currentUser != null) {
       await prefs.setString('currentUserId', _currentUser!.id);
+      // Update user in database
+      await dbHelper.updateUser(_currentUser!);
     }
   }
 
   Future<bool> login(String email, String password) async {
-    // Match by email and password
-    final match = _accounts
-        .where((a) =>
-            a.email.toLowerCase() == email.toLowerCase() &&
-            a.password == password)
-        .toList();
-    if (match.isNotEmpty) {
-      _currentUser = match.first;
+    final dbHelper = DatabaseHelper();
+    
+    // Try to get user from database first
+    final user = await dbHelper.getUserByEmail(email);
+    if (user != null && user.password == password) {
+      _currentUser = user;
+      
+      // Update local accounts list
+      _accounts = await dbHelper.getAllUsers();
+      
       await _save();
       notifyListeners();
       return true;
     }
+    
     return false;
   }
 
@@ -69,11 +83,19 @@ class AppStore extends ChangeNotifier {
   }
 
   Future<bool> createAccount(UserAccount account) async {
-    final exists = _accounts
-        .any((a) => a.email.toLowerCase() == account.email.toLowerCase());
-    if (exists) return false;
-    _accounts.add(account);
+    final dbHelper = DatabaseHelper();
+    
+    // Check if user already exists in database
+    final existingUser = await dbHelper.getUserByEmail(account.email);
+    if (existingUser != null) return false;
+    
+    // Insert new user into database
+    await dbHelper.insertUser(account);
+    
+    // Update local state
+    _accounts = await dbHelper.getAllUsers();
     _currentUser = account;
+    
     await _save();
     notifyListeners();
     return true;
@@ -89,12 +111,9 @@ class AppStore extends ChangeNotifier {
     }
   }
 
-  UserAccount? getUserById(String id) {
-    try {
-      return _accounts.firstWhere((a) => a.id == id);
-    } catch (_) {
-      return null;
-    }
+  Future<UserAccount?> getUserById(String id) async {
+    final dbHelper = DatabaseHelper();
+    return await dbHelper.getUserById(id);
   }
 
   Future<bool> addSkillToCurrentUserFromRecord(
@@ -171,86 +190,17 @@ class AppStore extends ChangeNotifier {
   }
 
   // All records flattened for search/select
-  List<Map<String, dynamic>> getAllRecords() {
-    final results = <Map<String, dynamic>>[];
-    for (final user in _accounts) {
-      // user profile records
-      results.add({
-        'type': 'profile',
-        'user': user.name,
-        'userId': user.id,
-        'name': user.name,
-        'course': user.course,
-        'yearLevel': user.yearLevel,
-        'studentId': user.studentId,
-        'location': user.location,
-        'bio': user.bio,
-        'avatarUrl': user.avatarUrl,
-        'instagramUrl': user.instagramUrl,
-        'facebookUrl': user.facebookUrl,
-      });
-      // skills
-      for (final cat in user.skillCategories) {
-        for (final skill in cat.skills) {
-          results.add({
-            'type': 'skill',
-            'user': user.name,
-            'userId': user.id,
-            'category': cat.name,
-            'name': skill.name,
-            'level': skill.level,
-            'percent': skill.proficiencyPercent,
-          });
-        }
-      }
-      // projects
-      for (final p in user.projects) {
-        results.add({
-          'type': 'project',
-          'user': user.name,
-          'userId': user.id,
-          'name': p.title,
-          'description': p.description,
-          'date': p.date,
-          'tags': p.tags,
-        });
-      }
-      // certifications
-      for (final c in user.certifications) {
-        results.add({
-          'type': 'certification',
-          'user': user.name,
-          'userId': user.id,
-          'name': c.title,
-          'issuer': c.issuer,
-          'date': c.date,
-        });
-      }
-    }
-    return results;
+  Future<List<Map<String, dynamic>>> getAllRecords() async {
+    final dbHelper = DatabaseHelper();
+    return await dbHelper.searchRecords('');
   }
 
-  List<Map<String, dynamic>> search(String query) {
-    if (query.trim().isEmpty) return getAllRecords();
-    final q = query.toLowerCase();
-    return getAllRecords().where((r) {
-      return (r['name'] as String? ?? '').toLowerCase().contains(q) ||
-          (r['user'] as String? ?? '').toLowerCase().contains(q) ||
-          (r['course'] as String? ?? '').toLowerCase().contains(q) ||
-          (r['yearLevel'] as String? ?? '').toLowerCase().contains(q) ||
-          (r['studentId'] as String? ?? '').toLowerCase().contains(q) ||
-          (r['location'] as String? ?? '').toLowerCase().contains(q) ||
-          (r['bio'] as String? ?? '').toLowerCase().contains(q) ||
-          (r['category'] as String? ?? '').toLowerCase().contains(q) ||
-          (r['level'] as String? ?? '').toLowerCase().contains(q) ||
-          (r['description'] as String? ?? '').toLowerCase().contains(q) ||
-          (r['issuer'] as String? ?? '').toLowerCase().contains(q) ||
-          (r['tags'] as List? ?? [])
-              .any((t) => t.toString().toLowerCase().contains(q));
-    }).toList();
+  Future<List<Map<String, dynamic>>> search(String query) async {
+    final dbHelper = DatabaseHelper();
+    return await dbHelper.searchRecords(query);
   }
 
-  UserAccount _demoAccount() {
+  Future<UserAccount> _createDemoAccount() async {
     return UserAccount(
       id: 'demo-001',
       name: 'Maria Sofia Santos',

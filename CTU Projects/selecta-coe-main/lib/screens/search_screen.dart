@@ -23,8 +23,8 @@ class _SearchScreenState extends State<SearchScreen> {
     super.dispose();
   }
 
-  List<Map<String, dynamic>> get _results {
-    var all = AppStore().search(_query);
+  Future<List<Map<String, dynamic>>> get _results async {
+    var all = await AppStore().search(_query);
     // Filter by type
     if (_filter != 'All') {
       final typeMap = {
@@ -50,7 +50,6 @@ class _SearchScreenState extends State<SearchScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final results = _results;
     return Container(
       color: AppTheme.surfaceVariant,
       child: Column(
@@ -166,24 +165,40 @@ class _SearchScreenState extends State<SearchScreen> {
               ],
             ),
           ),
-          // Results count
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 10, 16, 6),
-            child: Row(
-              children: [
-                Text(
-                  '${results.length} result${results.length == 1 ? '' : 's'}',
-                  style: const TextStyle(
-                      fontSize: 13,
-                      color: AppTheme.textMuted,
-                      fontWeight: FontWeight.w500),
-                ),
-              ],
-            ),
-          ),
-          // Results list
+          // Results count and list
           Expanded(
-            child: results.isEmpty
+            child: FutureBuilder<List<Map<String, dynamic>>>(
+              future: _results,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                if (snapshot.hasError) {
+                  return Center(child: Text('Error: ${snapshot.error}'));
+                }
+                
+                final results = snapshot.data ?? [];
+                
+                return Column(
+                  children: [
+                    // Results count
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 10, 16, 6),
+                      child: Row(
+                        children: [
+                          Text(
+                            '${results.length} result${results.length == 1 ? '' : 's'}',
+                            style: const TextStyle(
+                                fontSize: 13,
+                                color: AppTheme.textMuted,
+                                fontWeight: FontWeight.w500),
+                          ),
+                        ],
+                      ),
+                    ),
+                    // Results list
+                    Expanded(
+                      child: results.isEmpty
                 ? Center(
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
@@ -202,13 +217,18 @@ class _SearchScreenState extends State<SearchScreen> {
                     ),
                   )
                 : ListView.separated(
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-                    itemCount: results.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 8),
-                    itemBuilder: (_, i) => GestureDetector(
-                        onTap: () => _showRecordDetails(context, results[i]),
-                        child: _ResultTile(record: results[i])),
-                  ),
+                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+                        itemCount: results.length,
+                        separatorBuilder: (_, __) => const SizedBox(height: 8),
+                        itemBuilder: (_, i) => GestureDetector(
+                            onTap: () => _showRecordDetails(context, results[i]),
+                            child: _ResultTile(record: results[i])),
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
           ),
         ],
       ),

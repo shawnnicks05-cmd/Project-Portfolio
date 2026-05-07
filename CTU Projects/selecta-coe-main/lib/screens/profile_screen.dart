@@ -57,23 +57,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _initControllers();
   }
 
-  void _initControllers() {
-    _displayUser = widget.userId != null
-        ? AppStore().getUserById(widget.userId!) ?? AppStore().currentUser!
+  Future<void> _initControllers() async {
+    final displayUser = widget.userId != null
+        ? await AppStore().getUserById(widget.userId!) ?? AppStore().currentUser!
         : AppStore().currentUser!;
 
-    _name = TextEditingController(text: _displayUser.name);
-    _email = TextEditingController(text: _displayUser.email);
-    _phone = TextEditingController(text: _displayUser.phone);
-    _course = TextEditingController(text: _displayUser.course);
-    _studentId = TextEditingController(text: _displayUser.studentId);
-    _location = TextEditingController(text: _displayUser.location);
-    _bio = TextEditingController(text: _displayUser.bio);
-    _instagramUrl = TextEditingController(text: _displayUser.instagramUrl);
-    _facebookUrl = TextEditingController(text: _displayUser.facebookUrl);
-    _yearLevel = _years.contains(_displayUser.yearLevel)
-        ? _displayUser.yearLevel
-        : '1st Year';
+    setState(() {
+      _displayUser = displayUser;
+      _name = TextEditingController(text: _displayUser.name);
+      _email = TextEditingController(text: _displayUser.email);
+      _phone = TextEditingController(text: _displayUser.phone);
+      _course = TextEditingController(text: _displayUser.course);
+      _studentId = TextEditingController(text: _displayUser.studentId);
+      _location = TextEditingController(text: _displayUser.location);
+      _bio = TextEditingController(text: _displayUser.bio);
+      _instagramUrl = TextEditingController(text: _displayUser.instagramUrl);
+      _facebookUrl = TextEditingController(text: _displayUser.facebookUrl);
+      _yearLevel = _years.contains(_displayUser.yearLevel)
+          ? _displayUser.yearLevel
+          : '1st Year';
+    });
   }
 
   void _takeSnapshot() {
