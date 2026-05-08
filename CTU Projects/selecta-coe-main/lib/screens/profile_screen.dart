@@ -1,4 +1,4 @@
-﻿// lib/screens/profile_screen.dart
+// lib/screens/profile_screen.dart
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -125,7 +125,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         _phone = TextEditingController(text: _displayUser!.phone);
         _course = TextEditingController(text: _displayUser!.course);
         _studentId = TextEditingController(text: _displayUser!.studentId);
-        _location = TextEditingController(text: _displayUser!.location);
+        _location = TextEditingController(text: _displayUser!.address);
         _bio = TextEditingController(text: _displayUser!.bio);
         _instagramUrl = TextEditingController(text: _displayUser!.instagramUrl);
         _facebookUrl = TextEditingController(text: _displayUser!.facebookUrl);
@@ -252,7 +252,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       course: _course?.text.trim() ?? '',
       yearLevel: _yearLevelController?.text.trim() ?? '1st Year',
       studentId: _studentId?.text.trim() ?? '',
-      location: _location?.text.trim() ?? '',
+      address: _location?.text.trim() ?? '',
       avatarInitials: _displayUser!.avatarInitials,
       avatarUrl: newAvatarUrl,
       bio: _bio?.text.trim() ?? '',
@@ -350,6 +350,353 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       fontSize: 13, color: AppTheme.textPrimary)),
             ],
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _educationTile(EducationalAttainment education) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppTheme.surfaceVariant,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: AppTheme.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.school, size: 16, color: AppTheme.primary),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  education.schoolName,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AppTheme.textPrimary,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          if (education.degree.isNotEmpty) ...[
+            const SizedBox(height: 6),
+            Row(
+              children: [
+                const SizedBox(width: 24), // Align with school name text
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Degree',
+                        style: TextStyle(
+                            fontSize: 10, color: AppTheme.textMuted),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        education.degree,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: AppTheme.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ],
+          if (education.year.isNotEmpty) ...[
+            const SizedBox(height: 6),
+            Row(
+              children: [
+                const SizedBox(width: 24), // Align with school name text
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Year',
+                        style: TextStyle(
+                            fontSize: 10, color: AppTheme.textMuted),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        education.year,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: AppTheme.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ],
+          if (education.address.isNotEmpty) ...[
+            const SizedBox(height: 6),
+            Row(
+              children: [
+                const SizedBox(width: 24), // Align with school name text
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Address',
+                        style: TextStyle(
+                            fontSize: 10, color: AppTheme.textMuted),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        education.address,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: AppTheme.textSecondary,
+                          height: 1.4,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _experienceTile(Experience experience) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppTheme.surfaceVariant,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: AppTheme.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.work, size: 16, color: AppTheme.success),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  experience.position,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AppTheme.textPrimary,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Row(
+            children: [
+              const SizedBox(width: 24), // Align with position text
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Company',
+                      style: TextStyle(
+                          fontSize: 10, color: AppTheme.textMuted),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      experience.company,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AppTheme.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Row(
+            children: [
+              const SizedBox(width: 24), // Align with position text
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Duration',
+                      style: TextStyle(
+                          fontSize: 10, color: AppTheme.textMuted),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '${experience.startDate} - ${experience.endDate}',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AppTheme.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          if (experience.description.isNotEmpty) ...[
+            const SizedBox(height: 6),
+            Row(
+              children: [
+                const SizedBox(width: 24), // Align with position text
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Description',
+                        style: TextStyle(
+                            fontSize: 10, color: AppTheme.textMuted),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        experience.description,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: AppTheme.textSecondary,
+                          height: 1.4,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _achievementTile(Achievement achievement) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppTheme.surfaceVariant,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: AppTheme.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.emoji_events,
+                  size: 16, color: Color(0xFFF97316)),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  achievement.title,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AppTheme.textPrimary,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Row(
+            children: [
+              const SizedBox(width: 24), // Align with title text
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Category',
+                      style: TextStyle(
+                          fontSize: 10, color: AppTheme.textMuted),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      achievement.category,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AppTheme.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Row(
+            children: [
+              const SizedBox(width: 24), // Align with title text
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Date',
+                      style: TextStyle(
+                          fontSize: 10, color: AppTheme.textMuted),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      achievement.date,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AppTheme.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          if (achievement.description.isNotEmpty) ...[
+            const SizedBox(height: 6),
+            Row(
+              children: [
+                const SizedBox(width: 24), // Align with title text
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Description',
+                        style: TextStyle(
+                            fontSize: 10, color: AppTheme.textMuted),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        achievement.description,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: AppTheme.textSecondary,
+                          height: 1.4,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ],
         ],
       ),
     );
@@ -537,7 +884,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   Expanded(
                     child: Column(
                       children: [
-                        Icon(Icons.visibility_outlined,
+                        const Icon(Icons.visibility_outlined,
                             color: AppTheme.textMuted, size: 20),
                         const SizedBox(height: 4),
                         Text(
@@ -707,7 +1054,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   // Master toggle for all profile sections
                   Row(
                     children: [
-                      Expanded(
+                      const Expanded(
                         child: Text(
                           'Make Profile Private',
                           style: TextStyle(
@@ -720,12 +1067,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       Switch(
                         value: _displayUser?.skillsPrivate == true &&
                             _displayUser?.projectsPrivate == true &&
-                            _displayUser?.certificationsPrivate == true,
+                            _displayUser?.certificationsPrivate == true &&
+                            _displayUser?.experiencesPrivate == true &&
+                            _displayUser?.achievementsPrivate == true &&
+                            _displayUser?.careerObjectivePrivate == true,
                         onChanged: (value) async {
                           await AppStore().toggleProfilePrivacy('all');
                           await _initControllers(); // Refresh display
                         },
-                        activeColor: AppTheme.primary,
+                        activeThumbColor: AppTheme.primary,
                       ),
                     ],
                   ),
@@ -742,9 +1092,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       'Certifications',
                       _displayUser?.certificationsPrivate == true,
                       'certifications'),
+                  const SizedBox(height: 8),
+                  _buildPrivacyToggle('Experience',
+                      _displayUser?.experiencesPrivate == true, 'experiences'),
+                  const SizedBox(height: 8),
+                  _buildPrivacyToggle(
+                      'Achievements',
+                      _displayUser?.achievementsPrivate == true,
+                      'achievements'),
+                  const SizedBox(height: 8),
+                  _buildPrivacyToggle(
+                      'Career Objective',
+                      _displayUser?.careerObjectivePrivate == true,
+                      'careerObjective'),
 
                   const SizedBox(height: 12),
-                  Text(
+                  const Text(
                     'Private sections are only visible to you. Public sections can be seen by everyone.',
                     style: TextStyle(
                       color: AppTheme.textMuted,
@@ -826,9 +1189,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   _infoRow(Icons.school_outlined, 'Year Level', user.yearLevel),
                   _infoRow(Icons.badge_outlined, 'Student ID', user.studentId),
                   _infoRow(
-                      Icons.location_on_outlined, 'Location', user.location),
-                  _infoRow(Icons.school_outlined, 'School',
-                      'Cebu Technological University'),
+                      Icons.location_on_outlined, 'Location', user.address),
                   if (user.bio.isNotEmpty) ...[
                     const Padding(
                       padding: EdgeInsets.only(bottom: 4),
@@ -864,6 +1225,45 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ],
             ),
           ),
+
+          const SizedBox(height: 16),
+
+          // Career Objective section
+          if (user.careerObjective.isNotEmpty &&
+              (!user.careerObjectivePrivate || _canEdit)) ...[
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: AppTheme.surface,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppTheme.border),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Row(
+                    children: [
+                      Icon(Icons.trending_up,
+                          color: AppTheme.warning, size: 20),
+                      SizedBox(width: 8),
+                      Text('Career Objective',
+                          style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: AppTheme.textPrimary)),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Text(user.careerObjective,
+                      style: const TextStyle(
+                          fontSize: 13,
+                          color: AppTheme.textSecondary,
+                          height: 1.4)),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
 
           const SizedBox(height: 16),
 
@@ -903,12 +1303,164 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         label: 'Certifications',
                         value: '${user.certifications.length}',
                         color: const Color(0xFFF97316)),
+                    SummaryItem(
+                        label: 'Experience',
+                        value: '${user.experiences.length}',
+                        color: Colors.purple),
+                    SummaryItem(
+                        label: 'Achievements',
+                        value: '${user.achievements.length}',
+                        color: Colors.amber),
                   ],
                 ),
               ],
             ),
           ),
 
+          // Experience section
+          if (!user.experiencesPrivate || _canEdit) ...[
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: AppTheme.surface,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppTheme.border),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.work, color: AppTheme.success, size: 20),
+                      const SizedBox(width: 8),
+                      const Text('Work Experience',
+                          style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: AppTheme.textPrimary)),
+                      if (!user.experiencesPrivate && !_canEdit) ...[
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: Colors.green.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Text('Public',
+                              style: TextStyle(
+                                  color: Colors.green,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w600)),
+                        ),
+                      ],
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  if (user.experiences.isEmpty)
+                    const Text('No work experience added yet.',
+                        style: TextStyle(
+                            fontSize: 13, color: AppTheme.textSecondary))
+                  else
+                    ...user.experiences
+                        .map((experience) => _experienceTile(experience)),
+                ],
+              ),
+            ),
+          ],
+          const SizedBox(height: 16),
+
+          // Education section
+          if (user.educationalAttainments.isNotEmpty || _canEdit) ...[
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: AppTheme.surface,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppTheme.border),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Row(
+                    children: [
+                      Icon(Icons.school,
+                          color: AppTheme.primary, size: 20),
+                      SizedBox(width: 8),
+                      Text('Education',
+                          style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: AppTheme.textPrimary)),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  if (user.educationalAttainments.isEmpty)
+                    const Text('No educational attainment added yet.',
+                        style: TextStyle(
+                            fontSize: 13, color: AppTheme.textSecondary))
+                  else
+                    ...user.educationalAttainments
+                        .map((education) => _educationTile(education)),
+                ],
+              ),
+            ),
+          ],
+          const SizedBox(height: 16),
+
+          // Achievements section
+          if (!user.achievementsPrivate || _canEdit) ...[
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: AppTheme.surface,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppTheme.border),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.emoji_events,
+                          color: Color(0xFFF97316), size: 20),
+                      const SizedBox(width: 8),
+                      const Text('Achievements',
+                          style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: AppTheme.textPrimary)),
+                      if (!user.achievementsPrivate && !_canEdit) ...[
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: Colors.green.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Text('Public',
+                              style: TextStyle(
+                                  color: Colors.green,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w600)),
+                        ),
+                      ],
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  if (user.achievements.isEmpty)
+                    const Text('No achievements added yet.',
+                        style: TextStyle(
+                            fontSize: 13, color: AppTheme.textSecondary))
+                  else
+                    ...user.achievements
+                        .map((achievement) => _achievementTile(achievement)),
+                ],
+              ),
+            ),
+          ],
+          
           // Add skills section if not private or viewing own profile
           if (!user.skillsPrivate || _canEdit) ...[
             _buildSkillsSection(user),
@@ -1005,7 +1557,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                       fontWeight: FontWeight.w600,
                                       color: AppTheme.primary)),
                               Text(
-                                  '${skill.level} • ${skill.proficiencyPercent}%',
+                                  '${skill.level} � ${skill.proficiencyPercent}%',
                                   style: const TextStyle(
                                       fontSize: 9, color: AppTheme.textMuted)),
                             ],
@@ -1193,7 +1745,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         Expanded(
           child: Text(
             title,
-            style: TextStyle(
+            style: const TextStyle(
               color: AppTheme.textPrimary,
               fontSize: 14,
             ),
@@ -1239,7 +1791,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             await AppStore().toggleProfilePrivacy(type);
             await _initControllers(); // Refresh display
           },
-          activeColor: AppTheme.primary,
+          activeThumbColor: AppTheme.primary,
         ),
       ],
     );

@@ -11,7 +11,7 @@ class DatabaseExporter {
       // Use app's internal directory (no permissions needed)
       final appDir = await getApplicationDocumentsDirectory();
       final directory = Directory('${appDir.path}/SELECTA_COE_Exports');
-      
+
       if (!await directory.exists()) {
         await directory.create(recursive: true);
       }
@@ -21,7 +21,8 @@ class DatabaseExporter {
       }
 
       // Generate filename with timestamp
-      final timestamp = DateFormat('yyyy-MM-dd_HH-mm-ss').format(DateTime.now());
+      final timestamp =
+          DateFormat('yyyy-MM-dd_HH-mm-ss').format(DateTime.now());
       final cleanName = user.name.replaceAll(RegExp(r'[^\w\s-]'), '_');
       final filename = 'Account_${cleanName}_$timestamp.txt';
       final file = File('${directory.path}/$filename');
@@ -32,20 +33,20 @@ class DatabaseExporter {
 
       // Get all users
       final allUsers = await dbHelper.getAllUsers();
-      
+
       // Get all skills, projects, certifications for this user
       final userSkills = await db.query(
         'skills',
         where: 'userId = ?',
         whereArgs: [user.id],
       );
-      
+
       final userProjects = await db.query(
         'projects',
         where: 'userId = ?',
         whereArgs: [user.id],
       );
-      
+
       final userCertifications = await db.query(
         'certifications',
         where: 'userId = ?',
@@ -63,10 +64,9 @@ class DatabaseExporter {
 
       // Write to file
       await file.writeAsString(content);
-      
+
       print('✅ Account exported to: ${file.path}');
       print('📁 Directory: ${directory.path}');
-      
     } catch (e) {
       print('❌ Error exporting account: $e');
       print('📍 Stack trace: ${StackTrace.current}');
@@ -100,7 +100,7 @@ class DatabaseExporter {
     buffer.writeln('Course: ${user.course}');
     buffer.writeln('Year Level: ${user.yearLevel}');
     buffer.writeln('Student ID: ${user.studentId}');
-    buffer.writeln('Location: ${user.location}');
+    buffer.writeln('Address: ${user.address}');
     buffer.writeln('Avatar Initials: ${user.avatarInitials}');
     buffer.writeln('Bio: ${user.bio}');
     buffer.writeln();

@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../data/app_store.dart';
 import '../models/models.dart';
 import '../theme.dart';
-import 'database_screen.dart';
+import 'credential_summary.dart';
 import 'profile_screen.dart';
 import 'search_screen.dart';
 
@@ -498,6 +498,24 @@ class _DashboardTabState extends State<_DashboardTab> {
             const SizedBox(height: 10),
             _CertGrid(certs: user.certifications),
           ],
+          const SizedBox(height: 20),
+          if (user.educationalAttainments.isNotEmpty) ...[
+            const _SectionHeader(title: 'Education'),
+            const SizedBox(height: 10),
+            _EducationGrid(education: user.educationalAttainments),
+          ],
+          const SizedBox(height: 20),
+          if (user.experiences.isNotEmpty) ...[
+            const _SectionHeader(title: 'Experience'),
+            const SizedBox(height: 10),
+            _ExperienceGrid(experiences: user.experiences),
+          ],
+          const SizedBox(height: 20),
+          if (user.achievements.isNotEmpty) ...[
+            const _SectionHeader(title: 'Achievements'),
+            const SizedBox(height: 10),
+            _AchievementGrid(achievements: user.achievements),
+          ],
           const SizedBox(height: 24),
         ],
       ),
@@ -909,12 +927,417 @@ class _CertTile extends StatelessWidget {
               maxLines: 2,
               overflow: TextOverflow.ellipsis),
           const Spacer(),
-          Text(cert.issuer,
+          Text(cert.date,
               style: const TextStyle(fontSize: 10, color: AppTheme.textMuted),
               maxLines: 1,
               overflow: TextOverflow.ellipsis),
         ],
       ),
+    );
+  }
+}
+
+class _EducationGrid extends StatelessWidget {
+  final List<EducationalAttainment> education;
+  const _EducationGrid({required this.education});
+
+  @override
+  Widget build(BuildContext context) {
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        childAspectRatio: 1.6,
+        crossAxisSpacing: 10,
+        mainAxisSpacing: 10,
+      ),
+      itemCount: education.length,
+      itemBuilder: (_, i) => _EducationTile(education: education[i]),
+    );
+  }
+}
+
+class _EducationTile extends StatelessWidget {
+  final EducationalAttainment education;
+  const _EducationTile({required this.education});
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: () => _showEducationDialog(context),
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: AppTheme.surface,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppTheme.border),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 28,
+                  height: 28,
+                  decoration: BoxDecoration(
+                    color: AppTheme.primary.withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child:
+                      const Icon(Icons.school, size: 16, color: AppTheme.primary),
+                ),
+                const Spacer(),
+                const Icon(Icons.open_in_new,
+                    size: 14, color: AppTheme.textMuted),
+              ],
+            ),
+            const SizedBox(height: 3),
+            Text(education.schoolName,
+                style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AppTheme.textPrimary),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis),
+            if (education.degree.isNotEmpty) ...[
+              const SizedBox(height: 1),
+              Text(education.degree,
+                  style: const TextStyle(fontSize: 10, color: AppTheme.textSecondary),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis),
+            ],
+            if (education.year.isNotEmpty) ...[
+              Text(education.year,
+                  style: const TextStyle(fontSize: 10, color: AppTheme.textSecondary),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showEducationDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppTheme.surface,
+        title: const Row(
+          children: [
+            Icon(Icons.school, color: AppTheme.primary, size: 20),
+            SizedBox(width: 8),
+            Text('Education Details',
+                style: TextStyle(color: AppTheme.textPrimary, fontWeight: FontWeight.w600)),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildDetailRow('School Name', education.schoolName),
+            if (education.degree.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              _buildDetailRow('Degree', education.degree),
+            ],
+            if (education.year.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              _buildDetailRow('Year', education.year),
+            ],
+            if (education.address.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              _buildDetailRow('Address', education.address),
+            ],
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDetailRow(String label, String value) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label,
+            style: const TextStyle(fontSize: 12, color: AppTheme.textMuted)),
+        const SizedBox(height: 4),
+        Text(value,
+            style: const TextStyle(fontSize: 14, color: AppTheme.textPrimary)),
+      ],
+    );
+  }
+}
+
+class _ExperienceGrid extends StatelessWidget {
+  final List<Experience> experiences;
+  const _ExperienceGrid({required this.experiences});
+
+  @override
+  Widget build(BuildContext context) {
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        childAspectRatio: 1.6,
+        crossAxisSpacing: 10,
+        mainAxisSpacing: 10,
+      ),
+      itemCount: experiences.length,
+      itemBuilder: (_, i) => _ExperienceTile(experience: experiences[i]),
+    );
+  }
+}
+
+class _ExperienceTile extends StatelessWidget {
+  final Experience experience;
+  const _ExperienceTile({required this.experience});
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: () => _showExperienceDialog(context),
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: AppTheme.surface,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppTheme.border),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 28,
+                  height: 28,
+                  decoration: BoxDecoration(
+                    color: AppTheme.success.withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child:
+                      const Icon(Icons.work, size: 16, color: AppTheme.success),
+                ),
+                const Spacer(),
+                const Icon(Icons.open_in_new,
+                    size: 14, color: AppTheme.textMuted),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Text(experience.position,
+                style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AppTheme.textPrimary),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis),
+            const Spacer(),
+            Text(experience.company,
+                style: const TextStyle(fontSize: 10, color: AppTheme.textSecondary),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis),
+            Text('${experience.startDate} - ${experience.endDate}',
+                style: const TextStyle(fontSize: 10, color: AppTheme.textSecondary),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showExperienceDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppTheme.surface,
+        title: const Row(
+          children: [
+            Icon(Icons.work, color: AppTheme.success, size: 20),
+            SizedBox(width: 8),
+            Text('Experience Details',
+                style: TextStyle(color: AppTheme.textPrimary, fontWeight: FontWeight.w600)),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildDetailRow('Position', experience.position),
+            const SizedBox(height: 12),
+            _buildDetailRow('Company', experience.company),
+            const SizedBox(height: 12),
+            _buildDetailRow('Duration', '${experience.startDate} - ${experience.endDate}'),
+            if (experience.description.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              _buildDetailRow('Description', experience.description),
+            ],
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDetailRow(String label, String value) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label,
+            style: const TextStyle(fontSize: 12, color: AppTheme.textMuted)),
+        const SizedBox(height: 4),
+        Text(value,
+            style: const TextStyle(fontSize: 14, color: AppTheme.textPrimary)),
+      ],
+    );
+  }
+}
+
+class _AchievementGrid extends StatelessWidget {
+  final List<Achievement> achievements;
+  const _AchievementGrid({required this.achievements});
+
+  @override
+  Widget build(BuildContext context) {
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        childAspectRatio: 1.6,
+        crossAxisSpacing: 10,
+        mainAxisSpacing: 10,
+      ),
+      itemCount: achievements.length,
+      itemBuilder: (_, i) => _AchievementTile(achievement: achievements[i]),
+    );
+  }
+}
+
+class _AchievementTile extends StatelessWidget {
+  final Achievement achievement;
+  const _AchievementTile({required this.achievement});
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: () => _showAchievementDialog(context),
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: AppTheme.surface,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppTheme.border),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 28,
+                  height: 28,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF97316).withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child:
+                      const Icon(Icons.emoji_events, size: 16, color: Color(0xFFF97316)),
+                ),
+                const Spacer(),
+                const Icon(Icons.open_in_new,
+                    size: 14, color: AppTheme.textMuted),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Text(achievement.title,
+                style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AppTheme.textPrimary),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis),
+            const Spacer(),
+            Text(achievement.category,
+                style: const TextStyle(fontSize: 10, color: AppTheme.textSecondary),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis),
+            Text(achievement.date,
+                style: const TextStyle(fontSize: 10, color: AppTheme.textSecondary),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showAchievementDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppTheme.surface,
+        title: const Row(
+          children: [
+            Icon(Icons.emoji_events, color: Color(0xFFF97316), size: 20),
+            SizedBox(width: 8),
+            Text('Achievement Details',
+                style: TextStyle(color: AppTheme.textPrimary, fontWeight: FontWeight.w600)),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildDetailRow('Title', achievement.title),
+            const SizedBox(height: 12),
+            _buildDetailRow('Category', achievement.category),
+            const SizedBox(height: 12),
+            _buildDetailRow('Date', achievement.date),
+            if (achievement.description.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              _buildDetailRow('Description', achievement.description),
+            ],
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDetailRow(String label, String value) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label,
+            style: const TextStyle(fontSize: 12, color: AppTheme.textMuted)),
+        const SizedBox(height: 4),
+        Text(value,
+            style: const TextStyle(fontSize: 14, color: AppTheme.textPrimary)),
+      ],
     );
   }
 }

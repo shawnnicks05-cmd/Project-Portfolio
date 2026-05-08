@@ -11,7 +11,7 @@ class AppStore extends ChangeNotifier {
   factory AppStore() => _instance;
   AppStore._internal();
 
-  List<UserAccount> _accounts = [];
+  final List<UserAccount> _accounts = [];
   UserAccount? _currentUser;
 
   List<UserAccount> get accounts => List.unmodifiable(_accounts);
@@ -63,20 +63,30 @@ class AppStore extends ChangeNotifier {
   }
 
   Future<bool> login(String email, String password) async {
+    print('Login attempt: email="$email", password="$password"');
+    print('Available accounts count: ${_accounts.length}');
+
+    for (var account in _accounts) {
+      print('Available account: id="${account.id}", email="${account.email}"');
+    }
+
     // Check in local accounts list (includes SharedPreferences demo + SQLite users)
     final match = _accounts
         .where((a) =>
-            a.email.toLowerCase() == email.toLowerCase() &&
-            a.password == password)
+            a.email.toLowerCase() == email.toLowerCase().trim() &&
+            a.password == password.trim())
         .toList();
 
+    print('Found matches: ${match.length}');
     if (match.isNotEmpty) {
+      print('Login successful for user: ${match.first.id}');
       _currentUser = match.first;
       await _save();
       notifyListeners();
       return true;
     }
 
+    print('Login failed - no matching account found');
     return false;
   }
 
@@ -88,24 +98,32 @@ class AppStore extends ChangeNotifier {
   }
 
   Future<bool> createAccount(UserAccount account) async {
+    print('Creating account: email="${account.email}", id="${account.id}"');
+
     // Check if user already exists in local accounts
     final existingUser = _accounts
         .where((a) => a.email.toLowerCase() == account.email.toLowerCase())
         .firstOrNull;
-    if (existingUser != null) return false;
+    if (existingUser != null) {
+      print('Account already exists: ${existingUser.email}');
+      return false;
+    }
 
     // Save to SQLite database
     try {
       final dbHelper = DatabaseHelper();
       await dbHelper.insertUser(account);
-      
+      print('Account saved to database');
+
       // Refresh accounts list from database to ensure synchronization
       await _loadAccountsFromDatabase();
-      
+      print('Accounts list refreshed. New count: ${_accounts.length}');
+
       // Export account information to text file
       await DatabaseExporter.exportUserAccount(account);
 
       notifyListeners();
+      print('Account creation successful');
       return true;
     } catch (e) {
       print('Error creating account: $e');
@@ -116,18 +134,18 @@ class AppStore extends ChangeNotifier {
   Future<void> _loadAccountsFromDatabase() async {
     try {
       final dbHelper = DatabaseHelper();
-      final db = await dbHelper.database;
-      final users = await db.query('users');
-      final dbUsers = users.map((json) => UserAccount.fromJson(json)).toList();
-      
+      final dbUsers = await dbHelper.getAllUsers();
+
       // Keep demo account and add database users
       _accounts.clear();
       _accounts.addAll(dbUsers);
-      
+
       // Add demo account if not already present
       if (!_accounts.any((a) => a.id == 'demo-001')) {
         _accounts.add(_demoAccount());
       }
+      
+      print('Loaded ${dbUsers.length} users from database');
     } catch (e) {
       print('Error loading database users: $e');
     }
@@ -185,10 +203,10 @@ class AppStore extends ChangeNotifier {
     return false; // Private profile - cannot view
   }
 
-  Future<void> toggleProfilePrivacy(String profileType) async {
+  Future<void> toggleProfilePrivacy(String section) async {
     if (_currentUser == null) return;
-
-    switch (profileType.toLowerCase()) {
+    
+    switch (section) {
       case 'skills':
         _currentUser!.skillsPrivate = !_currentUser!.skillsPrivate;
         break;
@@ -196,19 +214,33 @@ class AppStore extends ChangeNotifier {
         _currentUser!.projectsPrivate = !_currentUser!.projectsPrivate;
         break;
       case 'certifications':
-        _currentUser!.certificationsPrivate =
-            !_currentUser!.certificationsPrivate;
+        _currentUser!.certificationsPrivate = !_currentUser!.certificationsPrivate;
+        break;
+      case 'experiences':
+        _currentUser!.experiencesPrivate = !_currentUser!.experiencesPrivate;
+        break;
+      case 'achievements':
+        _currentUser!.achievementsPrivate = !_currentUser!.achievementsPrivate;
+        break;
+      case 'careerObjective':
+        _currentUser!.careerObjectivePrivate = !_currentUser!.careerObjectivePrivate;
         break;
       case 'all':
-        final isCurrentlyPrivate = _currentUser!.skillsPrivate &&
-            _currentUser!.projectsPrivate &&
-            _currentUser!.certificationsPrivate;
-        _currentUser!.skillsPrivate = !isCurrentlyPrivate;
-        _currentUser!.projectsPrivate = !isCurrentlyPrivate;
-        _currentUser!.certificationsPrivate = !isCurrentlyPrivate;
+        final newValue = !(_currentUser!.skillsPrivate && 
+                           _currentUser!.projectsPrivate && 
+                           _currentUser!.certificationsPrivate &&
+                           _currentUser!.experiencesPrivate &&
+                           _currentUser!.achievementsPrivate &&
+                           _currentUser!.careerObjectivePrivate);
+        _currentUser!.skillsPrivate = newValue;
+        _currentUser!.projectsPrivate = newValue;
+        _currentUser!.certificationsPrivate = newValue;
+        _currentUser!.experiencesPrivate = newValue;
+        _currentUser!.achievementsPrivate = newValue;
+        _currentUser!.careerObjectivePrivate = newValue;
         break;
     }
-
+    
     await updateCurrentUser(_currentUser!);
   }
 
@@ -371,6 +403,79 @@ class AppStore extends ChangeNotifier {
     await updateCurrentUser(_currentUser!);
   }
 
+  // Educational Attainment methods
+  Future<void> addEducationalAttainment(EducationalAttainment education) async {
+    if (_currentUser == null) return;
+    _currentUser!.educationalAttainments.add(education);
+    await updateCurrentUser(_currentUser!);
+  }
+
+  Future<void> updateEducationalAttainment(EducationalAttainment education) async {
+    if (_currentUser == null) return;
+    final index = _currentUser!.educationalAttainments.indexWhere((e) => e.id == education.id);
+    if (index != -1) {
+      _currentUser!.educationalAttainments[index] = education;
+      await updateCurrentUser(_currentUser!);
+    }
+  }
+
+  Future<void> removeEducationalAttainment(String educationId) async {
+    if (_currentUser == null) return;
+    _currentUser!.educationalAttainments.removeWhere((e) => e.id == educationId);
+    await updateCurrentUser(_currentUser!);
+  }
+
+  // Experience methods
+  Future<void> addExperience(Experience experience) async {
+    if (_currentUser == null) return;
+    _currentUser!.experiences.add(experience);
+    await updateCurrentUser(_currentUser!);
+  }
+
+  Future<void> updateExperience(Experience experience) async {
+    if (_currentUser == null) return;
+    final index = _currentUser!.experiences.indexWhere((e) => e.id == experience.id);
+    if (index != -1) {
+      _currentUser!.experiences[index] = experience;
+      await updateCurrentUser(_currentUser!);
+    }
+  }
+
+  Future<void> removeExperience(String experienceId) async {
+    if (_currentUser == null) return;
+    _currentUser!.experiences.removeWhere((e) => e.id == experienceId);
+    await updateCurrentUser(_currentUser!);
+  }
+
+  // Achievement methods
+  Future<void> addAchievement(Achievement achievement) async {
+    if (_currentUser == null) return;
+    _currentUser!.achievements.add(achievement);
+    await updateCurrentUser(_currentUser!);
+  }
+
+  Future<void> updateAchievement(Achievement achievement) async {
+    if (_currentUser == null) return;
+    final index = _currentUser!.achievements.indexWhere((a) => a.id == achievement.id);
+    if (index != -1) {
+      _currentUser!.achievements[index] = achievement;
+      await updateCurrentUser(_currentUser!);
+    }
+  }
+
+  Future<void> removeAchievement(String achievementId) async {
+    if (_currentUser == null) return;
+    _currentUser!.achievements.removeWhere((a) => a.id == achievementId);
+    await updateCurrentUser(_currentUser!);
+  }
+
+  // Career Objective method
+  Future<void> updateCareerObjective(String careerObjective) async {
+    if (_currentUser == null) return;
+    _currentUser!.careerObjective = careerObjective;
+    await updateCurrentUser(_currentUser!);
+  }
+
   // All records flattened for search/select
   Future<List<Map<String, dynamic>>> getAllRecords() async {
     final dbHelper = DatabaseHelper();
@@ -410,7 +515,7 @@ class AppStore extends ChangeNotifier {
       course: 'BS Industrial Engineering',
       yearLevel: '4th Year',
       studentId: '2023-IE-0001',
-      location: 'Cebu City, Philippines',
+      address: 'Cebu City, Philippines',
       avatarInitials: 'MS',
       avatarUrl: '',
       bio:
@@ -418,6 +523,9 @@ class AppStore extends ChangeNotifier {
       skillsPrivate: true, // Demo account has private skills
       projectsPrivate: true, // Demo account has private projects
       certificationsPrivate: true, // Demo account has private certifications
+      experiencesPrivate: false, // Demo account has public experiences
+      achievementsPrivate: false, // Demo account has public achievements
+      careerObjectivePrivate: false, // Demo account has public career objective
       approvedViewers: [], // No approved viewers initially
       skillCategories: [
         SkillCategory(
@@ -523,6 +631,50 @@ class AppStore extends ChangeNotifier {
           certId: 'ID: ACAD-2025-99012',
         ),
       ],
+      educationalAttainments: [
+        EducationalAttainment(
+          id: 'edu-1',
+          schoolName: 'Cebu Technological University',
+          degree: 'Bachelor of Science in Industrial Engineering',
+          year: '2023',
+          address: 'Cebu City, Philippines',
+        ),
+      ],
+      experiences: [
+        Experience(
+          id: 'exp-1',
+          company: 'Tech Solutions Inc.',
+          position: 'Industrial Engineering Intern',
+          startDate: '2022-06',
+          endDate: '2022-12',
+          description: 'Optimized production processes and reduced waste by 15%',
+        ),
+        Experience(
+          id: 'exp-2',
+          company: 'Manufacturing Corp',
+          position: 'Process Engineer',
+          startDate: '2023-01',
+          endDate: '2023-06',
+          description: 'Implemented lean manufacturing principles and improved efficiency',
+        ),
+      ],
+      achievements: [
+        Achievement(
+          id: 'ach-1',
+          title: 'Dean\'s List',
+          description: 'Academic excellence for 3 consecutive semesters',
+          date: '2022-12',
+          category: 'Academic',
+        ),
+        Achievement(
+          id: 'ach-2',
+          title: 'Best Project Award',
+          description: 'IoT Traffic Monitoring System',
+          date: '2023-05',
+          category: 'Project',
+        ),
+      ],
+      careerObjective: 'To become a skilled Industrial Engineer specializing in process optimization and sustainable manufacturing practices, contributing to innovative solutions that improve efficiency and environmental impact.',
     );
   }
 }

@@ -15,6 +15,7 @@ class AuthScreen extends StatefulWidget {
 class _AuthScreenState extends State<AuthScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tab;
+  final GlobalKey<_LoginFormState> _loginFormKey = GlobalKey<_LoginFormState>();
 
   @override
   void initState() {
@@ -26,6 +27,21 @@ class _AuthScreenState extends State<AuthScreen>
   void dispose() {
     _tab.dispose();
     super.dispose();
+  }
+
+  void _handleAutoFill(String email, String password) {
+    print('Auto-fill handler called with: email=$email, password=$password');
+    
+    // Add delay to ensure login form is ready and tab switch is complete
+    Future.delayed(const Duration(milliseconds: 200), () {
+      if (_loginFormKey.currentState != null) {
+        print('Auto-filling credentials: email=$email, password=$password');
+        _loginFormKey.currentState!.autoFillCredentials(email, password);
+        print('Auto-fill completed successfully');
+      } else {
+        print('Login form state not available for auto-fill');
+      }
+    });
   }
 
   @override
@@ -78,51 +94,47 @@ class _AuthScreenState extends State<AuthScreen>
                       Text(
                         '   Student Electronic Tracker',
                         style: TextStyle(
-                          fontSize: 10,
-                          color: AppTheme.textSecondary,
-                          letterSpacing: 3,
-                        ),
+                            fontSize: 13,
+                            color: AppTheme.textMuted,
+                            fontWeight: FontWeight.w500),
                       ),
                     ],
                   ),
                 ],
               ),
-              const SizedBox(height: 40),
+              const SizedBox(height: 32),
+              // Form
               Container(
+                padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
                   color: AppTheme.surface,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppTheme.border),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.08),
+                      blurRadius: 20,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
                 ),
                 child: Column(
                   children: [
-                    // Tab bar
+                    // Tab Bar
                     Container(
-                      margin: const EdgeInsets.all(6),
                       decoration: BoxDecoration(
                         color: AppTheme.surfaceVariant,
-                        borderRadius: BorderRadius.circular(10),
+                        borderRadius: BorderRadius.circular(12),
                       ),
                       child: TabBar(
                         controller: _tab,
+                        labelColor: AppTheme.primary,
+                        unselectedLabelColor: AppTheme.textMuted,
                         indicator: BoxDecoration(
                           color: AppTheme.surface,
-                          borderRadius: BorderRadius.circular(8),
-                          boxShadow: [
-                            BoxShadow(
-                              color: const Color.fromARGB(255, 250, 248, 248)
-                                  .withOpacity(0.06),
-                              blurRadius: 4,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
+                          borderRadius: BorderRadius.circular(10),
                         ),
-                        indicatorSize: TabBarIndicatorSize.tab,
-                        labelColor: AppTheme.textPrimary,
-                        unselectedLabelColor: AppTheme.textSecondary,
-                        labelStyle: const TextStyle(
-                            fontWeight: FontWeight.w600, fontSize: 14),
-                        dividerColor: Colors.transparent,
+                        labelStyle:
+                            const TextStyle(fontWeight: FontWeight.w600),
                         tabs: const [
                           Tab(text: 'Sign In'),
                           Tab(text: 'Create Account'),
@@ -134,8 +146,11 @@ class _AuthScreenState extends State<AuthScreen>
                       child: TabBarView(
                         controller: _tab,
                         children: [
-                          const _LoginForm(),
-                          _RegisterForm(tabController: _tab),
+                          _LoginForm(key: _loginFormKey),
+                          _RegisterForm(
+                            tabController: _tab,
+                            onAutoFill: _handleAutoFill,
+                          ),
                         ],
                       ),
                     ),
@@ -151,7 +166,7 @@ class _AuthScreenState extends State<AuthScreen>
 }
 
 class _LoginForm extends StatefulWidget {
-  const _LoginForm();
+  const _LoginForm({super.key});
 
   @override
   State<_LoginForm> createState() => _LoginFormState();
@@ -181,16 +196,21 @@ class _LoginFormState extends State<_LoginForm> {
       _error = null;
     });
     // Demo: any password works
-    final ok = await AppStore().login(_email.text.trim(), _pass.text);
+    final ok = await AppStore().login(_email.text.trim(), _pass.text.trim());
     if (!mounted) return;
     if (ok) {
       Navigator.pushReplacementNamed(context, '/home');
     } else {
       setState(() {
-        _error = 'No account found with that email.';
+        _error = 'No account found with that email or incorrect password.';
         _loading = false;
       });
     }
+  }
+
+  void autoFillCredentials(String email, String password) {
+    _email.text = email;
+    _pass.text = password;
   }
 
   @override
@@ -287,7 +307,8 @@ class _LoginFormState extends State<_LoginForm> {
 
 class _RegisterForm extends StatefulWidget {
   final TabController tabController;
-  const _RegisterForm({required this.tabController});
+  final Function(String email, String password)? onAutoFill;
+  const _RegisterForm({required this.tabController, this.onAutoFill});
 
   @override
   State<_RegisterForm> createState() => _RegisterFormState();
@@ -300,7 +321,7 @@ class _RegisterFormState extends State<_RegisterForm> {
   final _phone = TextEditingController();
   final _course = TextEditingController();
   final _studentId = TextEditingController();
-  final _location = TextEditingController();
+  final _address = TextEditingController();
   final _bio = TextEditingController();
   final _password = TextEditingController();
   final _nameFocus = FocusNode();
@@ -308,7 +329,7 @@ class _RegisterFormState extends State<_RegisterForm> {
   final _phoneFocus = FocusNode();
   final _courseFocus = FocusNode();
   final _studentIdFocus = FocusNode();
-  final _locationFocus = FocusNode();
+  final _addressFocus = FocusNode();
   final _bioFocus = FocusNode();
   final _passwordFocus = FocusNode();
   String _userType = 'Student';
@@ -329,7 +350,7 @@ class _RegisterFormState extends State<_RegisterForm> {
       _phone,
       _course,
       _studentId,
-      _location,
+      _address,
       _bio,
       _password
     ]) {
@@ -341,7 +362,7 @@ class _RegisterFormState extends State<_RegisterForm> {
       _phoneFocus,
       _courseFocus,
       _studentIdFocus,
-      _locationFocus,
+      _addressFocus,
       _bioFocus,
       _passwordFocus,
     ]) {
@@ -370,38 +391,59 @@ class _RegisterFormState extends State<_RegisterForm> {
       name: _name.text.trim(),
       email: _email.text.trim(),
       phone: _phone.text.trim(),
-      password: _password.text,
+      password: _password.text.trim(),
       userType: _userType,
       course: _course.text.trim(),
       yearLevel: _yearLevel,
       studentId: _studentId.text.trim(),
-      location: _location.text.trim(),
+      address: _address.text.trim(),
       avatarInitials: initials,
       bio: _bio.text.trim(),
     );
 
+    // Store credentials before any state changes
+    final email = _email.text.trim();
+    final password = _password.text.trim();
+    
     final ok = await AppStore().createAccount(account);
     if (!mounted) return;
     if (ok) {
+      print('Account created successfully with email: $email');
+
       setState(() {
         _success = 'Account created successfully! You can now sign in.';
         _error = null;
         _loading = false;
-        // Clear the registration form
-        _name.clear();
-        _email.clear();
-        _phone.clear();
-        _password.clear();
-        _course.clear();
-        _studentId.clear();
-        _location.clear();
-        _bio.clear();
-        setState(() {
-          _userType = 'Student';
-          _yearLevel = '1st Year';
-        });
-        // Switch to login tab
-        widget.tabController.animateTo(0);
+      });
+
+      // Switch to login tab first
+      widget.tabController.animateTo(0);
+      
+      // Wait for tab switch to complete, then auto-fill
+      Future.delayed(const Duration(milliseconds: 300), () {
+        if (mounted) {
+          print('Auto-fill triggered via callback: email=$email, password=$password');
+          widget.onAutoFill?.call(email, password);
+        }
+      });
+
+      // Clear the registration form after auto-fill is triggered and completed
+      Future.delayed(const Duration(milliseconds: 800), () {
+        if (mounted) {
+          print('Clearing registration form');
+          _name.clear();
+          _email.clear();
+          _phone.clear();
+          _password.clear();
+          _course.clear();
+          _studentId.clear();
+          _address.clear();
+          _bio.clear();
+          setState(() {
+            _userType = 'Student';
+            _yearLevel = '1st Year';
+          });
+        }
       });
     } else {
       setState(() {
@@ -479,7 +521,7 @@ class _RegisterFormState extends State<_RegisterForm> {
                       focusNode: _studentIdFocus,
                       textInputAction: TextInputAction.next,
                       onFieldSubmitted: (_) =>
-                          FocusScope.of(context).requestFocus(_locationFocus)),
+                          FocusScope.of(context).requestFocus(_addressFocus)),
                 ),
                 const SizedBox(width: 10),
                 Expanded(
@@ -501,8 +543,8 @@ class _RegisterFormState extends State<_RegisterForm> {
               ],
             ),
             const SizedBox(height: 10),
-            _field(_location, 'Location', Icons.location_on_outlined,
-                focusNode: _locationFocus,
+            _field(_address, 'Address', Icons.location_on_outlined,
+                focusNode: _addressFocus,
                 textInputAction: TextInputAction.next,
                 onFieldSubmitted: (_) =>
                     FocusScope.of(context).requestFocus(_bioFocus)),
