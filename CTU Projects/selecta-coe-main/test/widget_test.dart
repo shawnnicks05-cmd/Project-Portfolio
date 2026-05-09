@@ -9,11 +9,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:selecta_coee/main.dart';
+import 'package:selecta_coee/theme_provider.dart';
 
 void main() {
   testWidgets('App starts without crashing', (WidgetTester tester) async {
     // Build our app and trigger a frame.
-    await tester.pumpWidget(const SelectaCOEApp());
+    await tester.pumpWidget(SelectaCOEApp(themeProvider: ThemeProvider()));
 
     // Verify that the app starts (basic smoke test)
     expect(find.byType(MaterialApp), findsOneWidget);

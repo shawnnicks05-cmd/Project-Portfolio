@@ -50,27 +50,37 @@ class _SearchScreenState extends State<SearchScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      color: AppTheme.surfaceVariant,
-      child: Column(
-        children: [
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: AppTheme.getSurface(context),
+        elevation: 0,
+        title: const Text('Search'),
+      ),
+      body: Container(
+        color: AppTheme.getSurfaceVariant(context),
+        child: Column(
+          children: [
           // Search bar
           Container(
-            color: AppTheme.surface,
+            color: AppTheme.getSurface(context),
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
             child: TextField(
               controller: _ctrl,
               onChanged: (v) => setState(() => _query = v),
-              style: const TextStyle(color: Colors.white),
+              style: TextStyle(color: AppTheme.getTextPrimary(context)),
               decoration: InputDecoration(
                 hintText: 'Search users, skills, projects, certifications...',
-                hintStyle: const TextStyle(color: Colors.white38),
-                prefixIcon:
-                    const Icon(Icons.search, size: 20, color: Colors.white54),
+                hintStyle: TextStyle(color: AppTheme.getTextMuted(context)),
+                prefixIcon: Icon(
+                      Icons.search, 
+                      size: 20,
+                      color: AppTheme.getTextMuted(context),
+                    ),
                 suffixIcon: _query.isNotEmpty
                     ? IconButton(
-                        icon: const Icon(Icons.close,
-                            size: 18, color: Colors.white54),
+                        icon: Icon(Icons.close,
+                            size: 18,
+                            color: AppTheme.getTextMuted(context)),
                         onPressed: () {
                           _ctrl.clear();
                           setState(() => _query = '');
@@ -82,7 +92,7 @@ class _SearchScreenState extends State<SearchScreen> {
           ),
           // Filters
           Container(
-            color: AppTheme.surface,
+            color: AppTheme.getSurface(context),
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
             child: Row(
               children: [
@@ -106,13 +116,13 @@ class _SearchScreenState extends State<SearchScreen> {
                                   onSelected: (_) =>
                                       setState(() => _filter = f),
                                   selectedColor:
-                                      AppTheme.primary.withOpacity(0.12),
-                                  checkmarkColor: AppTheme.primary,
+                                      AppTheme.getPrimary(context).withOpacity(0.12),
+                                  checkmarkColor: AppTheme.getPrimary(context),
                                   labelStyle: TextStyle(
                                     fontSize: 12,
                                     color: _filter == f
-                                        ? AppTheme.primary
-                                        : AppTheme.textSecondary,
+                                        ? AppTheme.getPrimary(context)
+                                        : AppTheme.getTextSecondary(context),
                                     fontWeight: _filter == f
                                         ? FontWeight.w600
                                         : FontWeight.normal,
@@ -132,8 +142,8 @@ class _SearchScreenState extends State<SearchScreen> {
                             child: Row(
                               children: [
                                 if (_sort == s)
-                                  const Icon(Icons.check,
-                                      size: 16, color: AppTheme.primary)
+                                  Icon(Icons.check,
+                                      size: 16, color: AppTheme.getPrimary(context))
                                 else
                                   const SizedBox(width: 16),
                                 const SizedBox(width: 8),
@@ -146,18 +156,18 @@ class _SearchScreenState extends State<SearchScreen> {
                     padding:
                         const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                     decoration: BoxDecoration(
-                      border: Border.all(color: AppTheme.border),
+                      border: Border.all(color: AppTheme.getBorder(context)),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Icons.sort,
-                            size: 14, color: AppTheme.textSecondary),
+                        Icon(Icons.sort,
+                            size: 14, color: AppTheme.getTextSecondary(context)),
                         const SizedBox(width: 4),
                         Text(_sort,
-                            style: const TextStyle(
-                                fontSize: 12, color: AppTheme.textSecondary)),
+                            style: TextStyle(
+                                fontSize: 12, color: AppTheme.getTextSecondary(context))),
                       ],
                     ),
                   ),
@@ -176,9 +186,9 @@ class _SearchScreenState extends State<SearchScreen> {
                 if (snapshot.hasError) {
                   return Center(child: Text('Error: ${snapshot.error}'));
                 }
-                
+
                 final results = snapshot.data ?? [];
-                
+
                 return Column(
                   children: [
                     // Results count
@@ -188,9 +198,9 @@ class _SearchScreenState extends State<SearchScreen> {
                         children: [
                           Text(
                             '${results.length} result${results.length == 1 ? '' : 's'}',
-                            style: const TextStyle(
+                            style: TextStyle(
                                 fontSize: 13,
-                                color: AppTheme.textMuted,
+                                color: AppTheme.getTextMuted(context),
                                 fontWeight: FontWeight.w500),
                           ),
                         ],
@@ -199,31 +209,34 @@ class _SearchScreenState extends State<SearchScreen> {
                     // Results list
                     Expanded(
                       child: results.isEmpty
-                ? Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.search_off,
-                            size: 40, color: AppTheme.textMuted),
-                        const SizedBox(height: 10),
-                        Text(
-                          _query.isEmpty
-                              ? 'Nothing in the database yet.'
-                              : 'No results for "$_query"',
-                          style: const TextStyle(
-                              color: AppTheme.textMuted, fontSize: 14),
-                        ),
-                      ],
-                    ),
-                  )
-                : ListView.separated(
-                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-                        itemCount: results.length,
-                        separatorBuilder: (_, __) => const SizedBox(height: 8),
-                        itemBuilder: (_, i) => GestureDetector(
-                            onTap: () => _showRecordDetails(context, results[i]),
-                            child: _ResultTile(record: results[i])),
-                      ),
+                          ? Center(
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.search_off,
+                                      size: 40, color: AppTheme.getTextMuted(context)),
+                                  const SizedBox(height: 10),
+                                  Text(
+                                    _query.isEmpty
+                                        ? 'Nothing in the database yet.'
+                                        : 'No results for "$_query"',
+                                    style: TextStyle(
+                                        color: AppTheme.getTextMuted(context),
+                                        fontSize: 14),
+                                  ),
+                                ],
+                              ),
+                            )
+                          : ListView.separated(
+                              padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+                              itemCount: results.length,
+                              separatorBuilder: (_, __) =>
+                                  const SizedBox(height: 8),
+                              itemBuilder: (_, i) => GestureDetector(
+                                  onTap: () =>
+                                      _showRecordDetails(context, results[i]),
+                                  child: _ResultTile(record: results[i])),
+                            ),
                     ),
                   ],
                 );
@@ -231,6 +244,7 @@ class _SearchScreenState extends State<SearchScreen> {
             ),
           ),
         ],
+        ),
       ),
     );
   }
@@ -252,17 +266,17 @@ class _ResultTile extends StatelessWidget {
 
     switch (type) {
       case 'skill':
-        typeColor = AppTheme.primary;
+        typeColor = AppTheme.getPrimary(context);
         typeIcon = Icons.workspace_premium_outlined;
         typeLabel = 'Skill';
         break;
       case 'project':
-        typeColor = AppTheme.warning;
+        typeColor = AppTheme.getWarning(context);
         typeIcon = Icons.folder_outlined;
         typeLabel = 'Project';
         break;
       case 'profile':
-        typeColor = AppTheme.accent;
+        typeColor = AppTheme.getAccent(context);
         typeIcon = Icons.person_outline;
         typeLabel = 'Student';
         break;
@@ -275,9 +289,9 @@ class _ResultTile extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppTheme.surface,
+        color: AppTheme.getSurface(context),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppTheme.border),
+        border: Border.all(color: AppTheme.getBorder(context)),
       ),
       child: Row(
         children: [
@@ -296,16 +310,15 @@ class _ResultTile extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(name,
-                    style: const TextStyle(
+                    style: TextStyle(
                         fontWeight: FontWeight.w600,
                         fontSize: 13,
-                        color: AppTheme.textPrimary)),
+                        color: AppTheme.getTextPrimary(context))),
                 const SizedBox(height: 2),
-                _subtitle(record),
+                _subtitle(context, record),
                 const SizedBox(height: 3),
                 Text('by $user',
-                    style: const TextStyle(
-                        fontSize: 11, color: AppTheme.textMuted)),
+                    style: TextStyle(fontSize: 11, color: AppTheme.getTextMuted(context))),
               ],
             ),
           ),
@@ -326,27 +339,26 @@ class _ResultTile extends StatelessWidget {
     );
   }
 
-  Widget _subtitle(Map<String, dynamic> r) {
+  Widget _subtitle(BuildContext context, Map<String, dynamic> r) {
     final type = r['type'];
     if (type == 'skill') {
       final pct = (r['percent'] as num?)?.toInt() ?? 0;
       return Row(
         children: [
           Text('${r['category'] ?? ''} • ${r['level'] ?? ''}  $pct%',
-              style:
-                  const TextStyle(fontSize: 11, color: AppTheme.textSecondary)),
+              style: TextStyle(fontSize: 11, color: AppTheme.getTextSecondary(context))),
         ],
       );
     } else if (type == 'project') {
       final tags = (r['tags'] as List? ?? []).take(3).join(', ');
       return Text(tags,
-          style: const TextStyle(fontSize: 11, color: AppTheme.textSecondary));
+          style: TextStyle(fontSize: 11, color: AppTheme.getTextSecondary(context)));
     } else if (type == 'profile') {
       return Text('${r['course'] ?? ''} • ${r['yearLevel'] ?? ''}',
-          style: const TextStyle(fontSize: 11, color: AppTheme.textSecondary));
+          style: TextStyle(fontSize: 11, color: AppTheme.getTextSecondary(context)));
     } else {
       return Text(r['issuer'] ?? '',
-          style: const TextStyle(fontSize: 11, color: AppTheme.textSecondary));
+          style: TextStyle(fontSize: 11, color: AppTheme.getTextSecondary(context)));
     }
   }
 }
@@ -377,48 +389,47 @@ void _showRecordDetails(BuildContext context, Map<String, dynamic> record) {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(name,
-                style: const TextStyle(
+                style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w700,
-                    color: AppTheme.textPrimary)),
+                    color: AppTheme.getTextPrimary(context))),
             const SizedBox(height: 8),
             Text('by $user',
-                style: const TextStyle(
-                    fontSize: 13, color: AppTheme.textSecondary)),
+                style: TextStyle(fontSize: 13, color: AppTheme.getTextSecondary(context))),
             const SizedBox(height: 16),
             if (type == 'profile') ...[
               Text('Course: ${record['course'] ?? ''}',
-                  style: const TextStyle(color: AppTheme.textPrimary)),
+                  style: TextStyle(color: AppTheme.getTextPrimary(context))),
               const SizedBox(height: 6),
               Text('Year Level: ${record['yearLevel'] ?? ''}',
-                  style: const TextStyle(color: AppTheme.textPrimary)),
+                  style: TextStyle(color: AppTheme.getTextPrimary(context))),
               const SizedBox(height: 6),
               Text('Student ID: ${record['studentId'] ?? ''}',
-                  style: const TextStyle(color: AppTheme.textPrimary)),
+                  style: TextStyle(color: AppTheme.getTextPrimary(context))),
               const SizedBox(height: 6),
               Text('Location: ${record['location'] ?? ''}',
-                  style: const TextStyle(color: AppTheme.textPrimary)),
+                  style: TextStyle(color: AppTheme.getTextPrimary(context))),
               if ((record['bio'] as String?)?.isNotEmpty ?? false) ...[
                 const SizedBox(height: 12),
-                const Text('Bio',
+                Text('Bio',
                     style: TextStyle(
                         fontSize: 12,
-                        color: AppTheme.textMuted,
+                        color: AppTheme.getTextMuted(context),
                         fontWeight: FontWeight.w600)),
-                const SizedBox(height: 4),
+                SizedBox(height: 4),
                 Text(record['bio'] as String,
-                    style: const TextStyle(
-                        color: AppTheme.textSecondary, fontSize: 14)),
+                    style:
+                        TextStyle(color: AppTheme.getTextSecondary(context), fontSize: 14)),
               ]
             ] else ...[
               Text(description,
-                  style: const TextStyle(
-                      color: AppTheme.textSecondary, fontSize: 14)),
+                  style:
+                      TextStyle(color: AppTheme.getTextSecondary(context), fontSize: 14)),
               const SizedBox(height: 12),
               if (type == 'skill')
                 Text('Skill percent: ${record['percent']?.toInt() ?? 0}%',
-                    style: const TextStyle(
-                        fontSize: 14, color: AppTheme.textPrimary)),
+                    style:
+                        TextStyle(fontSize: 14, color: AppTheme.getTextPrimary(context))),
             ],
             const SizedBox(height: 20),
             Row(
@@ -431,7 +442,7 @@ void _showRecordDetails(BuildContext context, Map<String, dynamic> record) {
                         // ── Wrap in Scaffold so the profile renders correctly ──
                         Navigator.of(context).push(MaterialPageRoute(
                           builder: (_) => Scaffold(
-                            backgroundColor: AppTheme.surfaceVariant,
+                            backgroundColor: AppTheme.getSurfaceVariant(context),
                             appBar: AppBar(
                               backgroundColor: AppTheme.primary,
                               elevation: 0,

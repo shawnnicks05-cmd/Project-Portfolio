@@ -1,7 +1,6 @@
 // lib/screens/profile_screen.dart
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:image_picker/image_picker.dart';
 import '../data/app_store.dart';
 import '../models/models.dart';
@@ -25,7 +24,10 @@ class SummaryItem extends StatelessWidget {
                 fontSize: 22, fontWeight: FontWeight.w800, color: color)),
         const SizedBox(height: 2),
         Text(label,
-            style: const TextStyle(fontSize: 11, color: AppTheme.textMuted)),
+            style: TextStyle(
+                fontSize: 11,
+                color:
+                    Theme.of(context).colorScheme.onSurface.withOpacity(0.6))),
       ],
     );
   }
@@ -184,7 +186,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     final source = await showModalBottomSheet<ImageSource>(
       context: context,
-      backgroundColor: AppTheme.surface,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
@@ -195,17 +197,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               ListTile(
-                leading: const Icon(Icons.camera_alt_outlined,
-                    color: AppTheme.primary),
-                title: const Text('Take Photo',
-                    style: TextStyle(color: AppTheme.textPrimary)),
+                leading: Icon(Icons.camera_alt_outlined,
+                    color: Theme.of(context).colorScheme.primary),
+                title: Text('Take Photo',
+                    style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurface)),
                 onTap: () => Navigator.pop(context, ImageSource.camera),
               ),
               ListTile(
-                leading: const Icon(Icons.photo_library_outlined,
-                    color: AppTheme.primary),
-                title: const Text('Choose from gallery',
-                    style: TextStyle(color: AppTheme.textPrimary)),
+                leading: Icon(Icons.photo_library_outlined,
+                    color: Theme.of(context).colorScheme.primary),
+                title: Text('Choose from gallery',
+                    style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurface)),
                 onTap: () => Navigator.pop(context, ImageSource.gallery),
               ),
               if (_pickedImageFile != null ||
@@ -303,8 +307,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Center(
       child: Text(
         initials,
-        style: const TextStyle(
-            color: Colors.white, fontSize: 28, fontWeight: FontWeight.w700),
+        style: TextStyle(
+            color: Theme.of(context).colorScheme.onPrimary,
+            fontSize: 28,
+            fontWeight: FontWeight.w700),
       ),
     );
   }
@@ -322,10 +328,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
       keyboardType: keyboard,
       minLines: minLines,
       maxLines: maxLines,
-      style: const TextStyle(color: Colors.white),
+      style: TextStyle(color: Theme.of(context).colorScheme.onPrimary),
       decoration: InputDecoration(
         labelText: label,
-        prefixIcon: Icon(icon, size: 18),
+        prefixIcon: Icon(icon,
+            size: 18, color: Theme.of(context).colorScheme.onPrimary),
       ),
     );
   }
@@ -337,17 +344,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 16, color: AppTheme.textMuted),
+          Icon(icon,
+              size: 16,
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
           const SizedBox(width: 10),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(label,
-                  style:
-                      const TextStyle(fontSize: 11, color: AppTheme.textMuted)),
+                  style: TextStyle(
+                      fontSize: 11,
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withOpacity(0.6))),
               Text(value,
-                  style: const TextStyle(
-                      fontSize: 13, color: AppTheme.textPrimary)),
+                  style: TextStyle(
+                      fontSize: 13,
+                      color: Theme.of(context).colorScheme.onSurface)),
             ],
           ),
         ],
@@ -360,24 +374,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppTheme.surfaceVariant,
+        color: Theme.of(context).colorScheme.surfaceVariant,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppTheme.border),
+        border: Border.all(
+            color: Theme.of(context).colorScheme.outline.withOpacity(0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Icon(Icons.school, size: 16, color: AppTheme.primary),
+              Icon(Icons.school,
+                  size: 16, color: Theme.of(context).colorScheme.primary),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   education.schoolName,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    color: AppTheme.textPrimary,
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
               ),
@@ -392,17 +408,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
+                      Text(
                         'Degree',
-                        style:
-                            TextStyle(fontSize: 10, color: AppTheme.textMuted),
+                        style: TextStyle(
+                            fontSize: 10,
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurface
+                                .withOpacity(0.6)),
                       ),
                       const SizedBox(height: 2),
                       Text(
                         education.degree,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 12,
-                          color: AppTheme.textSecondary,
+                          color: Theme.of(context).colorScheme.onSurface,
                         ),
                       ),
                     ],
@@ -420,17 +440,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
+                      Text(
                         'Year',
-                        style:
-                            TextStyle(fontSize: 10, color: AppTheme.textMuted),
+                        style: TextStyle(
+                            fontSize: 10,
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurface
+                                .withOpacity(0.6)),
                       ),
                       const SizedBox(height: 2),
                       Text(
                         education.year,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 12,
-                          color: AppTheme.textSecondary,
+                          color: Theme.of(context).colorScheme.onSurface,
                         ),
                       ),
                     ],
@@ -448,17 +472,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
+                      Text(
                         'Address',
-                        style:
-                            TextStyle(fontSize: 10, color: AppTheme.textMuted),
+                        style: TextStyle(
+                            fontSize: 10,
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurface
+                                .withOpacity(0.6)),
                       ),
                       const SizedBox(height: 2),
                       Text(
                         education.address,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 12,
-                          color: AppTheme.textSecondary,
+                          color: Theme.of(context).colorScheme.onSurface,
                           height: 1.4,
                         ),
                       ),
@@ -478,24 +506,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppTheme.surfaceVariant,
+        color: Theme.of(context).colorScheme.surfaceVariant,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppTheme.border),
+        border: Border.all(
+            color: Theme.of(context).colorScheme.outline.withOpacity(0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Icon(Icons.work, size: 16, color: AppTheme.success),
+              Icon(Icons.work, size: 16, color: AppTheme.success),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   experience.position,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    color: AppTheme.textPrimary,
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
               ),
@@ -509,16 +538,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       'Company',
-                      style: TextStyle(fontSize: 10, color: AppTheme.textMuted),
+                      style: TextStyle(
+                          fontSize: 10,
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onSurface
+                              .withOpacity(0.6)),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       experience.company,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 12,
-                        color: AppTheme.textSecondary,
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
                   ],
@@ -534,16 +568,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       'Duration',
-                      style: TextStyle(fontSize: 10, color: AppTheme.textMuted),
+                      style: TextStyle(
+                          fontSize: 10,
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onSurface
+                              .withOpacity(0.6)),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       '${experience.startDate} - ${experience.endDate}',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 12,
-                        color: AppTheme.textSecondary,
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
                   ],
@@ -560,17 +599,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
+                      Text(
                         'Description',
-                        style:
-                            TextStyle(fontSize: 10, color: AppTheme.textMuted),
+                        style: TextStyle(
+                            fontSize: 10,
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurface
+                                .withOpacity(0.6)),
                       ),
                       const SizedBox(height: 2),
                       Text(
                         experience.description,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 12,
-                          color: AppTheme.textSecondary,
+                          color: Theme.of(context).colorScheme.onSurface,
                           height: 1.4,
                         ),
                       ),
@@ -590,9 +633,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppTheme.surfaceVariant,
+        color: Theme.of(context).colorScheme.surfaceVariant,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppTheme.border),
+        border: Border.all(
+            color: Theme.of(context).colorScheme.outline.withOpacity(0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -605,10 +649,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
               Expanded(
                 child: Text(
                   achievement.title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    color: AppTheme.textPrimary,
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
               ),
@@ -622,16 +666,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       'Category',
-                      style: TextStyle(fontSize: 10, color: AppTheme.textMuted),
+                      style: TextStyle(
+                          fontSize: 10,
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onSurface
+                              .withOpacity(0.6)),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       achievement.category,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 12,
-                        color: AppTheme.textSecondary,
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
                   ],
@@ -647,16 +696,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       'Date',
-                      style: TextStyle(fontSize: 10, color: AppTheme.textMuted),
+                      style: TextStyle(
+                          fontSize: 10,
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onSurface
+                              .withOpacity(0.6)),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       achievement.date,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 12,
-                        color: AppTheme.textSecondary,
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
                   ],
@@ -673,17 +727,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
+                      Text(
                         'Description',
-                        style:
-                            TextStyle(fontSize: 10, color: AppTheme.textMuted),
+                        style: TextStyle(
+                            fontSize: 10,
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurface
+                                .withOpacity(0.6)),
                       ),
                       const SizedBox(height: 2),
                       Text(
                         achievement.description,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 12,
-                          color: AppTheme.textSecondary,
+                          color: Theme.of(context).colorScheme.onSurface,
                           height: 1.4,
                         ),
                       ),
@@ -711,11 +769,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(label,
-                  style:
-                      const TextStyle(fontSize: 11, color: AppTheme.textMuted)),
+                  style: TextStyle(
+                      fontSize: 11,
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withOpacity(0.6))),
               Text(url,
-                  style: const TextStyle(
-                      fontSize: 13, color: AppTheme.textPrimary)),
+                  style: TextStyle(
+                      fontSize: 13,
+                      color: Theme.of(context).colorScheme.onSurface)),
             ],
           ),
         ],
@@ -767,7 +830,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             width: 96,
             height: 96,
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
+              gradient: LinearGradient(
                 colors: [AppTheme.primary, AppTheme.primaryLight],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
@@ -807,214 +870,224 @@ class _ProfileScreenState extends State<ProfileScreen> {
       return const Center(child: CircularProgressIndicator());
     }
     final user = _displayUser!;
-    return Container(
-      color: AppTheme.surfaceVariant,
-      child: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          // Avatar + name header
-          Center(
-            child: Column(
-              children: [
-                _buildAvatar(user),
-                if (_editing && _canEdit)
-                  const Padding(
-                    padding: EdgeInsets.only(top: 6),
-                    child: Text(
-                      'Tap photo to change',
-                      style: TextStyle(fontSize: 11, color: AppTheme.textMuted),
-                    ),
-                  ),
-                const SizedBox(height: 10),
-                if (!_editing) ...[
-                  Text(user.name,
-                      style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w700,
-                          color: AppTheme.textPrimary)),
-                  const SizedBox(height: 4),
-                  const Text('Cebu Technological University',
-                      style: TextStyle(
-                          fontSize: 13, color: AppTheme.textSecondary)),
-                  const SizedBox(height: 4),
-                  Text('${user.course}  ${user.yearLevel}',
-                      style: const TextStyle(
-                          fontSize: 13, color: AppTheme.textSecondary)),
-                  const SizedBox(height: 4),
-                  Text(user.studentId,
-                      style: const TextStyle(
-                          fontSize: 12, color: AppTheme.textMuted)),
-                  if (user.bio.isNotEmpty) ...[
-                    const SizedBox(height: 12),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
-                      child: Text(
-                        user.bio,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                            fontSize: 13, color: AppTheme.textSecondary),
-                      ),
-                    ),
-                  ],
-                ],
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 20),
-
-          // Profile stats and like button (only show when viewing other users)
-          if (widget.viewOnly && _displayUser != null) ...[
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppTheme.surface,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppTheme.border),
-              ),
-              child: Row(
-                children: [
-                  // Views counter
-                  Expanded(
-                    child: Column(
-                      children: [
-                        const Icon(Icons.visibility_outlined,
-                            color: AppTheme.textMuted, size: 20),
-                        const SizedBox(height: 4),
-                        Text(
-                          _displayUser!.profileViews.toString(),
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: AppTheme.textPrimary,
-                          ),
-                        ),
-                        const Text(
-                          'Views',
+    return Stack(
+      children: [
+        Container(
+          color: Theme.of(context).colorScheme.surfaceVariant,
+          child: ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              // Avatar + name header
+              Center(
+                child: Column(
+                  children: [
+                    _buildAvatar(user),
+                    if (_editing && _canEdit)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 6),
+                        child: Text(
+                          'Tap photo to change',
                           style: TextStyle(
-                            fontSize: 12,
-                            color: AppTheme.textMuted,
+                              fontSize: 11, color: AppTheme.textMuted),
+                        ),
+                      ),
+                    const SizedBox(height: 10),
+                    if (!_editing) ...[
+                      Text(user.name,
+                          style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w700,
+                              color: Theme.of(context).colorScheme.onSurface)),
+                      const SizedBox(height: 4),
+                      Text('Cebu Technological University',
+                          style: TextStyle(
+                              fontSize: 13,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurface
+                                  .withOpacity(0.6))),
+                      const SizedBox(height: 4),
+                      Text('${user.course}  ${user.yearLevel}',
+                          style: TextStyle(
+                              fontSize: 13,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurface
+                                  .withOpacity(0.6))),
+                      const SizedBox(height: 4),
+                      Text(user.studentId,
+                          style: TextStyle(
+                              fontSize: 12,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurface
+                                  .withOpacity(0.6))),
+                      if (user.bio.isNotEmpty) ...[
+                        const SizedBox(height: 12),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          child: Text(
+                            user.bio,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                                fontSize: 13,
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurface
+                                    .withOpacity(0.6)),
                           ),
                         ),
                       ],
-                    ),
+                    ],
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 20),
+
+              // Profile stats and like button (only show when viewing other users)
+              if (widget.viewOnly && _displayUser != null) ...[
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surface,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                        color: Theme.of(context)
+                            .colorScheme
+                            .outline
+                            .withOpacity(0.3)),
                   ),
-                  // Like button
-                  GestureDetector(
-                    onTap: () async {
-                      final appStore = AppStore();
-                      final newLikeStatus =
-                          await appStore.toggleProfileLike(_displayUser!.id);
-
-                      // Update local state
-                      if (mounted) {
-                        setState(() {
-                          _isLiked = newLikeStatus;
-                        });
-
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(newLikeStatus
-                                ? 'Profile liked!'
-                                : 'Profile unliked'),
-                            backgroundColor: newLikeStatus
-                                ? Colors.pink
-                                : AppTheme.textMuted,
-                            behavior: SnackBarBehavior.floating,
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8)),
-                          ),
-                        );
-                      }
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: _isLiked
-                            ? Colors.pink.withOpacity(0.1)
-                            : AppTheme.primary.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: _isLiked
-                              ? Colors.pink.withOpacity(0.3)
-                              : AppTheme.primary.withOpacity(0.3),
+                  child: Row(
+                    children: [
+                      // Views counter
+                      Expanded(
+                        child: Column(
+                          children: [
+                            Icon(Icons.visibility_outlined,
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurface
+                                    .withOpacity(0.6),
+                                size: 20),
+                            const SizedBox(height: 4),
+                            Text(
+                              _displayUser!.profileViews.toString(),
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Theme.of(context).colorScheme.onSurface,
+                              ),
+                            ),
+                            Text(
+                              'Views',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurface
+                                    .withOpacity(0.6),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            _isLiked ? Icons.favorite : Icons.favorite_border,
-                            color: _isLiked ? Colors.pink : AppTheme.primary,
-                            size: 18,
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            _displayUser!.profileLikes.toString(),
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: _isLiked ? Colors.pink : AppTheme.primary,
+                      // Like button
+                      GestureDetector(
+                        onTap: () async {
+                          final appStore = AppStore();
+                          final newLikeStatus = await appStore
+                              .toggleProfileLike(_displayUser!.id);
+
+                          // Update local state
+                          if (mounted) {
+                            setState(() {
+                              _isLiked = newLikeStatus;
+                            });
+
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(newLikeStatus
+                                    ? 'Profile liked!'
+                                    : 'Profile unliked'),
+                                backgroundColor: newLikeStatus
+                                    ? Colors.pink
+                                    : Theme.of(context)
+                                        .colorScheme
+                                        .surfaceVariant,
+                                behavior: SnackBarBehavior.floating,
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8)),
+                              ),
+                            );
+                          }
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: _isLiked
+                                ? Colors.pink.withOpacity(0.1)
+                                : Theme.of(context)
+                                    .colorScheme
+                                    .surfaceVariant
+                                    .withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: _isLiked
+                                  ? Colors.pink.withOpacity(0.3)
+                                  : Theme.of(context)
+                                      .colorScheme
+                                      .outline
+                                      .withOpacity(0.3),
                             ),
                           ),
-                        ],
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                _isLiked
+                                    ? Icons.favorite
+                                    : Icons.favorite_border,
+                                color: _isLiked
+                                    ? Colors.pink
+                                    : Theme.of(context).colorScheme.onSurface,
+                                size: 18,
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                _displayUser!.profileLikes.toString(),
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                  color: _isLiked
+                                      ? Colors.pink
+                                      : Theme.of(context).colorScheme.onSurface,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
-          ],
-
-          //  Edit / Cancel / Save buttons
-          if (!widget.viewOnly && _canEdit) ...[
-            if (!_editing)
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: _startEditing,
-                  icon: const Icon(Icons.edit_outlined, size: 18),
-                  label: const Text('Edit Profile'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primary,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 13),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10)),
-                    elevation: 0,
+                    ],
                   ),
                 ),
-              )
-            else
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: _cancelEditing,
-                      icon: const Icon(Icons.close, size: 18),
-                      label: const Text('Cancel'),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: AppTheme.textPrimary,
-                        side: const BorderSide(color: AppTheme.border),
-                        padding: const EdgeInsets.symmetric(vertical: 13),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10)),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    flex: 2,
+                const SizedBox(height: 16),
+              ],
+
+              //  Edit / Cancel / Save buttons
+              if (!widget.viewOnly && _canEdit) ...[
+                if (!_editing)
+                  SizedBox(
+                    width: double.infinity,
                     child: ElevatedButton.icon(
-                      onPressed: _saveChanges,
-                      icon: const Icon(Icons.check, size: 18),
-                      label: const Text('Save Changes'),
+                      onPressed: _startEditing,
+                      icon: const Icon(Icons.edit_outlined, size: 18),
+                      label: const Text('Edit Profile'),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.success,
+                        backgroundColor: Theme.of(context).colorScheme.primary,
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 13),
                         shape: RoundedRectangleBorder(
@@ -1022,461 +1095,580 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         elevation: 0,
                       ),
                     ),
-                  ),
-                ],
-              ),
-            const SizedBox(height: 16),
-          ],
-
-          //  Privacy Settings card
-          if (_canEdit) ...[
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppTheme.surface,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppTheme.border),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('Privacy Settings',
-                      style: TextStyle(
-                          fontWeight: FontWeight.w700,
-                          fontSize: 14,
-                          color: AppTheme.textPrimary)),
-                  const SizedBox(height: 16),
-
-                  // Master toggle for all profile sections
+                  )
+                else
                   Row(
                     children: [
-                      const Expanded(
-                        child: Text(
-                          'Make Profile Private',
-                          style: TextStyle(
-                            color: AppTheme.textPrimary,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: _cancelEditing,
+                          icon: const Icon(Icons.close, size: 18),
+                          label: const Text('Cancel'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor:
+                                Theme.of(context).colorScheme.onSurface,
+                            side: BorderSide(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .outline
+                                    .withOpacity(0.3)),
+                            padding: const EdgeInsets.symmetric(vertical: 13),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10)),
                           ),
                         ),
                       ),
-                      Switch(
-                        value: _displayUser?.skillsPrivate == true &&
-                            _displayUser?.projectsPrivate == true &&
-                            _displayUser?.certificationsPrivate == true &&
-                            _displayUser?.experiencesPrivate == true &&
-                            _displayUser?.achievementsPrivate == true &&
-                            _displayUser?.careerObjectivePrivate == true,
-                        onChanged: (value) async {
-                          await AppStore().toggleProfilePrivacy('all');
-                          await _initControllers(); // Refresh display
-                        },
-                        activeThumbColor: AppTheme.primary,
+                      const SizedBox(width: 10),
+                      Expanded(
+                        flex: 2,
+                        child: ElevatedButton.icon(
+                          onPressed: _saveChanges,
+                          icon: const Icon(Icons.check, size: 18),
+                          label: const Text('Save Changes'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor:
+                                Theme.of(context).colorScheme.primary,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 13),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10)),
+                            elevation: 0,
+                          ),
+                        ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 12),
-
-                  // Individual section toggles
-                  _buildPrivacyToggle(
-                      'Skills', _displayUser?.skillsPrivate == true, 'skills'),
-                  const SizedBox(height: 8),
-                  _buildPrivacyToggle('Projects',
-                      _displayUser?.projectsPrivate == true, 'projects'),
-                  const SizedBox(height: 8),
-                  _buildPrivacyToggle(
-                      'Certifications',
-                      _displayUser?.certificationsPrivate == true,
-                      'certifications'),
-                  const SizedBox(height: 8),
-                  _buildPrivacyToggle('Experience',
-                      _displayUser?.experiencesPrivate == true, 'experiences'),
-                  const SizedBox(height: 8),
-                  _buildPrivacyToggle(
-                      'Achievements',
-                      _displayUser?.achievementsPrivate == true,
-                      'achievements'),
-                  const SizedBox(height: 8),
-                  _buildPrivacyToggle(
-                      'Career Objective',
-                      _displayUser?.careerObjectivePrivate == true,
-                      'careerObjective'),
-
-                  const SizedBox(height: 12),
-                  const Text(
-                    'Private sections are only visible to you. Public sections can be seen by everyone.',
-                    style: TextStyle(
-                      color: AppTheme.textMuted,
-                      fontSize: 12,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
-          ],
-
-          //  Personal Information card
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: AppTheme.surface,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppTheme.border),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('Personal Information',
-                    style: TextStyle(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 14,
-                        color: AppTheme.textPrimary)),
                 const SizedBox(height: 16),
-                if (_editing && _canEdit) ...[
-                  if (_name != null)
-                    _editField(_name!, 'Full Name', Icons.person_outline),
-                  const SizedBox(height: 12),
-                  if (_email != null)
-                    _editField(_email!, 'Email', Icons.email_outlined,
-                        keyboard: TextInputType.emailAddress),
-                  const SizedBox(height: 12),
-                  if (_phone != null)
-                    _editField(_phone!, 'Phone', Icons.phone_outlined,
-                        keyboard: TextInputType.phone),
-                  const SizedBox(height: 12),
-                  if (_course != null)
-                    _editField(
-                        _course!, 'Course / Program', Icons.book_outlined),
-                  const SizedBox(height: 12),
-                  Row(children: [
-                    Expanded(
-                        child: _studentId != null
-                            ? _editField(
-                                _studentId!, 'Student ID', Icons.badge_outlined)
-                            : Container()),
-                    const SizedBox(width: 10),
-                    Expanded(
-                        child: _yearLevelController != null
-                            ? _editField(_yearLevelController!, 'Year Level',
-                                Icons.school_outlined)
-                            : Container()),
-                  ]),
-                  const SizedBox(height: 12),
-                  if (_location != null)
-                    _editField(
-                        _location!, 'Location', Icons.location_on_outlined),
-                  const SizedBox(height: 12),
-                  if (_bio != null)
-                    _editField(_bio!, 'Bio', Icons.comment_outlined,
-                        keyboard: TextInputType.text, minLines: 1, maxLines: 1),
-                  const SizedBox(height: 12),
-                  if (_instagramUrl != null)
-                    _editField(_instagramUrl!, 'Instagram URL', Icons.camera,
-                        keyboard: TextInputType.url),
-                  const SizedBox(height: 12),
-                  if (_facebookUrl != null)
-                    _editField(_facebookUrl!, 'Facebook URL', Icons.facebook,
-                        keyboard: TextInputType.url),
-                ] else ...[
-                  _infoRow(Icons.email_outlined, 'Email', user.email),
-                  _infoRow(Icons.phone_outlined, 'Phone', user.phone),
-                  _infoRow(Icons.book_outlined, 'Course', user.course),
-                  _infoRow(Icons.school_outlined, 'Year Level', user.yearLevel),
-                  _infoRow(Icons.badge_outlined, 'Student ID', user.studentId),
-                  _infoRow(
-                      Icons.location_on_outlined, 'Location', user.address),
-                  if (user.bio.isNotEmpty) ...[
-                    const Padding(
-                      padding: EdgeInsets.only(bottom: 4),
-                      child: Text('Bio',
-                          style: TextStyle(
-                              fontSize: 11, color: AppTheme.textMuted)),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: Text(user.bio,
-                          maxLines: 3,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                              fontSize: 13, color: AppTheme.textPrimary)),
-                    ),
-                  ],
-                  if (user.instagramUrl.isNotEmpty ||
-                      user.facebookUrl.isNotEmpty)
-                    const Divider(color: AppTheme.border),
-                  if (user.instagramUrl.isNotEmpty)
-                    _socialLinkRow(
-                        const FaIcon(FontAwesomeIcons.instagram,
-                            size: 16, color: AppTheme.textMuted),
-                        'Instagram',
-                        user.instagramUrl),
-                  if (user.facebookUrl.isNotEmpty)
-                    _socialLinkRow(
-                        const FaIcon(FontAwesomeIcons.facebook,
-                            size: 16, color: AppTheme.textMuted),
-                        'Facebook',
-                        user.facebookUrl),
-                ],
               ],
-            ),
-          ),
 
-          const SizedBox(height: 16),
-
-          // Career Objective section
-          if (user.careerObjective.isNotEmpty &&
-              (!user.careerObjectivePrivate || _canEdit)) ...[
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppTheme.surface,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppTheme.border),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Row(
+              //  Privacy Settings card
+              if (_canEdit) ...[
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surface,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                        color: Theme.of(context)
+                            .colorScheme
+                            .outline
+                            .withOpacity(0.3)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Icon(Icons.trending_up,
-                          color: AppTheme.warning, size: 20),
-                      SizedBox(width: 8),
-                      Text('Career Objective',
+                      Text('Privacy Settings',
                           style: TextStyle(
+                              fontWeight: FontWeight.w700,
                               fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: AppTheme.textPrimary)),
+                              color: Theme.of(context).colorScheme.onSurface)),
+                      const SizedBox(height: 16),
+
+                      // Master toggle for all profile sections
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              'Make Profile Private',
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.onSurface,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                          Switch(
+                            value: _displayUser?.skillsPrivate == true &&
+                                _displayUser?.projectsPrivate == true &&
+                                _displayUser?.certificationsPrivate == true &&
+                                _displayUser?.experiencesPrivate == true &&
+                                _displayUser?.achievementsPrivate == true &&
+                                _displayUser?.careerObjectivePrivate == true,
+                            onChanged: (value) async {
+                              await AppStore().toggleProfilePrivacy('all');
+                              await _initControllers(); // Refresh display
+                            },
+                            activeThumbColor:
+                                Theme.of(context).colorScheme.primary,
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+
+                      // Individual section toggles
+                      _buildPrivacyToggle('Skills',
+                          _displayUser?.skillsPrivate == true, 'skills'),
+                      const SizedBox(height: 8),
+                      _buildPrivacyToggle('Projects',
+                          _displayUser?.projectsPrivate == true, 'projects'),
+                      const SizedBox(height: 8),
+                      _buildPrivacyToggle(
+                          'Certifications',
+                          _displayUser?.certificationsPrivate == true,
+                          'certifications'),
+                      const SizedBox(height: 8),
+                      _buildPrivacyToggle(
+                          'Experience',
+                          _displayUser?.experiencesPrivate == true,
+                          'experiences'),
+                      const SizedBox(height: 8),
+                      _buildPrivacyToggle(
+                          'Achievements',
+                          _displayUser?.achievementsPrivate == true,
+                          'achievements'),
+                      const SizedBox(height: 8),
+                      _buildPrivacyToggle(
+                          'Career Objective',
+                          _displayUser?.careerObjectivePrivate == true,
+                          'careerObjective'),
+
+                      const SizedBox(height: 12),
+                      Text(
+                        'Private sections are only visible to you. Public sections can be seen by everyone.',
+                        style: TextStyle(
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onSurface
+                              .withOpacity(0.6),
+                          fontSize: 12,
+                        ),
+                      ),
                     ],
                   ),
-                  const SizedBox(height: 12),
-                  Text(user.careerObjective,
-                      style: const TextStyle(
-                          fontSize: 13,
-                          color: AppTheme.textSecondary,
-                          height: 1.4)),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
-          ],
+                ),
+                const SizedBox(height: 16),
+              ],
 
-          const SizedBox(height: 16),
-
-          //  Summary card
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: AppTheme.surface,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppTheme.border),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('Summary',
-                    style: TextStyle(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 14,
-                        color: AppTheme.textPrimary)),
-                const SizedBox(height: 14),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+              //  Personal Information card
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surface,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                      color: Theme.of(context)
+                          .colorScheme
+                          .outline
+                          .withOpacity(0.3)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    SummaryItem(
-                        label: 'Skills',
-                        value: '${user.totalSkills}',
-                        color: AppTheme.primary),
-                    SummaryItem(
-                        label: 'Avg',
-                        value: '${user.avgCompetency.round()}%',
-                        color: AppTheme.success),
-                    SummaryItem(
-                        label: 'Projects',
-                        value: '${user.projects.length}',
-                        color: AppTheme.warning),
-                    SummaryItem(
-                        label: 'Certifications',
-                        value: '${user.certifications.length}',
-                        color: const Color(0xFFF97316)),
-                    SummaryItem(
-                        label: 'Experience',
-                        value: '${user.experiences.length}',
-                        color: Colors.purple),
-                    SummaryItem(
-                        label: 'Achievements',
-                        value: '${user.achievements.length}',
-                        color: Colors.amber),
+                    Text('Personal Information',
+                        style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 14,
+                            color: Theme.of(context).colorScheme.onSurface)),
+                    const SizedBox(height: 16),
+                    if (_editing && _canEdit) ...[
+                      if (_name != null)
+                        _editField(_name!, 'Full Name', Icons.person_outline),
+                      const SizedBox(height: 12),
+                      if (_email != null)
+                        _editField(_email!, 'Email', Icons.email_outlined,
+                            keyboard: TextInputType.emailAddress),
+                      const SizedBox(height: 12),
+                      if (_phone != null)
+                        _editField(_phone!, 'Phone', Icons.phone_outlined,
+                            keyboard: TextInputType.phone),
+                      const SizedBox(height: 12),
+                      if (_course != null)
+                        _editField(
+                            _course!, 'Course / Program', Icons.book_outlined),
+                      const SizedBox(height: 12),
+                      Row(children: [
+                        Expanded(
+                            child: _studentId != null
+                                ? _editField(_studentId!, 'Student ID',
+                                    Icons.badge_outlined)
+                                : Container()),
+                        const SizedBox(width: 10),
+                        Expanded(
+                            child: _yearLevelController != null
+                                ? _editField(_yearLevelController!,
+                                    'Year Level', Icons.school_outlined)
+                                : Container()),
+                      ]),
+                      const SizedBox(height: 12),
+                      if (_location != null)
+                        _editField(
+                            _location!, 'Location', Icons.location_on_outlined),
+                      const SizedBox(height: 12),
+                      if (_bio != null)
+                        _editField(_bio!, 'Bio', Icons.comment_outlined,
+                            keyboard: TextInputType.text,
+                            minLines: 1,
+                            maxLines: 1),
+                      const SizedBox(height: 12),
+                      if (_instagramUrl != null)
+                        _editField(
+                            _instagramUrl!, 'Instagram URL', Icons.camera,
+                            keyboard: TextInputType.url),
+                      const SizedBox(height: 12),
+                      if (_facebookUrl != null)
+                        _editField(
+                            _facebookUrl!, 'Facebook URL', Icons.facebook,
+                            keyboard: TextInputType.url),
+                    ] else ...[
+                      _infoRow(Icons.email_outlined, 'Email', user.email),
+                      _infoRow(Icons.phone_outlined, 'Phone', user.phone),
+                      _infoRow(Icons.book_outlined, 'Course', user.course),
+                      _infoRow(
+                          Icons.school_outlined, 'Year Level', user.yearLevel),
+                      _infoRow(
+                          Icons.badge_outlined, 'Student ID', user.studentId),
+                      _infoRow(
+                          Icons.location_on_outlined, 'Location', user.address),
+                      if (user.bio.isNotEmpty) ...[
+                        Padding(
+                          padding: EdgeInsets.only(bottom: 4),
+                          child: Text('Bio',
+                              style: TextStyle(
+                                  fontSize: 11,
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onSurface
+                                      .withOpacity(0.6))),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 12),
+                          child: Text(user.bio,
+                              maxLines: 3,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                  fontSize: 13,
+                                  color:
+                                      Theme.of(context).colorScheme.onSurface)),
+                        ),
+                      ],
+                      if (user.instagramUrl.isNotEmpty ||
+                          user.facebookUrl.isNotEmpty)
+                        Divider(color: Theme.of(context).colorScheme.outline),
+                      if (user.instagramUrl.isNotEmpty)
+                        _socialLinkRow(
+                            Icon(Icons.camera_alt,
+                                size: 16,
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurface
+                                    .withOpacity(0.6)),
+                            'Instagram',
+                            user.instagramUrl),
+                      if (user.facebookUrl.isNotEmpty)
+                        _socialLinkRow(
+                            Icon(Icons.facebook,
+                                size: 16,
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurface
+                                    .withOpacity(0.6)),
+                            'Facebook',
+                            user.facebookUrl),
+                    ],
                   ],
                 ),
+              ),
+
+              const SizedBox(height: 16),
+
+              // Career Objective section
+              if (user.careerObjective.isNotEmpty &&
+                  (!user.careerObjectivePrivate || _canEdit)) ...[
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surface,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                        color: Theme.of(context)
+                            .colorScheme
+                            .outline
+                            .withOpacity(0.3)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.trending_up,
+                              color: Theme.of(context).colorScheme.primary,
+                              size: 20),
+                          SizedBox(width: 8),
+                          Text('Career Objective',
+                              style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                  color:
+                                      Theme.of(context).colorScheme.onSurface)),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Text(user.careerObjective,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Theme.of(context).colorScheme.onSurface,
+                            height: 1.4,
+                          )),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
               ],
-            ),
+
+              const SizedBox(height: 16),
+
+              //  Summary card
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surface,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                      color: Theme.of(context)
+                          .colorScheme
+                          .outline
+                          .withOpacity(0.3)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Summary',
+                        style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 14,
+                            color: Theme.of(context).colorScheme.onSurface)),
+                    const SizedBox(height: 14),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        SummaryItem(
+                            label: 'Skills',
+                            value: '${user.totalSkills}',
+                            color: Theme.of(context).colorScheme.primary),
+                        const SizedBox(width: 12),
+                        SummaryItem(
+                            label: 'Avg',
+                            value: '${user.avgCompetency.round()}%',
+                            color: const Color.fromARGB(255, 16, 200, 62)),
+                        const SizedBox(width: 12),
+                        SummaryItem(
+                            label: 'Projects',
+                            value: '${user.projects.length}',
+                            color: Theme.of(context).colorScheme.primary),
+                        const SizedBox(width: 12),
+                        SummaryItem(
+                            label: 'Certifications',
+                            value: '${user.certifications.length}',
+                            color: const Color(0xFFF97316)),
+                        const SizedBox(width: 12),
+                        SummaryItem(
+                            label: 'Experience',
+                            value: '${user.experiences.length}',
+                            color: Colors.purple),
+                        const SizedBox(width: 12),
+                        SummaryItem(
+                            label: 'Achievements',
+                            value: '${user.achievements.length}',
+                            color: Colors.amber),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+
+              // Experience section
+              if (!user.experiencesPrivate || _canEdit) ...[
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surface,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                        color: Theme.of(context)
+                            .colorScheme
+                            .outline
+                            .withOpacity(0.3)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.work,
+                              color: Theme.of(context).colorScheme.primary,
+                              size: 20),
+                          SizedBox(width: 8),
+                          Text('Work Experience',
+                              style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                  color:
+                                      Theme.of(context).colorScheme.onSurface)),
+                          if (!user.experiencesPrivate && !_canEdit) ...[
+                            SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: Colors.green.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Text('Public',
+                                  style: TextStyle(
+                                      color: Colors.green,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w600)),
+                            ),
+                          ],
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      if (user.experiences.isEmpty)
+                        Text('No work experience added yet.',
+                            style: TextStyle(
+                                fontSize: 13,
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurface
+                                    .withOpacity(0.6)))
+                      else
+                        ...user.experiences
+                            .map((experience) => _experienceTile(experience)),
+                    ],
+                  ),
+                ),
+              ],
+              const SizedBox(height: 16),
+
+              // Education section
+              if (user.educationalAttainments.isNotEmpty || _canEdit) ...[
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surface,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                        color: Theme.of(context)
+                            .colorScheme
+                            .outline
+                            .withOpacity(0.3)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.school,
+                              color: Theme.of(context).colorScheme.primary,
+                              size: 20),
+                          SizedBox(width: 8),
+                          Text('Education',
+                              style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                  color:
+                                      Theme.of(context).colorScheme.onSurface)),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      if (user.educationalAttainments.isEmpty)
+                        Text('No educational attainment added yet.',
+                            style: TextStyle(
+                                fontSize: 13,
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurface
+                                    .withOpacity(0.6)))
+                      else
+                        ...user.educationalAttainments
+                            .map((education) => _educationTile(education)),
+                    ],
+                  ),
+                ),
+              ],
+              const SizedBox(height: 16),
+
+              // Achievements section
+              if (!user.achievementsPrivate || _canEdit) ...[
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surface,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                        color: Theme.of(context)
+                            .colorScheme
+                            .outline
+                            .withOpacity(0.3)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(Icons.emoji_events,
+                              color: Color(0xFFF97316), size: 20),
+                          SizedBox(width: 8),
+                          Text('Achievements',
+                              style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                  color:
+                                      Theme.of(context).colorScheme.onSurface)),
+                          if (!user.achievementsPrivate && !_canEdit) ...[
+                            SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: Colors.green.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Text('Public',
+                                  style: TextStyle(
+                                      color: Colors.green,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w600)),
+                            ),
+                          ],
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      if (user.achievements.isEmpty)
+                        Text('No achievements added yet.',
+                            style: TextStyle(
+                                fontSize: 13, color: AppTheme.textSecondary))
+                      else
+                        ...user.achievements.map(
+                            (achievement) => _achievementTile(achievement)),
+                    ],
+                  ),
+                ),
+              ],
+
+              // Add skills section if not private or viewing own profile
+              if (!user.skillsPrivate || _canEdit) ...[
+                _buildSkillsSection(user),
+                const SizedBox(height: 16),
+              ],
+
+              // Add projects section if not private or viewing own profile
+              if (!user.projectsPrivate || _canEdit) ...[
+                _buildProjectsSection(user),
+                const SizedBox(height: 16),
+              ],
+
+              // Add certifications section if not private or viewing own profile
+              if (!user.certificationsPrivate || _canEdit) ...[
+                _buildCertificationsSection(user),
+                const SizedBox(height: 16),
+              ],
+
+              const SizedBox(height: 24),
+            ],
           ),
-
-          // Experience section
-          if (!user.experiencesPrivate || _canEdit) ...[
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppTheme.surface,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppTheme.border),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      const Icon(Icons.work, color: AppTheme.success, size: 20),
-                      const SizedBox(width: 8),
-                      const Text('Work Experience',
-                          style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: AppTheme.textPrimary)),
-                      if (!user.experiencesPrivate && !_canEdit) ...[
-                        const SizedBox(width: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: Colors.green.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: const Text('Public',
-                              style: TextStyle(
-                                  color: Colors.green,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w600)),
-                        ),
-                      ],
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  if (user.experiences.isEmpty)
-                    const Text('No work experience added yet.',
-                        style: TextStyle(
-                            fontSize: 13, color: AppTheme.textSecondary))
-                  else
-                    ...user.experiences
-                        .map((experience) => _experienceTile(experience)),
-                ],
-              ),
-            ),
-          ],
-          const SizedBox(height: 16),
-
-          // Education section
-          if (user.educationalAttainments.isNotEmpty || _canEdit) ...[
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppTheme.surface,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppTheme.border),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Row(
-                    children: [
-                      Icon(Icons.school, color: AppTheme.primary, size: 20),
-                      SizedBox(width: 8),
-                      Text('Education',
-                          style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: AppTheme.textPrimary)),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  if (user.educationalAttainments.isEmpty)
-                    const Text('No educational attainment added yet.',
-                        style: TextStyle(
-                            fontSize: 13, color: AppTheme.textSecondary))
-                  else
-                    ...user.educationalAttainments
-                        .map((education) => _educationTile(education)),
-                ],
-              ),
-            ),
-          ],
-          const SizedBox(height: 16),
-
-          // Achievements section
-          if (!user.achievementsPrivate || _canEdit) ...[
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppTheme.surface,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppTheme.border),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      const Icon(Icons.emoji_events,
-                          color: Color(0xFFF97316), size: 20),
-                      const SizedBox(width: 8),
-                      const Text('Achievements',
-                          style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: AppTheme.textPrimary)),
-                      if (!user.achievementsPrivate && !_canEdit) ...[
-                        const SizedBox(width: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: Colors.green.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: const Text('Public',
-                              style: TextStyle(
-                                  color: Colors.green,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w600)),
-                        ),
-                      ],
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  if (user.achievements.isEmpty)
-                    const Text('No achievements added yet.',
-                        style: TextStyle(
-                            fontSize: 13, color: AppTheme.textSecondary))
-                  else
-                    ...user.achievements
-                        .map((achievement) => _achievementTile(achievement)),
-                ],
-              ),
-            ),
-          ],
-
-          // Add skills section if not private or viewing own profile
-          if (!user.skillsPrivate || _canEdit) ...[
-            _buildSkillsSection(user),
-            const SizedBox(height: 16),
-          ],
-
-          // Add projects section if not private or viewing own profile
-          if (!user.projectsPrivate || _canEdit) ...[
-            _buildProjectsSection(user),
-            const SizedBox(height: 16),
-          ],
-
-          // Add certifications section if not private or viewing own profile
-          if (!user.certificationsPrivate || _canEdit) ...[
-            _buildCertificationsSection(user),
-            const SizedBox(height: 16),
-          ],
-
-          const SizedBox(height: 24),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -1484,18 +1676,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppTheme.surface,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppTheme.border),
+        border: Border.all(
+            color: Theme.of(context).colorScheme.outline.withOpacity(0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Icon(Icons.psychology, color: AppTheme.primary, size: 20),
+              Icon(Icons.psychology, color: AppTheme.primary, size: 20),
               const SizedBox(width: 8),
-              const Text('Skills',
+              Text('Skills',
                   style: TextStyle(
                       fontWeight: FontWeight.w700,
                       fontSize: 14,
@@ -1520,12 +1713,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           const SizedBox(height: 12),
           if (user.skillCategories.isEmpty)
-            const Text('No skills added yet',
+            Text('No skills added yet',
                 style: TextStyle(color: AppTheme.textMuted, fontSize: 14))
           else ...[
             for (final category in user.skillCategories) ...[
               Text(category.name,
-                  style: const TextStyle(
+                  style: TextStyle(
                       fontWeight: FontWeight.w600,
                       fontSize: 13,
                       color: AppTheme.textPrimary)),
@@ -1538,23 +1731,35 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
-                            color: AppTheme.primary.withOpacity(0.1),
+                            color: Theme.of(context)
+                                .colorScheme
+                                .primary
+                                .withOpacity(0.1),
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
-                                color: AppTheme.primary.withOpacity(0.3)),
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .primary
+                                    .withOpacity(0.3)),
                           ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(skill.name,
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                       fontSize: 11,
                                       fontWeight: FontWeight.w600,
-                                      color: AppTheme.primary)),
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .primary)),
                               Text(
-                                  '${skill.level} � ${skill.proficiencyPercent}%',
-                                  style: const TextStyle(
-                                      fontSize: 9, color: AppTheme.textMuted)),
+                                  '${skill.level} • ${skill.proficiencyPercent}%',
+                                  style: TextStyle(
+                                      fontSize: 9,
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurface
+                                          .withOpacity(0.6))),
                             ],
                           ),
                         ))
@@ -1572,22 +1777,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppTheme.surface,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppTheme.border),
+        border: Border.all(
+            color: Theme.of(context).colorScheme.outline.withOpacity(0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Icon(Icons.work, color: AppTheme.warning, size: 20),
+              Icon(Icons.work,
+                  color: Theme.of(context).colorScheme.primary, size: 20),
               const SizedBox(width: 8),
-              const Text('Projects',
+              Text('Projects',
                   style: TextStyle(
                       fontWeight: FontWeight.w700,
                       fontSize: 14,
-                      color: AppTheme.textPrimary)),
+                      color: Theme.of(context).colorScheme.onSurface)),
               if (!user.projectsPrivate && !_canEdit) ...[
                 const SizedBox(width: 8),
                 Container(
@@ -1608,8 +1815,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           const SizedBox(height: 12),
           if (user.projects.isEmpty)
-            const Text('No projects added yet',
-                style: TextStyle(color: AppTheme.textMuted, fontSize: 14))
+            Text('No projects added yet',
+                style: TextStyle(
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withOpacity(0.6),
+                    fontSize: 14))
           else ...[
             for (final project in user.projects) ...[
               Container(
@@ -1617,29 +1829,41 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 padding: const EdgeInsets.all(12),
                 margin: const EdgeInsets.only(bottom: 8),
                 decoration: BoxDecoration(
-                  color: AppTheme.background,
+                  color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: AppTheme.border),
+                  border: Border.all(
+                      color: Theme.of(context)
+                          .colorScheme
+                          .outline
+                          .withOpacity(0.3)),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(project.title,
-                        style: const TextStyle(
+                        style: TextStyle(
                             fontWeight: FontWeight.w600,
                             fontSize: 13,
-                            color: AppTheme.textPrimary)),
+                            color: Theme.of(context).colorScheme.onSurface)),
                     if (project.description.isNotEmpty) ...[
                       const SizedBox(height: 4),
                       Text(project.description,
-                          style: const TextStyle(
-                              fontSize: 12, color: AppTheme.textSecondary)),
+                          style: TextStyle(
+                              fontSize: 12,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurface
+                                  .withOpacity(0.6))),
                     ],
                     if (project.date.isNotEmpty) ...[
                       const SizedBox(height: 4),
                       Text(project.date,
-                          style: const TextStyle(
-                              fontSize: 11, color: AppTheme.textMuted)),
+                          style: TextStyle(
+                              fontSize: 11,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurface
+                                  .withOpacity(0.6))),
                     ],
                   ],
                 ),
@@ -1655,22 +1879,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppTheme.surface,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppTheme.border),
+        border: Border.all(
+            color: Theme.of(context).colorScheme.outline.withOpacity(0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Icon(Icons.verified, color: Color(0xFFF97316), size: 20),
+              Icon(Icons.verified,
+                  color: Theme.of(context).colorScheme.primary, size: 20),
               const SizedBox(width: 8),
-              const Text('Certifications',
+              Text('Certifications',
                   style: TextStyle(
                       fontWeight: FontWeight.w700,
                       fontSize: 14,
-                      color: AppTheme.textPrimary)),
+                      color: Theme.of(context).colorScheme.onSurface)),
               if (!user.certificationsPrivate && !_canEdit) ...[
                 const SizedBox(width: 8),
                 Container(
@@ -1691,8 +1917,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           const SizedBox(height: 12),
           if (user.certifications.isEmpty)
-            const Text('No certifications added yet',
-                style: TextStyle(color: AppTheme.textMuted, fontSize: 14))
+            Text('No certifications added yet',
+                style: TextStyle(
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withOpacity(0.6),
+                    fontSize: 14))
           else ...[
             for (final certification in user.certifications) ...[
               Container(
@@ -1700,28 +1931,36 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 padding: const EdgeInsets.all(12),
                 margin: const EdgeInsets.only(bottom: 8),
                 decoration: BoxDecoration(
-                  color: AppTheme.background,
+                  color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: AppTheme.border),
+                  border: Border.all(
+                      color: Theme.of(context)
+                          .colorScheme
+                          .outline
+                          .withOpacity(0.3)),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(certification.title,
-                        style: const TextStyle(
+                        style: TextStyle(
                             fontWeight: FontWeight.w600,
                             fontSize: 13,
-                            color: AppTheme.textPrimary)),
+                            color: Theme.of(context).colorScheme.onSurface)),
                     if (certification.issuer.isNotEmpty) ...[
                       const SizedBox(height: 4),
                       Text(certification.issuer,
-                          style: const TextStyle(
-                              fontSize: 12, color: AppTheme.textSecondary)),
+                          style: TextStyle(
+                              fontSize: 12,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurface
+                                  .withOpacity(0.6))),
                     ],
                     if (certification.date.isNotEmpty) ...[
                       const SizedBox(height: 4),
                       Text(certification.date,
-                          style: const TextStyle(
+                          style: TextStyle(
                               fontSize: 11, color: AppTheme.textMuted)),
                     ],
                   ],
@@ -1740,8 +1979,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
         Expanded(
           child: Text(
             title,
-            style: const TextStyle(
-              color: AppTheme.textPrimary,
+            style: TextStyle(
+              color: AppTheme.getTextPrimary(context),
               fontSize: 14,
             ),
           ),

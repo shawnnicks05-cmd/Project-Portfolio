@@ -1,11 +1,36 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../data/app_store.dart';
 import '../models/models.dart';
 import '../theme.dart';
+import '../theme_provider.dart';
 import 'credential_summary.dart';
 import 'profile_screen.dart';
 import 'search_screen.dart';
+
+// ─── Theme helper functions ───────────────────────────────────────────────
+
+
+
+
+
+
+Color _getTextColor(BuildContext context) {
+  final theme = Theme.of(context);
+  return theme.brightness == Brightness.dark ? Colors.white : Colors.black87;
+}
+
+
+
+Color _getTextMuted(BuildContext context) {
+  final theme = Theme.of(context);
+  return theme.brightness == Brightness.dark
+      ? Colors.white54
+      : Colors.grey.shade600;
+}
+
+
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -81,10 +106,10 @@ class _HomeScreenState extends State<HomeScreen>
     final pages = _pages;
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: AppTheme.primary,
+        backgroundColor: Theme.of(context).colorScheme.primary,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.menu, color: Colors.white, size: 26),
+          icon: Icon(Icons.menu, color: Theme.of(context).colorScheme.onPrimary, size: 26),
           onPressed: _toggleSidebar,
           tooltip: 'Menu',
         ),
@@ -121,7 +146,22 @@ class _HomeScreenState extends State<HomeScreen>
             ),
           ],
         ),
-        actions: const [],
+        actions: [
+          Consumer<ThemeProvider>(
+            builder: (context, themeProvider, child) {
+              return IconButton(
+                icon: Icon(
+                  themeProvider.isDarkMode ? Icons.light_mode : Icons.dark_mode,
+                  color: Theme.of(context).colorScheme.onPrimary,
+                ),
+                onPressed: () => themeProvider.toggleTheme(),
+                tooltip: themeProvider.isDarkMode
+                    ? 'Switch to light mode'
+                    : 'Switch to dark mode',
+              );
+            },
+          ),
+        ],
       ),
       body: Stack(
         children: [
@@ -189,7 +229,7 @@ Widget _buildAvatarCircle({
   return Container(
     width: size,
     height: size,
-    decoration: const BoxDecoration(
+    decoration: BoxDecoration(
       shape: BoxShape.circle,
       color: AppTheme.primary,
     ),
@@ -229,7 +269,7 @@ class _SideDrawer extends StatelessWidget {
       width: 240,
       height: double.infinity,
       decoration: BoxDecoration(
-        color: AppTheme.surface,
+        color: Theme.of(context).colorScheme.surface,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.18),
@@ -244,7 +284,7 @@ class _SideDrawer extends StatelessWidget {
           children: [
             // ── User info header ──
             Container(
-              color: AppTheme.primary,
+              color: Theme.of(context).colorScheme.primary,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
               width: double.infinity,
               child: Row(
@@ -391,7 +431,7 @@ class _NavItem extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
           color: isSelected
-              ? AppTheme.primary.withOpacity(0.12)
+              ? Theme.of(context).colorScheme.primary.withOpacity(0.12)
               : Colors.transparent,
           borderRadius: BorderRadius.circular(10),
         ),
@@ -399,14 +439,14 @@ class _NavItem extends StatelessWidget {
           children: [
             Icon(
               isSelected ? activeIcon : icon,
-              color: isSelected ? AppTheme.primary : AppTheme.textMuted,
+              color: isSelected ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
               size: 22,
             ),
             const SizedBox(width: 14),
             Text(
               label,
               style: TextStyle(
-                color: isSelected ? AppTheme.primary : AppTheme.textPrimary,
+                color: isSelected ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onSurface,
                 fontWeight: isSelected ? FontWeight.w700 : FontWeight.normal,
                 fontSize: 14,
               ),
@@ -416,9 +456,9 @@ class _NavItem extends StatelessWidget {
               Container(
                 width: 4,
                 height: 4,
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: AppTheme.primary,
+                  color: Theme.of(context).colorScheme.primary,
                 ),
               ),
             ]
@@ -471,7 +511,7 @@ class _DashboardTabState extends State<_DashboardTab> {
     }
 
     return Container(
-      color: AppTheme.surfaceVariant,
+      color: Theme.of(context).colorScheme.surfaceVariant,
       child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -584,9 +624,9 @@ class _ProfileCardState extends State<_ProfileCard> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppTheme.surface,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppTheme.border),
+        border: Border.all(color: Theme.of(context).colorScheme.outline.withOpacity(0.3)),
       ),
       child: Row(
         children: [
@@ -602,27 +642,27 @@ class _ProfileCardState extends State<_ProfileCard> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(widget.user.name,
-                    style: const TextStyle(
+                    style: TextStyle(
                         fontWeight: FontWeight.w700,
                         fontSize: 16,
-                        color: AppTheme.textPrimary)),
+                        color: _getTextColor(context))),
                 const SizedBox(height: 2),
-                const Text('Cebu Technological University',
+                Text('Cebu Technological University',
                     style:
-                        TextStyle(fontSize: 11, color: AppTheme.textSecondary)),
+                        TextStyle(fontSize: 11, color: _getTextMuted(context))),
                 const SizedBox(height: 4),
                 Text('${widget.user.course} • ${widget.user.yearLevel}',
-                    style: const TextStyle(
-                        fontSize: 12, color: AppTheme.textSecondary)),
+                    style:
+                        TextStyle(fontSize: 12, color: _getTextMuted(context))),
                 const SizedBox(height: 4),
                 Row(children: [
-                  const Icon(Icons.email_outlined,
-                      size: 12, color: AppTheme.textMuted),
+                  Icon(Icons.email_outlined,
+                      size: 12, color: _getTextMuted(context)),
                   const SizedBox(width: 4),
                   Flexible(
                     child: Text(widget.user.email,
-                        style: const TextStyle(
-                            fontSize: 11, color: AppTheme.textMuted),
+                        style:
+                            TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
                         overflow: TextOverflow.ellipsis),
                   ),
                 ]),
@@ -640,7 +680,7 @@ class _ProfileCardState extends State<_ProfileCard> {
                     : Colors.transparent,
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
-                  color: _isLiked ? Colors.pink : AppTheme.border,
+                  color: _isLiked ? Colors.pink : Theme.of(context).colorScheme.outline.withOpacity(0.3),
                   width: 1,
                 ),
               ),
@@ -651,13 +691,13 @@ class _ProfileCardState extends State<_ProfileCard> {
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
                         valueColor: AlwaysStoppedAnimation<Color>(
-                          _isLiked ? Colors.pink : AppTheme.textMuted,
+                          _isLiked ? Colors.pink : Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                         ),
                       ),
                     )
                   : Icon(
                       _isLiked ? Icons.favorite : Icons.favorite_border,
-                      color: _isLiked ? Colors.pink : AppTheme.textMuted,
+                      color: _isLiked ? Colors.pink : Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                       size: 20,
                     ),
             ),
@@ -702,51 +742,68 @@ class _StatsRowState extends State<_StatsRow> {
     final displayUser =
         currentUser?.id == widget.user.id ? currentUser : widget.user;
 
-    return Row(
-      children: [
-        _StatCard(
-          value: displayUser?.skillsPrivate == true
-              ? 'Private'
-              : '${displayUser?.totalSkills ?? 0}',
-          label: 'Total Skills',
-          icon: Icons.workspace_premium_outlined,
-          color: AppTheme.primary,
-        ),
-        const SizedBox(width: 10),
-        _StatCard(
-          value: displayUser?.skillsPrivate == true
-              ? 'Private'
-              : '${displayUser?.avgCompetency.round() ?? 0}%',
-          label: 'Avg Competency',
-          icon: Icons.trending_up,
-          color: AppTheme.success,
-        ),
-        const SizedBox(width: 10),
-        _StatCard(
-          value: displayUser?.projectsPrivate == true
-              ? 'Private'
-              : '${displayUser?.projects.length ?? 0}',
-          label: 'Projects',
-          icon: Icons.folder_outlined,
-          color: AppTheme.warning,
-        ),
-        const SizedBox(width: 10),
-        _StatCard(
-          value: displayUser?.certificationsPrivate == true
-              ? 'Private'
-              : '${displayUser?.certifications.length ?? 0}',
-          label: 'Certs',
-          icon: Icons.military_tech_outlined,
-          color: const Color(0xFFF97316),
-        ),
-        const SizedBox(width: 10),
-        _StatCard(
-          value: '${displayUser?.profileLikes ?? 0}',
-          label: 'Likes',
-          icon: Icons.favorite_outline,
-          color: Colors.pink,
-        ),
-      ],
+    return IntrinsicHeight(
+      child: Row(
+        children: [
+          Expanded(
+            key: const ValueKey('skills'),
+            child: _StatCard(
+              value: displayUser?.skillsPrivate == true
+                  ? 'Private'
+                  : '${displayUser?.totalSkills ?? 0}',
+              label: 'Total Skills',
+              icon: Icons.workspace_premium_outlined,
+              color: AppTheme.primary,
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            key: const ValueKey('avg'),
+            child: _StatCard(
+              value: displayUser?.skillsPrivate == true
+                  ? 'Private'
+                  : '${displayUser?.avgCompetency.round() ?? 0}%',
+              label: 'Avg Competency',
+              icon: Icons.trending_up,
+              color: const Color.fromARGB(255, 53, 200, 16),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            key: const ValueKey('projects'),
+            child: _StatCard(
+              value: displayUser?.projectsPrivate == true
+                  ? 'Private'
+                  : '${displayUser?.projects.length ?? 0}',
+              label: 'Projects',
+              icon: Icons.folder_outlined,
+              color: AppTheme.warning,
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            key: const ValueKey('certifications'),
+            child: _StatCard(
+              value: displayUser?.certificationsPrivate == true
+                  ? 'Private'
+                  : '${displayUser?.certifications.length ?? 0}',
+              label: 'Certs',
+              icon: Icons.military_tech_outlined,
+              color: const Color(0xFFF97316),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            key: const ValueKey('likes'),
+            child: _StatCard(
+              value: '${displayUser?.profileLikes ?? 0}',
+              label: 'Likes',
+              icon: Icons.favorite,
+              color: Colors.pink,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -765,11 +822,11 @@ class _StatCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Expanded(
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
         decoration: BoxDecoration(
-          color: AppTheme.surface,
+          color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppTheme.border),
+          border: Border.all(color: Theme.of(context).colorScheme.outline.withOpacity(0.3)),
         ),
         child: Column(
           children: [
@@ -781,8 +838,7 @@ class _StatCard extends StatelessWidget {
             const SizedBox(height: 2),
             Text(label,
                 textAlign: TextAlign.center,
-                style:
-                    const TextStyle(fontSize: 10, color: AppTheme.textMuted)),
+                style: TextStyle(fontSize: 10, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6))),
           ],
         ),
       ),
@@ -797,10 +853,10 @@ class _SectionHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Text(title,
-        style: const TextStyle(
+        style: TextStyle(
             fontSize: 15,
             fontWeight: FontWeight.w700,
-            color: AppTheme.textPrimary));
+            color: _getTextColor(context)));
   }
 }
 
@@ -814,9 +870,9 @@ class _CompetencyCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppTheme.surface,
+        color: Theme.of(context).colorScheme.surfaceVariant,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppTheme.border),
+        border: Border.all(color: Theme.of(context).colorScheme.outline.withOpacity(0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -825,12 +881,12 @@ class _CompetencyCard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(category.name,
-                  style: const TextStyle(
+                  style: TextStyle(
                       fontWeight: FontWeight.w600,
                       fontSize: 15,
-                      color: AppTheme.textPrimary)),
-              const Icon(Icons.add_circle_outline,
-                  size: 18, color: AppTheme.textMuted),
+                      color: Theme.of(context).colorScheme.onSurface)),
+              Icon(Icons.add_circle_outline,
+                  size: 18, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
             ],
           ),
           const SizedBox(height: 10),
@@ -855,18 +911,18 @@ class _SkillRow extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(skill.name,
-                  style: const TextStyle(
-                      fontSize: 15, color: AppTheme.textPrimary)),
+                  style:
+                      TextStyle(fontSize: 15, color: Theme.of(context).colorScheme.onSurface)),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
-                  color: AppTheme.levelColor(skill.level).withOpacity(0.1),
+                  color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(skill.level,
                     style: TextStyle(
                         fontSize: 11,
-                        color: AppTheme.levelColor(skill.level),
+                        color: Theme.of(context).colorScheme.onSurface,
                         fontWeight: FontWeight.w600)),
               ),
             ],
@@ -876,9 +932,9 @@ class _SkillRow extends StatelessWidget {
             borderRadius: BorderRadius.circular(4),
             child: LinearProgressIndicator(
               value: skill.proficiencyPercent / 100,
-              backgroundColor: AppTheme.border,
+              backgroundColor: Theme.of(context).colorScheme.outline.withOpacity(0.3),
               valueColor: AlwaysStoppedAnimation<Color>(
-                  AppTheme.barColor(skill.proficiencyPercent)),
+                  Theme.of(context).colorScheme.primary),
               minHeight: 6,
             ),
           ),
@@ -898,9 +954,9 @@ class _ProjectCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppTheme.surface,
+        color: Theme.of(context).colorScheme.surfaceVariant,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppTheme.border),
+        border: Border.all(color: Theme.of(context).colorScheme.outline.withOpacity(0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -910,37 +966,36 @@ class _ProjectCard extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(project.title,
-                    style: const TextStyle(
+                    style: TextStyle(
                         fontWeight: FontWeight.w600,
                         fontSize: 14,
-                        color: AppTheme.textPrimary)),
+                        color: Theme.of(context).colorScheme.onSurface)),
               ),
-              const Icon(Icons.open_in_new,
-                  size: 16, color: AppTheme.textMuted),
+              Icon(Icons.open_in_new, size: 16, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
             ],
           ),
           const SizedBox(height: 6),
           Text(project.description,
-              style: const TextStyle(
-                  fontSize: 12, color: AppTheme.textSecondary, height: 1.4),
+              style: TextStyle(
+                  fontSize: 12, color: Theme.of(context).colorScheme.onSurface, height: 1.4),
               maxLines: 2,
               overflow: TextOverflow.ellipsis),
           const SizedBox(height: 10),
           Row(
             children: [
-              const Icon(Icons.calendar_today_outlined,
-                  size: 12, color: AppTheme.textMuted),
+              Icon(Icons.calendar_today_outlined,
+                  size: 12, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
               const SizedBox(width: 4),
               Text(project.date,
                   style:
-                      const TextStyle(fontSize: 11, color: AppTheme.textMuted)),
+                      TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6))),
               const SizedBox(width: 12),
-              const Icon(Icons.people_outline,
-                  size: 12, color: AppTheme.textMuted),
+              Icon(Icons.people_outline,
+                  size: 12, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
               const SizedBox(width: 4),
               Text('${project.memberCount} members',
                   style:
-                      const TextStyle(fontSize: 11, color: AppTheme.textMuted)),
+                      TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6))),
             ],
           ),
           const SizedBox(height: 8),
@@ -952,13 +1007,13 @@ class _ProjectCard extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 8, vertical: 3),
                       decoration: BoxDecoration(
-                        color: AppTheme.surfaceVariant,
+                        color: Theme.of(context).colorScheme.surfaceVariant,
                         borderRadius: BorderRadius.circular(6),
-                        border: Border.all(color: AppTheme.border),
+                        border: Border.all(color: Theme.of(context).colorScheme.outline.withOpacity(0.3)),
                       ),
                       child: Text(t,
-                          style: const TextStyle(
-                              fontSize: 11, color: AppTheme.textSecondary)),
+                          style: TextStyle(
+                              fontSize: 11, color: Theme.of(context).colorScheme.onSurface)),
                     ))
                 .toList(),
           ),
@@ -969,12 +1024,12 @@ class _ProjectCard extends StatelessWidget {
               onPressed: () {},
               style: OutlinedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 8),
-                side: const BorderSide(color: AppTheme.border),
+                side: BorderSide(color: Theme.of(context).colorScheme.outline.withOpacity(0.3)),
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8)),
               ),
-              child: const Text('Edit Project',
-                  style: TextStyle(fontSize: 13, color: AppTheme.textPrimary)),
+              child: Text('Edit Project',
+                  style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onSurface)),
             ),
           ),
         ],
@@ -1013,9 +1068,9 @@ class _CertTile extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppTheme.surface,
+        color: Theme.of(context).colorScheme.surfaceVariant,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppTheme.border),
+        border: Border.all(color: Theme.of(context).colorScheme.outline.withOpacity(0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1033,13 +1088,12 @@ class _CertTile extends StatelessWidget {
                     size: 16, color: Color(0xFFF97316)),
               ),
               const Spacer(),
-              const Icon(Icons.open_in_new,
-                  size: 14, color: AppTheme.textMuted),
+              Icon(Icons.open_in_new, size: 14, color: _getTextMuted(context)),
             ],
           ),
           const SizedBox(height: 6),
           Text(cert.title,
-              style: const TextStyle(
+              style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
                   color: AppTheme.textPrimary),
@@ -1047,7 +1101,7 @@ class _CertTile extends StatelessWidget {
               overflow: TextOverflow.ellipsis),
           const Spacer(),
           Text(cert.date,
-              style: const TextStyle(fontSize: 10, color: AppTheme.textMuted),
+              style: TextStyle(fontSize: 10, color: AppTheme.textMuted),
               maxLines: 1,
               overflow: TextOverflow.ellipsis),
         ],
@@ -1089,9 +1143,9 @@ class _EducationTile extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: AppTheme.surface,
+          color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppTheme.border),
+          border: Border.all(color: Theme.of(context).colorScheme.outline.withOpacity(0.3)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1106,17 +1160,16 @@ class _EducationTile extends StatelessWidget {
                     color: AppTheme.primary.withOpacity(0.12),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Icon(Icons.school,
-                      size: 16, color: AppTheme.primary),
+                  child: Icon(Icons.school, size: 16, color: AppTheme.primary),
                 ),
                 const Spacer(),
-                const Icon(Icons.open_in_new,
-                    size: 14, color: AppTheme.textMuted),
+                Icon(Icons.open_in_new,
+                    size: 14, color: _getTextMuted(context)),
               ],
             ),
             const SizedBox(height: 3),
             Text(education.schoolName,
-                style: const TextStyle(
+                style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                     color: AppTheme.textPrimary),
@@ -1125,15 +1178,13 @@ class _EducationTile extends StatelessWidget {
             if (education.degree.isNotEmpty) ...[
               const SizedBox(height: 1),
               Text(education.degree,
-                  style: const TextStyle(
-                      fontSize: 10, color: AppTheme.textSecondary),
+                  style: TextStyle(fontSize: 10, color: AppTheme.textSecondary),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis),
             ],
             if (education.year.isNotEmpty) ...[
               Text(education.year,
-                  style: const TextStyle(
-                      fontSize: 10, color: AppTheme.textSecondary),
+                  style: TextStyle(fontSize: 10, color: AppTheme.textSecondary),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis),
             ],
@@ -1148,7 +1199,7 @@ class _EducationTile extends StatelessWidget {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: AppTheme.surface,
-        title: const Row(
+        title: Row(
           children: [
             Icon(Icons.school, color: AppTheme.primary, size: 20),
             SizedBox(width: 8),
@@ -1190,11 +1241,10 @@ class _EducationTile extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label,
-            style: const TextStyle(fontSize: 12, color: AppTheme.textMuted)),
+        Text(label, style: TextStyle(fontSize: 12, color: AppTheme.textMuted)),
         const SizedBox(height: 4),
         Text(value,
-            style: const TextStyle(fontSize: 14, color: AppTheme.textPrimary)),
+            style: TextStyle(fontSize: 14, color: AppTheme.textPrimary)),
       ],
     );
   }
@@ -1233,9 +1283,9 @@ class _ExperienceTile extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: AppTheme.surface,
+          color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppTheme.border),
+          border: Border.all(color: Theme.of(context).colorScheme.outline.withOpacity(0.3)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1249,17 +1299,15 @@ class _ExperienceTile extends StatelessWidget {
                     color: AppTheme.success.withOpacity(0.12),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child:
-                      const Icon(Icons.work, size: 16, color: AppTheme.success),
+                  child: Icon(Icons.work, size: 16, color: AppTheme.success),
                 ),
                 const Spacer(),
-                const Icon(Icons.open_in_new,
-                    size: 14, color: AppTheme.textMuted),
+                Icon(Icons.open_in_new, size: 14, color: AppTheme.textMuted),
               ],
             ),
             const SizedBox(height: 6),
             Text(experience.position,
-                style: const TextStyle(
+                style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                     color: AppTheme.textPrimary),
@@ -1267,13 +1315,11 @@ class _ExperienceTile extends StatelessWidget {
                 overflow: TextOverflow.ellipsis),
             const Spacer(),
             Text(experience.company,
-                style: const TextStyle(
-                    fontSize: 10, color: AppTheme.textSecondary),
+                style: TextStyle(fontSize: 10, color: AppTheme.textSecondary),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis),
             Text('${experience.startDate} - ${experience.endDate}',
-                style: const TextStyle(
-                    fontSize: 10, color: AppTheme.textSecondary),
+                style: TextStyle(fontSize: 10, color: AppTheme.textSecondary),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis),
           ],
@@ -1287,7 +1333,7 @@ class _ExperienceTile extends StatelessWidget {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: AppTheme.surface,
-        title: const Row(
+        title: Row(
           children: [
             Icon(Icons.work, color: AppTheme.success, size: 20),
             SizedBox(width: 8),
@@ -1327,10 +1373,10 @@ class _ExperienceTile extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(label,
-            style: const TextStyle(fontSize: 12, color: AppTheme.textMuted)),
+            style:  TextStyle(fontSize: 12, color: AppTheme.textMuted)),
         const SizedBox(height: 4),
         Text(value,
-            style: const TextStyle(fontSize: 14, color: AppTheme.textPrimary)),
+            style:  TextStyle(fontSize: 14, color: AppTheme.textPrimary)),
       ],
     );
   }
@@ -1369,9 +1415,9 @@ class _AchievementTile extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: AppTheme.surface,
+          color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppTheme.border),
+          border: Border.all(color: Theme.of(context).colorScheme.outline.withOpacity(0.3)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1389,13 +1435,13 @@ class _AchievementTile extends StatelessWidget {
                       size: 16, color: Color(0xFFF97316)),
                 ),
                 const Spacer(),
-                const Icon(Icons.open_in_new,
+                 Icon(Icons.open_in_new,
                     size: 14, color: AppTheme.textMuted),
               ],
             ),
             const SizedBox(height: 6),
             Text(achievement.title,
-                style: const TextStyle(
+                style:  TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                     color: AppTheme.textPrimary),
@@ -1403,12 +1449,12 @@ class _AchievementTile extends StatelessWidget {
                 overflow: TextOverflow.ellipsis),
             const Spacer(),
             Text(achievement.category,
-                style: const TextStyle(
+                style:  TextStyle(
                     fontSize: 10, color: AppTheme.textSecondary),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis),
             Text(achievement.date,
-                style: const TextStyle(
+                style:  TextStyle(
                     fontSize: 10, color: AppTheme.textSecondary),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis),
@@ -1423,7 +1469,7 @@ class _AchievementTile extends StatelessWidget {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: AppTheme.surface,
-        title: const Row(
+        title:  Row(
           children: [
             Icon(Icons.emoji_events, color: Color(0xFFF97316), size: 20),
             SizedBox(width: 8),
@@ -1462,10 +1508,10 @@ class _AchievementTile extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(label,
-            style: const TextStyle(fontSize: 12, color: AppTheme.textMuted)),
+            style:  TextStyle(fontSize: 12, color: AppTheme.textMuted)),
         const SizedBox(height: 4),
         Text(value,
-            style: const TextStyle(fontSize: 14, color: AppTheme.textPrimary)),
+            style:  TextStyle(fontSize: 14, color: AppTheme.textPrimary)),
       ],
     );
   }

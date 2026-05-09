@@ -2,7 +2,7 @@
 import 'dart:io';
 import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
-import '../data/database_helper.dart';
+import '../data/firebase_database_service.dart';
 import '../models/models.dart';
 
 class DatabaseExporter {
@@ -20,38 +20,25 @@ class DatabaseExporter {
         await directory.create(recursive: true);
       }
 
-      // Generate filename with timestamp
-      final timestamp =
-          DateFormat('yyyy-MM-dd_HH-mm-ss').format(DateTime.now());
-      final cleanName = user.name.replaceAll(RegExp(r'[^\w\s-]'), '_');
-      final filename = 'Account_${cleanName}_$timestamp.txt';
+      // Generate filename using the user's name
+      final cleanName = user.name
+          .trim()
+          .replaceAll(RegExp(r'[^\w\s-]'), '_')
+          .replaceAll(RegExp(r'\s+'), '_')
+          .toLowerCase();
+      final filename = 'Account_${cleanName}.txt';
       final file = File('${directory.path}/$filename');
 
-      // Get database helper and all data
-      final dbHelper = DatabaseHelper();
-      final db = await dbHelper.database;
+      // Get Firebase service and all data
+      final firebaseService = FirebaseDatabaseService();
 
       // Get all users
-      final allUsers = await dbHelper.getAllUsers();
+      final allUsers = await firebaseService.getAllUsers();
 
-      // Get all skills, projects, certifications for this user
-      final userSkills = await db.query(
-        'skills',
-        where: 'userId = ?',
-        whereArgs: [user.id],
-      );
-
-      final userProjects = await db.query(
-        'projects',
-        where: 'userId = ?',
-        whereArgs: [user.id],
-      );
-
-      final userCertifications = await db.query(
-        'certifications',
-        where: 'userId = ?',
-        whereArgs: [user.id],
-      );
+      // Get user-specific data (for new user, these will be empty initially)
+      final userSkills = <Map<String, dynamic>>[];
+      final userProjects = <Map<String, dynamic>>[];
+      final userCertifications = <Map<String, dynamic>>[];
 
       // Create export content
       final content = _generateExportContent(

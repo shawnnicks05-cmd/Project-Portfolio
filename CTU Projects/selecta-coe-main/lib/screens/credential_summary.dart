@@ -5,32 +5,60 @@ import '../data/app_store.dart';
 import '../models/models.dart';
 import '../theme.dart';
 
-// ─── Shared dark dialog helpers ───────────────────────────────────────────────
+// ─── Shared theme-aware dialog helpers ───────────────────────────────────────────────
 
-const _kDialogBg = Color(0xFF1E2530);
-const _kHintColor = Colors.white38;
-const _kLabelColor = Colors.white54;
-const _kTextColor = Colors.white;
-const _kSubTextColor = Colors.white70;
-const _kTextMuted = Colors.white54;
-const _kBorder = Colors.white24;
+Color _getDialogBg(BuildContext context) {
+  final theme = Theme.of(context);
+  return theme.brightness == Brightness.dark
+      ? const Color(0xFF1E2530)
+      : const Color(0xFFF8FAFC);
+}
 
-InputDecoration _darkInput(String hint) => InputDecoration(
+Color _getTextColor(BuildContext context) {
+  final theme = Theme.of(context);
+  return theme.brightness == Brightness.dark ? Colors.white : Colors.black87;
+}
+
+Color _getSubTextColor(BuildContext context) {
+  final theme = Theme.of(context);
+  return theme.brightness == Brightness.dark
+      ? Colors.white70
+      : Colors.grey.shade800;
+}
+
+Color _getTextMuted(BuildContext context) {
+  final theme = Theme.of(context);
+  return theme.brightness == Brightness.dark
+      ? Colors.white54
+      : Colors.grey.shade600;
+}
+
+Color _getBorder(BuildContext context) {
+  final theme = Theme.of(context);
+  return theme.brightness == Brightness.dark
+      ? Colors.white24
+      : Colors.grey.shade300;
+}
+
+InputDecoration _darkInput(String hint, BuildContext context) =>
+    InputDecoration(
       hintText: hint,
-      hintStyle: const TextStyle(color: _kHintColor),
-      enabledBorder: const UnderlineInputBorder(
-          borderSide: BorderSide(color: Colors.white24)),
-      focusedBorder: const UnderlineInputBorder(
-          borderSide: BorderSide(color: AppTheme.primary)),
+      hintStyle: TextStyle(
+          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
+      enabledBorder: UnderlineInputBorder(
+          borderSide: BorderSide(color: Theme.of(context).colorScheme.outline)),
+      focusedBorder: UnderlineInputBorder(
+          borderSide: BorderSide(color: Theme.of(context).colorScheme.primary)),
     );
 
-InputDecoration _darkLabelInput(String label) => InputDecoration(
+InputDecoration _darkLabelInput(String label, BuildContext context) =>
+    InputDecoration(
       labelText: label,
-      labelStyle: const TextStyle(color: _kLabelColor),
-      enabledBorder: const UnderlineInputBorder(
-          borderSide: BorderSide(color: Colors.white24)),
-      focusedBorder: const UnderlineInputBorder(
-          borderSide: BorderSide(color: AppTheme.primary)),
+      labelStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+      enabledBorder: UnderlineInputBorder(
+          borderSide: BorderSide(color: Theme.of(context).colorScheme.outline)),
+      focusedBorder: UnderlineInputBorder(
+          borderSide: BorderSide(color: Theme.of(context).colorScheme.primary)),
     );
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -63,11 +91,12 @@ class _DatabaseScreenState extends State<DatabaseScreen>
     return Column(
       children: [
         Container(
-          color: AppTheme.surfaceVariant,
+          color: Theme.of(context).colorScheme.surfaceVariant,
           child: TabBar(
             controller: _tab,
-            labelColor: AppTheme.primary,
-            unselectedLabelColor: const Color.fromARGB(255, 255, 255, 255),
+            labelColor: Theme.of(context).colorScheme.primary,
+            unselectedLabelColor:
+                Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
             indicatorColor: AppTheme.primary,
             tabs: const [
               Tab(text: 'Skills'),
@@ -130,8 +159,8 @@ class _SkillsTabState extends State<_SkillsTab> {
           right: 16,
           child: FloatingActionButton.extended(
             onPressed: () => _showAddCategoryDialog(context),
-            backgroundColor: AppTheme.primary,
-            foregroundColor: Colors.white,
+            backgroundColor: Theme.of(context).colorScheme.primary,
+            foregroundColor: Theme.of(context).colorScheme.onPrimary,
             icon: const Icon(Icons.add),
             label: const Text('Add Category'),
           ),
@@ -145,16 +174,17 @@ class _SkillsTabState extends State<_SkillsTab> {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        backgroundColor: _kDialogBg,
-        title: const Text(
+        backgroundColor: _getDialogBg(context),
+        title: Text(
           'New Skill Category',
-          style: TextStyle(color: _kTextColor, fontWeight: FontWeight.w600),
+          style: TextStyle(
+              color: _getTextColor(context), fontWeight: FontWeight.w600),
         ),
         content: TextField(
           controller: ctrl,
           autofocus: true,
-          style: const TextStyle(color: _kTextColor),
-          decoration: _darkInput('e.g. Programming Languages'),
+          style: TextStyle(color: _getTextColor(context)),
+          decoration: _darkInput('e.g. Programming Languages', context),
         ),
         actions: [
           TextButton(
@@ -189,9 +219,10 @@ class _CategoryCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: AppTheme.surface,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppTheme.border),
+        border: Border.all(
+            color: Theme.of(context).colorScheme.outline.withOpacity(0.3)),
       ),
       child: Column(
         children: [
@@ -200,15 +231,17 @@ class _CategoryCard extends StatelessWidget {
             child: Row(
               children: [
                 Expanded(
-                  child: Text(category.name,
-                      style: const TextStyle(
-                          fontWeight: FontWeight.w600,
-                          fontSize: 14,
-                          color: AppTheme.textPrimary)),
+                  child: Text(
+                    category.name,
+                    style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                        color: Theme.of(context).colorScheme.onSurface),
+                  ),
                 ),
                 IconButton(
-                  icon:
-                      const Icon(Icons.add, color: AppTheme.primary, size: 20),
+                  icon: Icon(Icons.add,
+                      color: Theme.of(context).colorScheme.primary, size: 20),
                   onPressed: () => _showAddSkillDialog(context),
                   tooltip: 'Add skill',
                 ),
@@ -216,12 +249,15 @@ class _CategoryCard extends StatelessWidget {
             ),
           ),
           if (category.skills.isEmpty)
-            const Padding(
-              padding: EdgeInsets.fromLTRB(14, 0, 14, 14),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
               child: Text('No skills yet — tap + to add one.',
                   style: TextStyle(
                       fontSize: 12,
-                      color: AppTheme.textMuted,
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withOpacity(0.6),
                       fontStyle: FontStyle.italic)),
             )
           else
@@ -244,10 +280,11 @@ class _CategoryCard extends StatelessWidget {
       context: context,
       builder: (_) => StatefulBuilder(builder: (ctx, setSt) {
         return AlertDialog(
-          backgroundColor: _kDialogBg,
-          title: const Text(
+          backgroundColor: _getDialogBg(context),
+          title: Text(
             'Add Skill',
-            style: TextStyle(color: _kTextColor, fontWeight: FontWeight.w600),
+            style: TextStyle(
+                color: _getTextColor(context), fontWeight: FontWeight.w600),
           ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
@@ -255,15 +292,16 @@ class _CategoryCard extends StatelessWidget {
               TextField(
                 controller: nameCtrl,
                 autofocus: true,
-                style: const TextStyle(color: _kTextColor),
-                decoration: _darkInput('Skill name'),
+                style: TextStyle(color: _getTextColor(context)),
+                decoration: _darkLabelInput('Skill name', context),
               ),
               const SizedBox(height: 14),
               DropdownButtonFormField<String>(
                 initialValue: level,
-                dropdownColor: _kDialogBg,
-                style: const TextStyle(color: _kTextColor),
-                decoration: _darkLabelInput('Proficiency Level'),
+                dropdownColor: Theme.of(context).colorScheme.surface,
+                style:
+                    TextStyle(color: Theme.of(context).colorScheme.onSurface),
+                decoration: _darkLabelInput('Proficiency Level', context),
                 items: ['Beginner', 'Intermediate', 'Advanced', 'Expert']
                     .map((l) => DropdownMenuItem(value: l, child: Text(l)))
                     .toList(),
@@ -271,13 +309,14 @@ class _CategoryCard extends StatelessWidget {
               ),
               const SizedBox(height: 14),
               Text('Proficiency: ${percent.round()}%',
-                  style: const TextStyle(fontSize: 13, color: _kSubTextColor)),
+                  style: TextStyle(
+                      fontSize: 13, color: _getSubTextColor(context))),
               Slider(
                 value: percent,
                 min: 0,
                 max: 100,
                 divisions: 20,
-                activeColor: AppTheme.primary,
+                activeColor: Theme.of(context).primaryColor,
                 onChanged: (v) => setSt(() => percent = v),
               ),
             ],
@@ -328,19 +367,20 @@ class _SkillTile extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(skill.name,
-                    style: const TextStyle(
-                        fontSize: 13, color: AppTheme.textPrimary)),
+                    style: TextStyle(
+                        fontSize: 13,
+                        color: Theme.of(context).colorScheme.onSurface)),
               ),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                 decoration: BoxDecoration(
-                  color: AppTheme.levelColor(skill.level).withOpacity(0.1),
+                  color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(skill.level,
                     style: TextStyle(
                         fontSize: 10,
-                        color: AppTheme.levelColor(skill.level),
+                        color: Theme.of(context).colorScheme.primary,
                         fontWeight: FontWeight.w600)),
               ),
               const SizedBox(width: 6),
@@ -349,8 +389,12 @@ class _SkillTile extends StatelessWidget {
                   await AppStore().removeSkill(catId, skill.id);
                   onChanged();
                 },
-                child: const Icon(Icons.close,
-                    size: 16, color: AppTheme.textMuted),
+                child: Icon(Icons.close,
+                    size: 16,
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withOpacity(0.6)),
               ),
             ],
           ),
@@ -362,17 +406,22 @@ class _SkillTile extends StatelessWidget {
                   borderRadius: BorderRadius.circular(4),
                   child: LinearProgressIndicator(
                     value: skill.proficiencyPercent / 100,
-                    backgroundColor: AppTheme.border,
+                    backgroundColor:
+                        Theme.of(context).colorScheme.outline.withOpacity(0.3),
                     valueColor: AlwaysStoppedAnimation<Color>(
-                        AppTheme.barColor(skill.proficiencyPercent)),
+                        Theme.of(context).colorScheme.primary),
                     minHeight: 6,
                   ),
                 ),
               ),
               const SizedBox(width: 8),
               Text('${skill.proficiencyPercent.round()}%',
-                  style:
-                      const TextStyle(fontSize: 11, color: AppTheme.textMuted)),
+                  style: TextStyle(
+                      fontSize: 11,
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withOpacity(0.6))),
             ],
           ),
         ],
@@ -413,8 +462,8 @@ class _ProjectsTabState extends State<_ProjectsTab> {
           right: 16,
           child: FloatingActionButton.extended(
             onPressed: () => _showAddDialog(context),
-            backgroundColor: AppTheme.primary,
-            foregroundColor: Colors.white,
+            backgroundColor: Theme.of(context).colorScheme.primary,
+            foregroundColor: Theme.of(context).colorScheme.onPrimary,
             icon: const Icon(Icons.add),
             label: const Text('Add Project'),
           ),
@@ -434,10 +483,11 @@ class _ProjectsTabState extends State<_ProjectsTab> {
       context: context,
       builder: (_) => StatefulBuilder(builder: (ctx, setSt) {
         return AlertDialog(
-          backgroundColor: _kDialogBg,
-          title: const Text(
+          backgroundColor: _getDialogBg(context),
+          title: Text(
             'Add Project',
-            style: TextStyle(color: _kTextColor, fontWeight: FontWeight.w600),
+            style: TextStyle(
+                color: _getTextColor(context), fontWeight: FontWeight.w600),
           ),
           content: SingleChildScrollView(
             child: Column(
@@ -446,43 +496,45 @@ class _ProjectsTabState extends State<_ProjectsTab> {
                 TextField(
                   controller: titleCtrl,
                   autofocus: true,
-                  style: const TextStyle(color: _kTextColor),
-                  decoration: _darkInput('Project title'),
+                  style: TextStyle(color: _getTextColor(context)),
+                  decoration: _darkInput('Project title', context),
                 ),
                 const SizedBox(height: 10),
                 TextField(
                   controller: descCtrl,
                   maxLines: 3,
-                  style: const TextStyle(color: _kTextColor),
-                  decoration: _darkInput('Description'),
+                  style: TextStyle(color: _getTextColor(context)),
+                  decoration: _darkInput('Description', context),
                 ),
                 const SizedBox(height: 10),
                 TextField(
                   controller: dateCtrl,
-                  style: const TextStyle(color: _kTextColor),
-                  decoration: _darkInput('Date (e.g. Jan 2026)'),
+                  style: TextStyle(color: _getTextColor(context)),
+                  decoration: _darkInput('Date (e.g. Jan 2026)', context),
                 ),
                 const SizedBox(height: 10),
                 TextField(
                   controller: tagsCtrl,
-                  style: const TextStyle(color: _kTextColor),
-                  decoration: _darkInput('Tags (comma separated)'),
+                  style: TextStyle(color: _getTextColor(context)),
+                  decoration: _darkInput('Tags (space separated)', context),
                 ),
                 const SizedBox(height: 10),
                 Row(children: [
-                  const Text('Members: ',
-                      style: TextStyle(fontSize: 13, color: _kSubTextColor)),
+                  Text('Members: ',
+                      style: TextStyle(
+                          fontSize: 13, color: _getSubTextColor(context))),
                   IconButton(
-                      icon: const Icon(Icons.remove_circle_outline,
-                          color: _kSubTextColor),
+                      icon: Icon(Icons.remove_circle_outline,
+                          color: _getSubTextColor(context)),
                       onPressed: () =>
                           setSt(() => members = (members - 1).clamp(1, 50))),
                   Text('$members',
-                      style: const TextStyle(
-                          color: _kTextColor, fontWeight: FontWeight.w600)),
+                      style: TextStyle(
+                          color: _getTextColor(context),
+                          fontWeight: FontWeight.w600)),
                   IconButton(
-                      icon: const Icon(Icons.add_circle_outline,
-                          color: _kSubTextColor),
+                      icon: Icon(Icons.add_circle_outline,
+                          color: _getSubTextColor(context)),
                       onPressed: () => setSt(() => members++)),
                 ]),
               ],
@@ -496,7 +548,7 @@ class _ProjectsTabState extends State<_ProjectsTab> {
               onPressed: () async {
                 if (titleCtrl.text.trim().isEmpty) return;
                 final tags = tagsCtrl.text
-                    .split(',')
+                    .split(' ')
                     .map((t) => t.trim())
                     .where((t) => t.isNotEmpty)
                     .toList();
@@ -531,9 +583,10 @@ class _ProjectTile extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppTheme.surface,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppTheme.border),
+        border: Border.all(
+            color: Theme.of(context).colorScheme.outline.withOpacity(0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -542,13 +595,13 @@ class _ProjectTile extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(project.title,
-                    style: const TextStyle(
+                    style: TextStyle(
                         fontWeight: FontWeight.w600,
                         fontSize: 14,
-                        color: AppTheme.textPrimary)),
+                        color: _getTextColor(context))),
               ),
               IconButton(
-                icon: const Icon(Icons.delete_outline,
+                icon: Icon(Icons.delete_outline,
                     size: 18, color: AppTheme.danger),
                 onPressed: () async {
                   await AppStore().removeProject(project.id);
@@ -560,8 +613,8 @@ class _ProjectTile extends StatelessWidget {
           if (project.description.isNotEmpty) ...[
             const SizedBox(height: 4),
             Text(project.description,
-                style: const TextStyle(
-                    fontSize: 12, color: AppTheme.textSecondary, height: 1.4),
+                style: TextStyle(
+                    fontSize: 12, color: _getTextColor(context), height: 1.4),
                 maxLines: 3,
                 overflow: TextOverflow.ellipsis),
           ],
@@ -579,9 +632,8 @@ class _ProjectTile extends StatelessWidget {
                         border: Border.all(color: AppTheme.border),
                       ),
                       child: Text(t,
-                          style: const TextStyle(
-                              fontSize: 11,
-                              color: Color.fromARGB(255, 8, 15, 26))),
+                          style: TextStyle(
+                              fontSize: 11, color: _getTextColor(context))),
                     ))
                 .toList(),
           ),
@@ -611,13 +663,14 @@ class _EducationTabState extends State<_EducationTab> {
         user.educationalAttainments.isEmpty
             ? const _EmptyState(
                 icon: Icons.school_outlined,
-                message: 'No education yet.\nAdd your education to get started.')
+                message:
+                    'No education yet.\nAdd your education to get started.')
             : ListView.separated(
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 90),
                 itemCount: user.educationalAttainments.length,
                 separatorBuilder: (_, __) => const SizedBox(height: 10),
                 itemBuilder: (_, i) => _EducationTile(
-                    education: user.educationalAttainments[i], 
+                    education: user.educationalAttainments[i],
                     onChanged: _refresh),
               ),
         Positioned(
@@ -625,8 +678,8 @@ class _EducationTabState extends State<_EducationTab> {
           right: 16,
           child: FloatingActionButton.extended(
             onPressed: () => _showAddDialog(context),
-            backgroundColor: AppTheme.primary,
-            foregroundColor: Colors.white,
+            backgroundColor: Theme.of(context).colorScheme.primary,
+            foregroundColor: Theme.of(context).colorScheme.onPrimary,
             icon: const Icon(Icons.add),
             label: const Text('Add Education'),
           ),
@@ -644,10 +697,11 @@ class _EducationTabState extends State<_EducationTab> {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        backgroundColor: _kDialogBg,
-        title: const Text(
+        backgroundColor: _getDialogBg(context),
+        title: Text(
           'Add Education',
-          style: TextStyle(color: _kTextColor, fontWeight: FontWeight.w600),
+          style: TextStyle(
+              color: _getTextColor(context), fontWeight: FontWeight.w600),
         ),
         content: SingleChildScrollView(
           child: Column(
@@ -656,26 +710,30 @@ class _EducationTabState extends State<_EducationTab> {
               TextField(
                 controller: schoolCtrl,
                 autofocus: true,
-                style: const TextStyle(color: _kTextColor),
-                decoration: _darkInput('School Name'),
+                style: TextStyle(color: _getTextColor(context)),
+                decoration: _darkInput('School Name', context),
+                textAlign: TextAlign.left,
               ),
               const SizedBox(height: 14),
               TextField(
                 controller: degreeCtrl,
-                style: const TextStyle(color: _kTextColor),
-                decoration: _darkInput('Degree'),
+                textAlign: TextAlign.left,
+                style: TextStyle(color: _getTextColor(context)),
+                decoration: _darkInput('Degree', context),
               ),
               const SizedBox(height: 14),
               TextField(
                 controller: yearCtrl,
-                style: const TextStyle(color: _kTextColor),
-                decoration: _darkInput('Year'),
+                textAlign: TextAlign.left,
+                style: TextStyle(color: _getTextColor(context)),
+                decoration: _darkInput('Year', context),
               ),
               const SizedBox(height: 14),
               TextField(
                 controller: addressCtrl,
-                style: const TextStyle(color: _kTextColor),
-                decoration: _darkInput('Address'),
+                textAlign: TextAlign.left,
+                style: TextStyle(color: _getTextColor(context)),
+                decoration: _darkInput('Address', context),
               ),
             ],
           ),
@@ -723,9 +781,10 @@ class _EducationTile extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: AppTheme.surface,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppTheme.border),
+        border: Border.all(
+            color: Theme.of(context).colorScheme.outline.withOpacity(0.3)),
       ),
       child: Column(
         children: [
@@ -735,14 +794,13 @@ class _EducationTile extends StatelessWidget {
               children: [
                 Expanded(
                   child: Text(education.schoolName,
-                      style: const TextStyle(
+                      style: TextStyle(
                           fontWeight: FontWeight.w600,
                           fontSize: 14,
-                          color: AppTheme.textPrimary)),
+                          color: _getTextColor(context))),
                 ),
                 IconButton(
-                  icon:
-                      const Icon(Icons.edit, color: AppTheme.primary, size: 20),
+                  icon: Icon(Icons.edit, color: AppTheme.primary, size: 20),
                   onPressed: () => _showEditDialog(context),
                   tooltip: 'Edit education',
                 ),
@@ -760,33 +818,44 @@ class _EducationTile extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 if (education.degree.isNotEmpty) ...[
-                  const Text('Degree',
-                      style: TextStyle(
-                          fontSize: 10, color: AppTheme.textMuted)),
+                  Text('Degree',
+                      style:
+                          TextStyle(fontSize: 10, color: AppTheme.textMuted)),
                   const SizedBox(height: 2),
-                  Text(education.degree,
-                      style: const TextStyle(
-                          fontSize: 12, color: AppTheme.textSecondary)),
+                  SizedBox(
+                      width: double.infinity,
+                      child: Text(education.degree,
+                          textAlign: TextAlign.left,
+                          style: TextStyle(
+                              fontSize: 12, color: AppTheme.textSecondary))),
                   const SizedBox(height: 8),
                 ],
                 if (education.year.isNotEmpty) ...[
-                  const Text('Year',
-                      style: TextStyle(
-                          fontSize: 10, color: AppTheme.textMuted)),
+                  Text('Year',
+                      style:
+                          TextStyle(fontSize: 10, color: AppTheme.textMuted)),
                   const SizedBox(height: 2),
-                  Text(education.year,
-                      style: const TextStyle(
-                          fontSize: 12, color: AppTheme.textSecondary)),
+                  SizedBox(
+                      width: double.infinity,
+                      child: Text(education.year,
+                          textAlign: TextAlign.left,
+                          style: TextStyle(
+                              fontSize: 12, color: AppTheme.textSecondary))),
                   const SizedBox(height: 8),
                 ],
                 if (education.address.isNotEmpty) ...[
-                  const Text('Address',
-                      style: TextStyle(
-                          fontSize: 10, color: AppTheme.textMuted)),
+                  Text('Address',
+                      style:
+                          TextStyle(fontSize: 10, color: AppTheme.textMuted)),
                   const SizedBox(height: 2),
-                  Text(education.address,
-                      style: const TextStyle(
-                          fontSize: 12, color: AppTheme.textSecondary, height: 1.4)),
+                  SizedBox(
+                      width: double.infinity,
+                      child: Text(education.address,
+                          textAlign: TextAlign.left,
+                          style: TextStyle(
+                              fontSize: 12,
+                              color: AppTheme.textSecondary,
+                              height: 1.4))),
                 ],
               ],
             ),
@@ -805,10 +874,11 @@ class _EducationTile extends StatelessWidget {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        backgroundColor: _kDialogBg,
-        title: const Text(
+        backgroundColor: _getDialogBg(context),
+        title: Text(
           'Edit Education',
-          style: TextStyle(color: _kTextColor, fontWeight: FontWeight.w600),
+          style: TextStyle(
+              color: _getTextColor(context), fontWeight: FontWeight.w600),
         ),
         content: SingleChildScrollView(
           child: Column(
@@ -817,26 +887,26 @@ class _EducationTile extends StatelessWidget {
               TextField(
                 controller: schoolCtrl,
                 autofocus: true,
-                style: const TextStyle(color: _kTextColor),
-                decoration: _darkInput('School Name'),
+                style: TextStyle(color: _getTextColor(context)),
+                decoration: _darkInput('School Name', context),
               ),
               const SizedBox(height: 14),
               TextField(
                 controller: degreeCtrl,
-                style: const TextStyle(color: _kTextColor),
-                decoration: _darkInput('Degree'),
+                style: TextStyle(color: _getTextColor(context)),
+                decoration: _darkInput('Degree', context),
               ),
               const SizedBox(height: 14),
               TextField(
                 controller: yearCtrl,
-                style: const TextStyle(color: _kTextColor),
-                decoration: _darkInput('Year'),
+                style: TextStyle(color: _getTextColor(context)),
+                decoration: _darkInput('Year', context),
               ),
               const SizedBox(height: 14),
               TextField(
                 controller: addressCtrl,
-                style: const TextStyle(color: _kTextColor),
-                decoration: _darkInput('Address'),
+                style: TextStyle(color: _getTextColor(context)),
+                decoration: _darkInput('Address', context),
               ),
             ],
           ),
@@ -860,7 +930,8 @@ class _EducationTile extends StatelessWidget {
                 Navigator.pop(context);
                 onChanged();
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Education updated successfully')),
+                  const SnackBar(
+                      content: Text('Education updated successfully')),
                 );
               }
             },
@@ -875,14 +946,15 @@ class _EducationTile extends StatelessWidget {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        backgroundColor: _kDialogBg,
-        title: const Text(
+        backgroundColor: _getDialogBg(context),
+        title: Text(
           'Delete Education',
-          style: TextStyle(color: _kTextColor, fontWeight: FontWeight.w600),
+          style: TextStyle(
+              color: _getTextColor(context), fontWeight: FontWeight.w600),
         ),
-        content: const Text(
+        content: Text(
           'Are you sure you want to delete this education record?',
-          style: TextStyle(color: _kSubTextColor),
+          style: TextStyle(color: _getSubTextColor(context)),
         ),
         actions: [
           TextButton(
@@ -939,8 +1011,8 @@ class _CertificationsTabState extends State<_CertificationsTab> {
           right: 16,
           child: FloatingActionButton.extended(
             onPressed: () => _showAddDialog(context),
-            backgroundColor: AppTheme.primary,
-            foregroundColor: Colors.white,
+            backgroundColor: Theme.of(context).colorScheme.primary,
+            foregroundColor: Theme.of(context).colorScheme.onPrimary,
             icon: const Icon(Icons.add),
             label: const Text('Add Certification'),
           ),
@@ -958,10 +1030,11 @@ class _CertificationsTabState extends State<_CertificationsTab> {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        backgroundColor: _kDialogBg,
-        title: const Text(
+        backgroundColor: _getDialogBg(context),
+        title: Text(
           'Add Certification',
-          style: TextStyle(color: _kTextColor, fontWeight: FontWeight.w600),
+          style: TextStyle(
+              color: _getTextColor(context), fontWeight: FontWeight.w600),
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -969,26 +1042,26 @@ class _CertificationsTabState extends State<_CertificationsTab> {
             TextField(
               controller: titleCtrl,
               autofocus: true,
-              style: const TextStyle(color: _kTextColor),
-              decoration: _darkInput('Certification title'),
+              style: TextStyle(color: _getTextColor(context)),
+              decoration: _darkInput('Certification title', context),
             ),
             const SizedBox(height: 10),
             TextField(
               controller: issuerCtrl,
-              style: const TextStyle(color: _kTextColor),
-              decoration: _darkInput('Issuing organization'),
+              style: TextStyle(color: _getTextColor(context)),
+              decoration: _darkInput('Issuing organization', context),
             ),
             const SizedBox(height: 10),
             TextField(
               controller: dateCtrl,
-              style: const TextStyle(color: _kTextColor),
-              decoration: _darkInput('Date (e.g. March 2026)'),
+              style: TextStyle(color: _getTextColor(context)),
+              decoration: _darkInput('Date (e.g. March 2026)', context),
             ),
             const SizedBox(height: 10),
             TextField(
               controller: idCtrl,
-              style: const TextStyle(color: _kTextColor),
-              decoration: _darkInput('Certificate ID'),
+              style: TextStyle(color: _getTextColor(context)),
+              decoration: _darkInput('Certification ID', context),
             ),
           ],
         ),
@@ -1028,9 +1101,10 @@ class _CertTile extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppTheme.surface,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppTheme.border),
+        border: Border.all(
+            color: Theme.of(context).colorScheme.outline.withOpacity(0.3)),
       ),
       child: Row(
         children: [
@@ -1050,22 +1124,21 @@ class _CertTile extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(cert.title,
-                    style: const TextStyle(
+                    style: TextStyle(
                         fontWeight: FontWeight.w600,
                         fontSize: 13,
-                        color: AppTheme.textPrimary)),
+                        color: _getTextColor(context))),
                 Text(cert.issuer,
-                    style: const TextStyle(
-                        fontSize: 11, color: AppTheme.textSecondary)),
+                    style:
+                        TextStyle(fontSize: 11, color: _getTextColor(context))),
                 Text('${cert.date}  •  ${cert.certId}',
-                    style: const TextStyle(
-                        fontSize: 10, color: AppTheme.textMuted)),
+                    style:
+                        TextStyle(fontSize: 10, color: _getTextMuted(context))),
               ],
             ),
           ),
           IconButton(
-            icon: const Icon(Icons.delete_outline,
-                size: 18, color: AppTheme.danger),
+            icon: Icon(Icons.delete_outline, size: 18, color: AppTheme.danger),
             onPressed: () async {
               await AppStore().removeCertification(cert.id);
               onChanged();
@@ -1090,12 +1163,12 @@ class _EmptyState extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 48, color: AppTheme.textMuted),
+          Icon(icon, size: 48, color: AppTheme.getTextMuted(context)),
           const SizedBox(height: 12),
           Text(message,
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                  color: AppTheme.textMuted, fontSize: 14, height: 1.5)),
+              style: TextStyle(
+                  color: _getTextMuted(context), fontSize: 14, height: 1.5)),
         ],
       ),
     );
@@ -1122,19 +1195,21 @@ class _ExperienceTabState extends State<_ExperienceTab> {
         experiences.isEmpty
             ? const _EmptyState(
                 icon: Icons.work_outline,
-                message: 'No experience entries yet.\nTap the + button to add your work experience.')
+                message:
+                    'No experience entries yet.\nTap the + button to add your work experience.')
             : ListView.builder(
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 90),
                 itemCount: experiences.length,
-                itemBuilder: (_, i) => _ExperienceTile(experience: experiences[i]),
+                itemBuilder: (_, i) =>
+                    _ExperienceTile(experience: experiences[i]),
               ),
         Positioned(
           bottom: 16,
           right: 16,
           child: FloatingActionButton.extended(
             onPressed: () => _showAddExperienceDialog(context),
-            backgroundColor: AppTheme.primary,
-            foregroundColor: Colors.white,
+            backgroundColor: Theme.of(context).colorScheme.primary,
+            foregroundColor: Theme.of(context).colorScheme.onPrimary,
             icon: const Icon(Icons.add),
             label: const Text('Add Experience'),
           ),
@@ -1153,42 +1228,43 @@ class _ExperienceTile extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: AppTheme.surface,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppTheme.border),
+        border: Border.all(
+            color: Theme.of(context).colorScheme.outline.withOpacity(0.3)),
       ),
       child: Column(
         children: [
           ListTile(
             contentPadding: const EdgeInsets.fromLTRB(14, 12, 8, 8),
             title: Text(experience.position,
-                style: const TextStyle(
+                style: TextStyle(
                     fontWeight: FontWeight.w600,
                     fontSize: 14,
-                    color: AppTheme.textPrimary)),
+                    color: _getTextColor(context))),
             subtitle: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(experience.company,
-                    style: const TextStyle(
-                        fontSize: 13, color: AppTheme.textSecondary)),
+                    style:
+                        TextStyle(fontSize: 13, color: _getTextColor(context))),
                 const SizedBox(height: 4),
                 Text('${experience.startDate} - ${experience.endDate}',
-                    style: const TextStyle(
-                        fontSize: 11, color: AppTheme.textMuted)),
+                    style:
+                        TextStyle(fontSize: 11, color: _getTextMuted(context))),
               ],
             ),
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 IconButton(
-                  icon: const Icon(Icons.edit_outlined,
+                  icon: Icon(Icons.edit_outlined,
                       size: 18, color: AppTheme.primary),
                   onPressed: () => _showEditDialog(context),
                   tooltip: 'Edit experience',
                 ),
                 IconButton(
-                  icon: const Icon(Icons.delete_outline,
+                  icon: Icon(Icons.delete_outline,
                       size: 18, color: AppTheme.danger),
                   onPressed: () => _showDeleteDialog(context),
                   tooltip: 'Delete experience',
@@ -1200,8 +1276,10 @@ class _ExperienceTile extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
               child: Text(experience.description,
-                  style: const TextStyle(
-                      fontSize: 12, color: AppTheme.textSecondary, height: 1.4)),
+                  style: TextStyle(
+                      fontSize: 12,
+                      color: _getTextColor(context),
+                      height: 1.4)),
             ),
         ],
       ),
@@ -1218,10 +1296,11 @@ class _ExperienceTile extends StatelessWidget {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        backgroundColor: _kDialogBg,
-        title: const Text(
+        backgroundColor: _getDialogBg(context),
+        title: Text(
           'Edit Work Experience',
-          style: TextStyle(color: _kTextColor, fontWeight: FontWeight.w600),
+          style: TextStyle(
+              color: _getTextColor(context), fontWeight: FontWeight.w600),
         ),
         content: SizedBox(
           width: 400,
@@ -1230,27 +1309,29 @@ class _ExperienceTile extends StatelessWidget {
             children: [
               TextField(
                 controller: companyCtrl,
-                style: const TextStyle(color: _kTextColor),
-                decoration: const InputDecoration(
+                style: TextStyle(color: _getTextColor(context)),
+                decoration: InputDecoration(
                   labelText: 'Company',
-                  labelStyle: TextStyle(color: _kTextMuted),
+                  labelStyle: TextStyle(color: _getTextMuted(context)),
                   enabledBorder: UnderlineInputBorder(
-                      borderSide: BorderSide(color: _kBorder)),
+                      borderSide: BorderSide(color: _getBorder(context))),
                   focusedBorder: UnderlineInputBorder(
-                      borderSide: BorderSide(color: AppTheme.primary)),
+                      borderSide:
+                          BorderSide(color: Theme.of(context).primaryColor)),
                 ),
               ),
               const SizedBox(height: 12),
               TextField(
                 controller: positionCtrl,
-                style: const TextStyle(color: _kTextColor),
-                decoration: const InputDecoration(
+                style: TextStyle(color: _getTextColor(context)),
+                decoration: InputDecoration(
                   labelText: 'Position',
-                  labelStyle: TextStyle(color: _kTextMuted),
+                  labelStyle: TextStyle(color: _getTextMuted(context)),
                   enabledBorder: UnderlineInputBorder(
-                      borderSide: BorderSide(color: _kBorder)),
+                      borderSide: BorderSide(color: _getBorder(context))),
                   focusedBorder: UnderlineInputBorder(
-                      borderSide: BorderSide(color: AppTheme.primary)),
+                      borderSide:
+                          BorderSide(color: Theme.of(context).primaryColor)),
                 ),
               ),
               const SizedBox(height: 12),
@@ -1259,14 +1340,15 @@ class _ExperienceTile extends StatelessWidget {
                   Expanded(
                     child: TextField(
                       controller: startDateCtrl,
-                      style: const TextStyle(color: _kTextColor),
-                      decoration: const InputDecoration(
+                      style: TextStyle(color: _getTextColor(context)),
+                      decoration: InputDecoration(
                         labelText: 'Start Date',
-                        labelStyle: TextStyle(color: _kTextMuted),
+                        labelStyle: TextStyle(color: _getTextMuted(context)),
                         enabledBorder: UnderlineInputBorder(
-                            borderSide: BorderSide(color: _kBorder)),
+                            borderSide: BorderSide(color: _getBorder(context))),
                         focusedBorder: UnderlineInputBorder(
-                            borderSide: BorderSide(color: AppTheme.primary)),
+                            borderSide: BorderSide(
+                                color: Theme.of(context).primaryColor)),
                       ),
                     ),
                   ),
@@ -1274,14 +1356,15 @@ class _ExperienceTile extends StatelessWidget {
                   Expanded(
                     child: TextField(
                       controller: endDateCtrl,
-                      style: const TextStyle(color: _kTextColor),
-                      decoration: const InputDecoration(
+                      style: TextStyle(color: _getTextColor(context)),
+                      decoration: InputDecoration(
                         labelText: 'End Date',
-                        labelStyle: TextStyle(color: _kTextMuted),
+                        labelStyle: TextStyle(color: _getTextMuted(context)),
                         enabledBorder: UnderlineInputBorder(
-                            borderSide: BorderSide(color: _kBorder)),
+                            borderSide: BorderSide(color: _getBorder(context))),
                         focusedBorder: UnderlineInputBorder(
-                            borderSide: BorderSide(color: AppTheme.primary)),
+                            borderSide: BorderSide(
+                                color: Theme.of(context).primaryColor)),
                       ),
                     ),
                   ),
@@ -1290,15 +1373,16 @@ class _ExperienceTile extends StatelessWidget {
               const SizedBox(height: 12),
               TextField(
                 controller: descriptionCtrl,
-                style: const TextStyle(color: _kTextColor),
+                style: TextStyle(color: _getTextColor(context)),
                 maxLines: 3,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Description',
-                  labelStyle: TextStyle(color: _kTextMuted),
+                  labelStyle: TextStyle(color: _getTextMuted(context)),
                   enabledBorder: UnderlineInputBorder(
-                      borderSide: BorderSide(color: _kBorder)),
+                      borderSide: BorderSide(color: _getBorder(context))),
                   focusedBorder: UnderlineInputBorder(
-                      borderSide: BorderSide(color: AppTheme.primary)),
+                      borderSide:
+                          BorderSide(color: Theme.of(context).primaryColor)),
                 ),
               ),
             ],
@@ -1307,7 +1391,7 @@ class _ExperienceTile extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel', style: TextStyle(color: _kTextMuted)),
+            child: Text('Cancel', style: TextStyle(color: AppTheme.textMuted)),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -1322,7 +1406,7 @@ class _ExperienceTile extends StatelessWidget {
                 position: positionCtrl.text.trim(),
                 startDate: startDateCtrl.text.trim(),
                 endDate: endDateCtrl.text.trim(),
-                description: descriptionCtrl.text.trim(),
+                description: descriptionCtrl.text.trim(), title: '', dateRange: '',
               );
 
               await AppStore().updateExperience(updatedExperience);
@@ -1340,19 +1424,20 @@ class _ExperienceTile extends StatelessWidget {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        backgroundColor: _kDialogBg,
-        title: const Text(
+        backgroundColor: _getDialogBg(context),
+        title: Text(
           'Delete Experience',
-          style: TextStyle(color: _kTextColor, fontWeight: FontWeight.w600),
+          style: TextStyle(
+              color: _getTextColor(context), fontWeight: FontWeight.w600),
         ),
-        content: const Text(
+        content: Text(
           'Are you sure you want to delete this work experience?',
-          style: TextStyle(color: _kSubTextColor),
+          style: TextStyle(color: _getSubTextColor(context)),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel', style: TextStyle(color: _kTextMuted)),
+            child: Text('Cancel', style: TextStyle(color: AppTheme.textMuted)),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -1379,10 +1464,11 @@ void _showAddExperienceDialog(BuildContext context) {
   showDialog(
     context: context,
     builder: (_) => AlertDialog(
-      backgroundColor: _kDialogBg,
-      title: const Text(
+      backgroundColor: _getDialogBg(context),
+      title: Text(
         'Add Work Experience',
-        style: TextStyle(color: _kTextColor, fontWeight: FontWeight.w600),
+        style: TextStyle(
+            color: _getTextColor(context), fontWeight: FontWeight.w600),
       ),
       content: SizedBox(
         width: 400,
@@ -1391,27 +1477,29 @@ void _showAddExperienceDialog(BuildContext context) {
           children: [
             TextField(
               controller: companyCtrl,
-              style: const TextStyle(color: _kTextColor),
-              decoration: const InputDecoration(
+              style: TextStyle(color: _getTextColor(context)),
+              decoration: InputDecoration(
                 labelText: 'Company',
-                labelStyle: TextStyle(color: _kTextMuted),
+                labelStyle: TextStyle(color: _getTextMuted(context)),
                 enabledBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(color: _kBorder)),
+                    borderSide: BorderSide(color: _getBorder(context))),
                 focusedBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(color: AppTheme.primary)),
+                    borderSide:
+                        BorderSide(color: Theme.of(context).primaryColor)),
               ),
             ),
             const SizedBox(height: 12),
             TextField(
               controller: positionCtrl,
-              style: const TextStyle(color: _kTextColor),
-              decoration: const InputDecoration(
+              style: TextStyle(color: _getTextColor(context)),
+              decoration: InputDecoration(
                 labelText: 'Position',
-                labelStyle: TextStyle(color: _kTextMuted),
+                labelStyle: TextStyle(color: _getTextMuted(context)),
                 enabledBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(color: _kBorder)),
+                    borderSide: BorderSide(color: _getBorder(context))),
                 focusedBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(color: AppTheme.primary)),
+                    borderSide:
+                        BorderSide(color: Theme.of(context).primaryColor)),
               ),
             ),
             const SizedBox(height: 12),
@@ -1420,14 +1508,15 @@ void _showAddExperienceDialog(BuildContext context) {
                 Expanded(
                   child: TextField(
                     controller: startDateCtrl,
-                    style: const TextStyle(color: _kTextColor),
-                    decoration: const InputDecoration(
+                    style: TextStyle(color: _getTextColor(context)),
+                    decoration: InputDecoration(
                       labelText: 'Start Date',
-                      labelStyle: TextStyle(color: _kTextMuted),
+                      labelStyle: TextStyle(color: _getTextMuted(context)),
                       enabledBorder: UnderlineInputBorder(
-                          borderSide: BorderSide(color: _kBorder)),
+                          borderSide: BorderSide(color: _getBorder(context))),
                       focusedBorder: UnderlineInputBorder(
-                          borderSide: BorderSide(color: AppTheme.primary)),
+                          borderSide: BorderSide(
+                              color: Theme.of(context).primaryColor)),
                     ),
                   ),
                 ),
@@ -1435,14 +1524,15 @@ void _showAddExperienceDialog(BuildContext context) {
                 Expanded(
                   child: TextField(
                     controller: endDateCtrl,
-                    style: const TextStyle(color: _kTextColor),
-                    decoration: const InputDecoration(
+                    style: TextStyle(color: _getTextColor(context)),
+                    decoration: InputDecoration(
                       labelText: 'End Date',
-                      labelStyle: TextStyle(color: _kTextMuted),
+                      labelStyle: TextStyle(color: _getTextMuted(context)),
                       enabledBorder: UnderlineInputBorder(
-                          borderSide: BorderSide(color: _kBorder)),
+                          borderSide: BorderSide(color: _getBorder(context))),
                       focusedBorder: UnderlineInputBorder(
-                          borderSide: BorderSide(color: AppTheme.primary)),
+                          borderSide: BorderSide(
+                              color: Theme.of(context).primaryColor)),
                     ),
                   ),
                 ),
@@ -1451,15 +1541,16 @@ void _showAddExperienceDialog(BuildContext context) {
             const SizedBox(height: 12),
             TextField(
               controller: descriptionCtrl,
-              style: const TextStyle(color: _kTextColor),
+              style: TextStyle(color: _getTextColor(context)),
               maxLines: 3,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 labelText: 'Description',
-                labelStyle: TextStyle(color: _kTextMuted),
+                labelStyle: TextStyle(color: _getTextMuted(context)),
                 enabledBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(color: _kBorder)),
+                    borderSide: BorderSide(color: _getBorder(context))),
                 focusedBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(color: AppTheme.primary)),
+                    borderSide:
+                        BorderSide(color: Theme.of(context).primaryColor)),
               ),
             ),
           ],
@@ -1468,7 +1559,8 @@ void _showAddExperienceDialog(BuildContext context) {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel', style: TextStyle(color: _kTextMuted)),
+          child:
+              Text('Cancel', style: TextStyle(color: _getTextMuted(context))),
         ),
         ElevatedButton(
           onPressed: () async {
@@ -1483,7 +1575,7 @@ void _showAddExperienceDialog(BuildContext context) {
               position: positionCtrl.text.trim(),
               startDate: startDateCtrl.text.trim(),
               endDate: endDateCtrl.text.trim(),
-              description: descriptionCtrl.text.trim(),
+              description: descriptionCtrl.text.trim(), title: '', dateRange: '',
             );
 
             await AppStore().addExperience(experience);
@@ -1507,10 +1599,11 @@ void _showAddAchievementDialog(BuildContext context) {
   showDialog(
     context: context,
     builder: (_) => AlertDialog(
-      backgroundColor: _kDialogBg,
-      title: const Text(
+      backgroundColor: _getDialogBg(context),
+      title: Text(
         'Add Achievement',
-        style: TextStyle(color: _kTextColor, fontWeight: FontWeight.w600),
+        style: TextStyle(
+            color: _getTextColor(context), fontWeight: FontWeight.w600),
       ),
       content: SizedBox(
         width: 400,
@@ -1519,54 +1612,58 @@ void _showAddAchievementDialog(BuildContext context) {
           children: [
             TextField(
               controller: titleCtrl,
-              style: const TextStyle(color: _kTextColor),
-              decoration: const InputDecoration(
+              style: TextStyle(color: _getTextColor(context)),
+              decoration: InputDecoration(
                 labelText: 'Title',
-                labelStyle: TextStyle(color: _kTextMuted),
+                labelStyle: TextStyle(color: _getTextMuted(context)),
                 enabledBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(color: _kBorder)),
+                    borderSide: BorderSide(color: _getBorder(context))),
                 focusedBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(color: AppTheme.primary)),
+                    borderSide:
+                        BorderSide(color: Theme.of(context).primaryColor)),
               ),
             ),
             const SizedBox(height: 12),
             TextField(
               controller: categoryCtrl,
-              style: const TextStyle(color: _kTextColor),
-              decoration: const InputDecoration(
+              style: TextStyle(color: _getTextColor(context)),
+              decoration: InputDecoration(
                 labelText: 'Category',
-                labelStyle: TextStyle(color: _kTextMuted),
+                labelStyle: TextStyle(color: _getTextMuted(context)),
                 enabledBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(color: _kBorder)),
+                    borderSide: BorderSide(color: _getBorder(context))),
                 focusedBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(color: AppTheme.primary)),
+                    borderSide:
+                        BorderSide(color: Theme.of(context).primaryColor)),
               ),
             ),
             const SizedBox(height: 12),
             TextField(
               controller: dateCtrl,
-              style: const TextStyle(color: _kTextColor),
-              decoration: const InputDecoration(
+              style: TextStyle(color: _getTextColor(context)),
+              decoration: InputDecoration(
                 labelText: 'Date',
-                labelStyle: TextStyle(color: _kTextMuted),
+                labelStyle: TextStyle(color: _getTextMuted(context)),
                 enabledBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(color: _kBorder)),
+                    borderSide: BorderSide(color: _getBorder(context))),
                 focusedBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(color: AppTheme.primary)),
+                    borderSide:
+                        BorderSide(color: Theme.of(context).primaryColor)),
               ),
             ),
             const SizedBox(height: 12),
             TextField(
               controller: descriptionCtrl,
-              style: const TextStyle(color: _kTextColor),
+              style: TextStyle(color: _getTextColor(context)),
               maxLines: 3,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 labelText: 'Description',
-                labelStyle: TextStyle(color: _kTextMuted),
+                labelStyle: TextStyle(color: _getTextMuted(context)),
                 enabledBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(color: _kBorder)),
+                    borderSide: BorderSide(color: _getBorder(context))),
                 focusedBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(color: AppTheme.primary)),
+                    borderSide:
+                        BorderSide(color: Theme.of(context).primaryColor)),
               ),
             ),
           ],
@@ -1575,7 +1672,8 @@ void _showAddAchievementDialog(BuildContext context) {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel', style: TextStyle(color: _kTextMuted)),
+          child:
+              Text('Cancel', style: TextStyle(color: _getTextMuted(context))),
         ),
         ElevatedButton(
           onPressed: () async {
@@ -1622,19 +1720,21 @@ class _AchievementsTabState extends State<_AchievementsTab> {
         achievements.isEmpty
             ? const _EmptyState(
                 icon: Icons.emoji_events_outlined,
-                message: 'No achievements yet.\nTap the + button to add your achievements.')
+                message:
+                    'No achievements yet.\nTap the + button to add your achievements.')
             : ListView.builder(
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 90),
                 itemCount: achievements.length,
-                itemBuilder: (_, i) => _AchievementTile(achievement: achievements[i]),
+                itemBuilder: (_, i) =>
+                    _AchievementTile(achievement: achievements[i]),
               ),
         Positioned(
           bottom: 16,
           right: 16,
           child: FloatingActionButton.extended(
             onPressed: () => _showAddAchievementDialog(context),
-            backgroundColor: AppTheme.primary,
-            foregroundColor: Colors.white,
+            backgroundColor: Theme.of(context).colorScheme.primary,
+            foregroundColor: Theme.of(context).colorScheme.onPrimary,
             icon: const Icon(Icons.add),
             label: const Text('Add Achievement'),
           ),
@@ -1653,42 +1753,46 @@ class _AchievementTile extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: AppTheme.surface,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppTheme.border),
+        border: Border.all(
+            color: Theme.of(context).colorScheme.outline.withOpacity(0.3)),
       ),
       child: Column(
         children: [
           ListTile(
             contentPadding: const EdgeInsets.fromLTRB(14, 12, 8, 8),
             title: Text(achievement.title,
-                style: const TextStyle(
+                style: TextStyle(
                     fontWeight: FontWeight.w600,
                     fontSize: 14,
-                    color: AppTheme.textPrimary)),
+                    color: Theme.of(context).colorScheme.onSurface)),
             subtitle: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(achievement.category,
-                    style: const TextStyle(
-                        fontSize: 11, color: AppTheme.textMuted)),
+                    style: TextStyle(
+                        fontSize: 11,
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withOpacity(0.6))),
                 const SizedBox(height: 4),
                 Text(achievement.date,
-                    style: const TextStyle(
-                        fontSize: 11, color: AppTheme.textMuted)),
+                    style: TextStyle(fontSize: 11, color: AppTheme.textMuted)),
               ],
             ),
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 IconButton(
-                  icon: const Icon(Icons.edit_outlined,
+                  icon: Icon(Icons.edit_outlined,
                       size: 18, color: AppTheme.primary),
                   onPressed: () => _showEditDialog(context),
                   tooltip: 'Edit achievement',
                 ),
                 IconButton(
-                  icon: const Icon(Icons.delete_outline,
+                  icon: Icon(Icons.delete_outline,
                       size: 18, color: AppTheme.danger),
                   onPressed: () => _showDeleteDialog(context),
                   tooltip: 'Delete achievement',
@@ -1700,8 +1804,10 @@ class _AchievementTile extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
               child: Text(achievement.description,
-                  style: const TextStyle(
-                      fontSize: 12, color: AppTheme.textSecondary, height: 1.4)),
+                  style: TextStyle(
+                      fontSize: 12,
+                      color: AppTheme.textSecondary,
+                      height: 1.4)),
             ),
         ],
       ),
@@ -1710,17 +1816,19 @@ class _AchievementTile extends StatelessWidget {
 
   void _showEditDialog(BuildContext context) {
     final titleCtrl = TextEditingController(text: achievement.title);
-    final descriptionCtrl = TextEditingController(text: achievement.description);
+    final descriptionCtrl =
+        TextEditingController(text: achievement.description);
     final dateCtrl = TextEditingController(text: achievement.date);
     final categoryCtrl = TextEditingController(text: achievement.category);
 
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        backgroundColor: _kDialogBg,
-        title: const Text(
+        backgroundColor: _getDialogBg(context),
+        title: Text(
           'Edit Achievement',
-          style: TextStyle(color: _kTextColor, fontWeight: FontWeight.w600),
+          style: TextStyle(
+              color: _getTextColor(context), fontWeight: FontWeight.w600),
         ),
         content: SizedBox(
           width: 400,
@@ -1729,54 +1837,57 @@ class _AchievementTile extends StatelessWidget {
             children: [
               TextField(
                 controller: titleCtrl,
-                style: const TextStyle(color: _kTextColor),
-                decoration: const InputDecoration(
+                style: TextStyle(color: _getTextColor(context)),
+                decoration: InputDecoration(
                   labelText: 'Title',
-                  labelStyle: TextStyle(color: _kTextMuted),
+                  labelStyle: TextStyle(color: _getTextMuted(context)),
                   enabledBorder: UnderlineInputBorder(
-                      borderSide: BorderSide(color: _kBorder)),
+                      borderSide: BorderSide(color: _getBorder(context))),
                   focusedBorder: UnderlineInputBorder(
-                      borderSide: BorderSide(color: AppTheme.primary)),
+                      borderSide:
+                          BorderSide(color: Theme.of(context).primaryColor)),
                 ),
               ),
               const SizedBox(height: 12),
               TextField(
                 controller: categoryCtrl,
-                style: const TextStyle(color: _kTextColor),
-                decoration: const InputDecoration(
+                style: TextStyle(color: _getTextColor(context)),
+                decoration: InputDecoration(
                   labelText: 'Category',
-                  labelStyle: TextStyle(color: _kTextMuted),
+                  labelStyle: TextStyle(color: _getTextMuted(context)),
                   enabledBorder: UnderlineInputBorder(
-                      borderSide: BorderSide(color: _kBorder)),
+                      borderSide: BorderSide(color: _getBorder(context))),
                   focusedBorder: UnderlineInputBorder(
-                      borderSide: BorderSide(color: AppTheme.primary)),
+                      borderSide:
+                          BorderSide(color: Theme.of(context).primaryColor)),
                 ),
               ),
               const SizedBox(height: 12),
               TextField(
                 controller: dateCtrl,
-                style: const TextStyle(color: _kTextColor),
-                decoration: const InputDecoration(
+                style: TextStyle(color: _getTextColor(context)),
+                decoration: InputDecoration(
                   labelText: 'Date',
-                  labelStyle: TextStyle(color: _kTextMuted),
+                  labelStyle: TextStyle(color: _getTextMuted(context)),
                   enabledBorder: UnderlineInputBorder(
-                      borderSide: BorderSide(color: _kBorder)),
+                      borderSide: BorderSide(color: _getBorder(context))),
                   focusedBorder: UnderlineInputBorder(
-                      borderSide: BorderSide(color: AppTheme.primary)),
+                      borderSide:
+                          BorderSide(color: Theme.of(context).primaryColor)),
                 ),
               ),
               const SizedBox(height: 12),
               TextField(
                 controller: descriptionCtrl,
-                style: const TextStyle(color: _kTextColor),
+                style: TextStyle(color: _getTextColor(context)),
                 maxLines: 3,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Description',
-                  labelStyle: TextStyle(color: _kTextMuted),
+                  labelStyle: TextStyle(color: _getTextMuted(context)),
                   enabledBorder: UnderlineInputBorder(
-                      borderSide: BorderSide(color: _kBorder)),
+                      borderSide: BorderSide(color: _getBorder(context))),
                   focusedBorder: UnderlineInputBorder(
-                      borderSide: BorderSide(color: AppTheme.primary)),
+                      borderSide: BorderSide(color: _getTextColor(context))),
                 ),
               ),
             ],
@@ -1785,7 +1896,8 @@ class _AchievementTile extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel', style: TextStyle(color: _kTextMuted)),
+            child:
+                Text('Cancel', style: TextStyle(color: _getTextMuted(context))),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -1816,19 +1928,20 @@ class _AchievementTile extends StatelessWidget {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        backgroundColor: _kDialogBg,
-        title: const Text(
+        backgroundColor: _getDialogBg(context),
+        title: Text(
           'Delete Achievement',
-          style: TextStyle(color: _kTextColor, fontWeight: FontWeight.w600),
+          style: TextStyle(
+              color: _getTextColor(context), fontWeight: FontWeight.w600),
         ),
-        content: const Text(
+        content: Text(
           'Are you sure you want to delete this achievement?',
-          style: TextStyle(color: _kSubTextColor),
+          style: TextStyle(color: _getSubTextColor(context)),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel', style: TextStyle(color: _kTextMuted)),
+            child: Text('Cancel', style: TextStyle(color: AppTheme.textMuted)),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -1836,7 +1949,7 @@ class _AchievementTile extends StatelessWidget {
               if (context.mounted) Navigator.pop(context);
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text('Delete', style: TextStyle(color: Colors.white)),
+            child: Text('Delete', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),

@@ -151,10 +151,10 @@ class AppStore extends ChangeNotifier {
       _accounts.addAll(dbUsers);
 
       // Add demo account if not already present
-      if (!_accounts.any((a) => a.id == 'demo-001')) {
+      if (!_accounts.any((a) => a.id == 'maria_sofia_santos')) {
         _accounts.add(_demoAccount());
       }
-      
+
       print('Loaded ${dbUsers.length} users from Firebase database');
     } catch (e) {
       print('Error loading Firebase database users: $e');
@@ -219,7 +219,7 @@ class AppStore extends ChangeNotifier {
 
   Future<void> toggleProfilePrivacy(String section) async {
     if (_currentUser == null) return;
-    
+
     switch (section) {
       case 'skills':
         _currentUser!.skillsPrivate = !_currentUser!.skillsPrivate;
@@ -228,7 +228,8 @@ class AppStore extends ChangeNotifier {
         _currentUser!.projectsPrivate = !_currentUser!.projectsPrivate;
         break;
       case 'certifications':
-        _currentUser!.certificationsPrivate = !_currentUser!.certificationsPrivate;
+        _currentUser!.certificationsPrivate =
+            !_currentUser!.certificationsPrivate;
         break;
       case 'experiences':
         _currentUser!.experiencesPrivate = !_currentUser!.experiencesPrivate;
@@ -237,15 +238,16 @@ class AppStore extends ChangeNotifier {
         _currentUser!.achievementsPrivate = !_currentUser!.achievementsPrivate;
         break;
       case 'careerObjective':
-        _currentUser!.careerObjectivePrivate = !_currentUser!.careerObjectivePrivate;
+        _currentUser!.careerObjectivePrivate =
+            !_currentUser!.careerObjectivePrivate;
         break;
       case 'all':
-        final newValue = !(_currentUser!.skillsPrivate && 
-                           _currentUser!.projectsPrivate && 
-                           _currentUser!.certificationsPrivate &&
-                           _currentUser!.experiencesPrivate &&
-                           _currentUser!.achievementsPrivate &&
-                           _currentUser!.careerObjectivePrivate);
+        final newValue = !(_currentUser!.skillsPrivate &&
+            _currentUser!.projectsPrivate &&
+            _currentUser!.certificationsPrivate &&
+            _currentUser!.experiencesPrivate &&
+            _currentUser!.achievementsPrivate &&
+            _currentUser!.careerObjectivePrivate);
         _currentUser!.skillsPrivate = newValue;
         _currentUser!.projectsPrivate = newValue;
         _currentUser!.certificationsPrivate = newValue;
@@ -254,7 +256,7 @@ class AppStore extends ChangeNotifier {
         _currentUser!.careerObjectivePrivate = newValue;
         break;
     }
-    
+
     await updateCurrentUser(_currentUser!);
   }
 
@@ -301,7 +303,8 @@ class AppStore extends ChangeNotifier {
     if (targetUser == null) return false;
 
     final isLiked = targetUser.likedBy.contains(_currentUser!.id);
-    print('DEBUG: User ${_currentUser!.id} liking ${targetUserId}, currently liked: $isLiked');
+    print(
+        'DEBUG: User ${_currentUser!.id} liking ${targetUserId}, currently liked: $isLiked');
 
     if (isLiked) {
       // Unlike
@@ -331,7 +334,8 @@ class AppStore extends ChangeNotifier {
       return false;
     }
     final isLiked = targetUser.likedBy.contains(_currentUser!.id);
-    print('DEBUG: User ${_currentUser!.id} checking if liked ${targetUserId}: $isLiked');
+    print(
+        'DEBUG: User ${_currentUser!.id} checking if liked ${targetUserId}: $isLiked');
     print('DEBUG: Target user likedBy list: ${targetUser.likedBy}');
     return isLiked;
   }
@@ -437,13 +441,17 @@ class AppStore extends ChangeNotifier {
   // Educational Attainment methods
   Future<void> addEducationalAttainment(EducationalAttainment education) async {
     if (_currentUser == null) return;
+
     _currentUser!.educationalAttainments.add(education);
     await updateCurrentUser(_currentUser!);
   }
 
-  Future<void> updateEducationalAttainment(EducationalAttainment education) async {
+  Future<void> updateEducationalAttainment(
+      EducationalAttainment education) async {
     if (_currentUser == null) return;
-    final index = _currentUser!.educationalAttainments.indexWhere((e) => e.id == education.id);
+
+    final index = _currentUser!.educationalAttainments
+        .indexWhere((e) => e.id == education.id);
     if (index != -1) {
       _currentUser!.educationalAttainments[index] = education;
       await updateCurrentUser(_currentUser!);
@@ -452,7 +460,9 @@ class AppStore extends ChangeNotifier {
 
   Future<void> removeEducationalAttainment(String educationId) async {
     if (_currentUser == null) return;
-    _currentUser!.educationalAttainments.removeWhere((e) => e.id == educationId);
+
+    _currentUser!.educationalAttainments
+        .removeWhere((e) => e.id == educationId);
     await updateCurrentUser(_currentUser!);
   }
 
@@ -465,7 +475,8 @@ class AppStore extends ChangeNotifier {
 
   Future<void> updateExperience(Experience experience) async {
     if (_currentUser == null) return;
-    final index = _currentUser!.experiences.indexWhere((e) => e.id == experience.id);
+    final index =
+        _currentUser!.experiences.indexWhere((e) => e.id == experience.id);
     if (index != -1) {
       _currentUser!.experiences[index] = experience;
       await updateCurrentUser(_currentUser!);
@@ -487,7 +498,8 @@ class AppStore extends ChangeNotifier {
 
   Future<void> updateAchievement(Achievement achievement) async {
     if (_currentUser == null) return;
-    final index = _currentUser!.achievements.indexWhere((a) => a.id == achievement.id);
+    final index =
+        _currentUser!.achievements.indexWhere((a) => a.id == achievement.id);
     if (index != -1) {
       _currentUser!.achievements[index] = achievement;
       await updateCurrentUser(_currentUser!);
@@ -516,9 +528,13 @@ class AppStore extends ChangeNotifier {
   }
 
   Future<List<Map<String, dynamic>>> search(String query) async {
-    // Note: Firebase search would need to be implemented differently
-    // For now, return empty list as this is used for search functionality
-    return [];
+    try {
+      return await FirebaseDatabaseService().searchRecords(query);
+    } catch (e) {
+      print('Firebase search failed, falling back to local database: $e');
+      // Fallback to local database if Firebase fails
+      return await DatabaseHelper().searchRecords(query);
+    }
   }
 
   bool canUserViewPrivateContent(String targetUserId, String viewerId) {
@@ -540,7 +556,7 @@ class AppStore extends ChangeNotifier {
 
   UserAccount _demoAccount() {
     return UserAccount(
-      id: 'demo-001',
+      id: 'maria_sofia_santos',
       name: 'Maria Sofia Santos',
       email: 'maria.santos@ctu.edu.ph',
       phone: '+63 912 345 6789',
@@ -550,6 +566,7 @@ class AppStore extends ChangeNotifier {
       yearLevel: '4th Year',
       studentId: '2023-IE-0001',
       address: 'Cebu City, Philippines',
+      department: 'Bachelor of Science in Industrial Engineering',
       avatarInitials: 'MS',
       avatarUrl: '',
       bio:
@@ -681,7 +698,10 @@ class AppStore extends ChangeNotifier {
           position: 'Industrial Engineering Intern',
           startDate: '2022-06',
           endDate: '2022-12',
-          description: 'Optimized production processes and reduced waste by 15%',
+          description:
+              'Optimized production processes and reduced waste by 15%',
+          title: '',
+          dateRange: '',
         ),
         Experience(
           id: 'exp-2',
@@ -689,7 +709,10 @@ class AppStore extends ChangeNotifier {
           position: 'Process Engineer',
           startDate: '2023-01',
           endDate: '2023-06',
-          description: 'Implemented lean manufacturing principles and improved efficiency',
+          description:
+              'Implemented lean manufacturing principles and improved efficiency',
+          title: '',
+          dateRange: '',
         ),
       ],
       achievements: [
@@ -708,7 +731,8 @@ class AppStore extends ChangeNotifier {
           category: 'Project',
         ),
       ],
-      careerObjective: 'To become a skilled Industrial Engineer specializing in process optimization and sustainable manufacturing practices, contributing to innovative solutions that improve efficiency and environmental impact.',
+      careerObjective:
+          'To become a skilled Industrial Engineer specializing in process optimization and sustainable manufacturing practices, contributing to innovative solutions that improve efficiency and environmental impact.',
     );
   }
 }

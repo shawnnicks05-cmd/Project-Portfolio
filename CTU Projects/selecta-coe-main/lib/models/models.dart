@@ -12,6 +12,7 @@ class UserAccount {
   String yearLevel;
   String studentId;
   String address;
+  String department;
   String avatarInitials;
   String avatarUrl;
   String bio;
@@ -46,6 +47,7 @@ class UserAccount {
     this.yearLevel = '',
     this.studentId = '',
     this.address = '',
+    this.department = '',
     this.avatarInitials = '',
     this.avatarUrl = '',
     this.bio = '',
@@ -89,7 +91,8 @@ class UserAccount {
         'course': course,
         'yearLevel': yearLevel,
         'studentId': studentId,
-        'Address': address,
+        'address': address,
+        'department': department,
         'avatarInitials': avatarInitials,
         'avatarUrl': avatarUrl,
         'bio': bio,
@@ -124,6 +127,7 @@ class UserAccount {
       yearLevel: json['yearLevel'] ?? '',
       studentId: json['studentId'] ?? '',
       address: json['address'] ?? '',
+      department: json['department'] ?? '',
       avatarInitials: json['avatarInitials'] ?? '',
       avatarUrl: json['avatarUrl'] ?? '',
       bio: json['bio'] ?? '',
@@ -311,7 +315,7 @@ class Experience {
     required this.position,
     required this.startDate,
     required this.endDate,
-    required this.description,
+    required this.description, required String title, required String dateRange,
   });
 
   Map<String, dynamic> toJson() => {
@@ -323,14 +327,13 @@ class Experience {
         'description': description,
       };
 
-  factory Experience.fromJson(Map<String, dynamic> json) =>
-      Experience(
+  factory Experience.fromJson(Map<String, dynamic> json) => Experience(
         id: json['id'],
         company: json['company'],
         position: json['position'],
         startDate: json['startDate'],
         endDate: json['endDate'],
-        description: json['description'],
+        description: json['description'], title: '', dateRange: '',
       );
 }
 
@@ -357,8 +360,7 @@ class Achievement {
         'category': category,
       };
 
-  factory Achievement.fromJson(Map<String, dynamic> json) =>
-      Achievement(
+  factory Achievement.fromJson(Map<String, dynamic> json) => Achievement(
         id: json['id'],
         title: json['title'],
         description: json['description'],

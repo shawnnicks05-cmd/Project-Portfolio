@@ -1,9 +1,10 @@
 // lib/screens/auth_screen.dart
 import 'package:flutter/material.dart';
-import 'package:uuid/uuid.dart';
+import 'package:provider/provider.dart';
 import '../data/app_store.dart';
 import '../models/models.dart';
 import '../theme.dart';
+import '../theme_provider.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -35,19 +36,23 @@ class _AuthScreenState extends State<AuthScreen>
 
   void _onTabChanged() {
     print('Tab changed to index: ${_tab.index}');
-    print('Pending auto-fill data: email=$_pendingAutoFillEmail, password=$_pendingAutoFillPassword');
-    print('Login form key current state: ${_loginFormKey.currentState != null}');
-    
+    print(
+        'Pending auto-fill data: email=$_pendingAutoFillEmail, password=$_pendingAutoFillPassword');
+    print(
+        'Login form key current state: ${_loginFormKey.currentState != null}');
+
     // If we have pending auto-fill data and switched to login tab (index 0)
-    if (_pendingAutoFillEmail != null && 
-        _pendingAutoFillPassword != null && 
+    if (_pendingAutoFillEmail != null &&
+        _pendingAutoFillPassword != null &&
         _tab.index == 0) {
       print('Attempting auto-fill...');
       // Small delay to ensure tab animation is complete
       Future.delayed(const Duration(milliseconds: 200), () {
-        print('Delayed auto-fill attempt - mounted: $mounted, formState: ${_loginFormKey.currentState != null}');
+        print(
+            'Delayed auto-fill attempt - mounted: $mounted, formState: ${_loginFormKey.currentState != null}');
         if (mounted && _loginFormKey.currentState != null) {
-          print('Calling autoFillCredentials with: $_pendingAutoFillEmail, $_pendingAutoFillPassword');
+          print(
+              'Calling autoFillCredentials with: $_pendingAutoFillEmail, $_pendingAutoFillPassword');
           _loginFormKey.currentState!.autoFillCredentials(
             _pendingAutoFillEmail!,
             _pendingAutoFillPassword!,
@@ -67,10 +72,10 @@ class _AuthScreenState extends State<AuthScreen>
 
   void _handleAutoFill(String email, String password) {
     print('Auto-fill handler called with: email=$email, password=$password');
-    
+
     // Always switch to login tab and wait for it to complete
     _tab.animateTo(0);
-    
+
     // Wait for tab animation to complete, then auto-fill
     Future.delayed(const Duration(milliseconds: 500), () {
       if (mounted && _loginFormKey.currentState != null) {
@@ -93,119 +98,151 @@ class _AuthScreenState extends State<AuthScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.surfaceVariant,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 32),
-              // Logo
-              Row(
-                children: [
-                  Container(
-                    width: 80,
-                    height: 80,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(10),
-                      color: AppTheme.primary,
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(10),
-                      child: Image.asset(
-                        'assets/LOGO.png',
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => const Icon(
-                          Icons.school,
-                          color: Colors.white,
-                          size: 24,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  const Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'SELECTA-COE',
-                        style: TextStyle(
-                          fontSize: 25,
-                          fontWeight: FontWeight.w800,
-                          color: AppTheme.textPrimary,
-                          letterSpacing: 7,
-                        ),
-                      ),
-                      Text(
-                        '   Student Electronic Tracker',
-                        style: TextStyle(
-                            fontSize: 13,
-                            color: AppTheme.textMuted,
-                            fontWeight: FontWeight.w500),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-              const SizedBox(height: 32),
-              // Form
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: AppTheme.surface,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.08),
-                      blurRadius: 20,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
+      backgroundColor: Theme.of(context).colorScheme.surfaceVariant,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        actions: [
+          Consumer<ThemeProvider>(
+            builder: (context, themeProvider, child) {
+              return IconButton(
+                icon: Icon(
+                  themeProvider.isDarkMode ? Icons.light_mode : Icons.dark_mode,
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
-                child: Column(
-                  children: [
-                    // Tab Bar
-                    Container(
-                      decoration: BoxDecoration(
-                        color: AppTheme.surfaceVariant,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: TabBar(
-                        controller: _tab,
-                        labelColor: AppTheme.primary,
-                        unselectedLabelColor: AppTheme.textMuted,
-                        indicator: BoxDecoration(
-                          color: AppTheme.surface,
+                onPressed: () {
+                  themeProvider.toggleTheme();
+                },
+                tooltip: 'Toggle theme',
+              );
+            },
+          ),
+        ],
+      ),
+      body: Stack(
+        children: [
+          SafeArea(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 32),
+                  // Logo
+                  Row(
+                    children: [
+                      Container(
+                        width: 80,
+                        height: 80,
+                        decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(10),
+                          color: Theme.of(context).colorScheme.primary,
                         ),
-                        labelStyle:
-                            const TextStyle(fontWeight: FontWeight.w600),
-                        tabs: const [
-                          Tab(text: 'Sign In'),
-                          Tab(text: 'Create Account'),
-                        ],
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(10),
+                          child: Image.asset(
+                            'assets/LOGO.png',
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => const Icon(
+                              Icons.school,
+                              color: Colors.white,
+                              size: 24,
+                            ),
+                          ),
+                        ),
                       ),
-                    ),
-                    SizedBox(
-                      height: 480,
-                      child: TabBarView(
-                        controller: _tab,
+                      const SizedBox(width: 12),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          _LoginForm(key: _loginFormKey),
-                          _RegisterForm(
-                            tabController: _tab,
-                            onAutoFill: _handleAutoFill,
+                          Text(
+                            'SELECTA-COE',
+                            style: TextStyle(
+                              fontSize: 25,
+                              fontWeight: FontWeight.w800,
+                              color: Theme.of(context).colorScheme.onSurface,
+                              letterSpacing: 7,
+                            ),
+                          ),
+                          Text(
+                            '   Student Electronic Tracker',
+                            style: TextStyle(
+                                fontSize: 13,
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurface
+                                    .withOpacity(0.6),
+                                fontWeight: FontWeight.w500),
                           ),
                         ],
                       ),
+                    ],
+                  ),
+                  const SizedBox(height: 32),
+                  // Form
+                  Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.surface,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.08),
+                          blurRadius: 20,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
+                    child: Column(
+                      children: [
+                        // Tab Bar
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).colorScheme.surfaceVariant,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: TabBar(
+                            controller: _tab,
+                            labelColor: Theme.of(context).colorScheme.primary,
+                            unselectedLabelColor: Theme.of(context)
+                                .colorScheme
+                                .onSurface
+                                .withOpacity(0.6),
+                            indicator: const UnderlineTabIndicator(
+                              borderSide: BorderSide(
+                                color: Colors.transparent,
+                                width: 0,
+                              ),
+                            ),
+                            labelStyle:
+                                const TextStyle(fontWeight: FontWeight.w600),
+                            tabs: const [
+                              Tab(text: 'Sign In'),
+                              Tab(text: 'Create Account'),
+                            ],
+                          ),
+                        ),
+                        SizedBox(
+                          height: 480,
+                          child: TabBarView(
+                            controller: _tab,
+                            children: [
+                              _LoginForm(key: _loginFormKey),
+                              _RegisterForm(
+                                tabController: _tab,
+                                onAutoFill: _handleAutoFill,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
@@ -258,12 +295,12 @@ class _LoginFormState extends State<_LoginForm> {
     print('autoFillCredentials called with: email=$email, password=$password');
     print('Current email text before: ${_email.text}');
     print('Current password text before: ${_pass.text}');
-    
+
     setState(() {
       _email.text = email;
       _pass.text = password;
     });
-    
+
     print('Current email text after: ${_email.text}');
     print('Current password text after: ${_pass.text}');
     print('Auto-fill credentials set successfully');
@@ -276,22 +313,27 @@ class _LoginFormState extends State<_LoginForm> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Text('Welcome!',
+          Text('Welcome!',
               style: TextStyle(
                   letterSpacing: 3,
                   fontSize: 20,
                   fontWeight: FontWeight.w700,
-                  color: AppTheme.textPrimary)),
-          const SizedBox(height: 4),
-          const Text('Sign in to your account',
-              style: TextStyle(fontSize: 13, color: AppTheme.textSecondary)),
-          const SizedBox(height: 24),
+                  color: Theme.of(context).colorScheme.onSurface)),
+          SizedBox(height: 4),
+          Text('Sign in to your account',
+              style: TextStyle(
+                  fontSize: 13,
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onSurface
+                      .withOpacity(0.7))),
+          SizedBox(height: 24),
           TextFormField(
             focusNode: _emailFocus,
             textInputAction: TextInputAction.next,
             onFieldSubmitted: (_) =>
                 FocusScope.of(context).requestFocus(_passFocus),
-            style: const TextStyle(color: AppTheme.textPrimary),
+            style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
             controller: _email,
             keyboardType: TextInputType.emailAddress,
             decoration: const InputDecoration(
@@ -304,7 +346,7 @@ class _LoginFormState extends State<_LoginForm> {
             focusNode: _passFocus,
             textInputAction: TextInputAction.done,
             onFieldSubmitted: (_) => _login(),
-            style: const TextStyle(color: AppTheme.textPrimary),
+            style: TextStyle(color: AppTheme.textPrimary),
             controller: _pass,
             obscureText: _obscure,
             decoration: InputDecoration(
@@ -318,11 +360,11 @@ class _LoginFormState extends State<_LoginForm> {
             ),
           ),
           if (_error != null) ...[
-            const SizedBox(height: 10),
+            const SizedBox(height: 8),
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: AppTheme.danger.withOpacity(0.08),
+                color: AppTheme.danger.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(_error!,
@@ -343,17 +385,6 @@ class _LoginFormState extends State<_LoginForm> {
                           strokeWidth: 2, color: Colors.white))
                   : const Text('Sign In'),
             ),
-          ),
-          const SizedBox(height: 16),
-          const Divider(),
-          const SizedBox(height: 10),
-          const Text(
-            'Demo: use maria.santos@ctu.edu.ph\nPassword: password123',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-                fontSize: 12,
-                color: AppTheme.textMuted,
-                fontStyle: FontStyle.italic),
           ),
         ],
       ),
@@ -390,6 +421,7 @@ class _RegisterFormState extends State<_RegisterForm> {
   final _passwordFocus = FocusNode();
   String _userType = 'Student';
   String _yearLevel = '1st Year';
+  String _department = 'Bachelor of Science in Industrial Engineering';
   bool _loading = false;
   bool _obscure = true;
   String? _error;
@@ -397,6 +429,15 @@ class _RegisterFormState extends State<_RegisterForm> {
 
   final _years = ['1st Year', '2nd Year', '3rd Year', '4th Year', '5th Year'];
   final _userTypes = ['Student', 'Professor'];
+  final _departments = [
+    'Bachelor of Science in Electronics and Communication Engineering',
+    'Bachelor of Science in Civil Engineering',
+    'Bachelor of Science in Electrical Engineering',
+    'Bachelor of Science in Mechanical Engineering',
+    'Bachelor of Science in Aerospace Engineering',
+    'Bachelor of Science in Computer Engineering',
+    'Bachelor of Science in Industrial Engineering'
+  ];
 
   @override
   void dispose() {
@@ -443,7 +484,12 @@ class _RegisterFormState extends State<_RegisterForm> {
         .join();
 
     final account = UserAccount(
-      id: const Uuid().v4(),
+      id: _name.text
+          .trim()
+          .toLowerCase()
+          .replaceAll(' ', '_')
+          .replaceAll('.', '_')
+          .replaceAll('@', '_'),
       name: _name.text.trim(),
       email: _email.text.trim(),
       phone: _phone.text.trim(),
@@ -453,6 +499,7 @@ class _RegisterFormState extends State<_RegisterForm> {
       yearLevel: _yearLevel,
       studentId: _studentId.text.trim(),
       address: _address.text.trim(),
+      department: _department,
       avatarInitials: initials,
       bio: _bio.text.trim(),
     );
@@ -460,7 +507,7 @@ class _RegisterFormState extends State<_RegisterForm> {
     // Store credentials before any state changes
     final email = _email.text.trim();
     final password = _password.text.trim();
-    
+
     final ok = await AppStore().createAccount(account);
     if (!mounted) return;
     if (ok) {
@@ -509,13 +556,8 @@ class _RegisterFormState extends State<_RegisterForm> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text('Create account',
-                style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w700,
-                    color: AppTheme.textPrimary)),
             const SizedBox(height: 16),
-            _field(_name, 'Full Name', Icons.person_outline,
+            _field(context, _name, 'Full Name', Icons.person_outline,
                 focusNode: _nameFocus,
                 textInputAction: TextInputAction.next,
                 onFieldSubmitted: (_) =>
@@ -530,14 +572,15 @@ class _RegisterFormState extends State<_RegisterForm> {
                       value: type,
                       child: Text(
                         type,
-                        style: const TextStyle(
-                            fontSize: 13, color: AppTheme.textPrimary),
+                        style: TextStyle(
+                            fontSize: 13,
+                            color: AppTheme.getTextPrimary(context)),
                       )))
                   .toList(),
               onChanged: (v) => setState(() => _userType = v!),
             ),
-            const SizedBox(height: 10),
-            _field(_email, 'Email', Icons.email_outlined,
+            const SizedBox(height: 12),
+            _field(context, _email, 'Email', Icons.email_outlined,
                 focusNode: _emailFocus,
                 textInputAction: TextInputAction.next,
                 onFieldSubmitted: (_) =>
@@ -545,31 +588,49 @@ class _RegisterFormState extends State<_RegisterForm> {
                 keyboard: TextInputType.emailAddress,
                 validator: (v) =>
                     v!.contains('@') ? null : 'Enter a valid email'),
-            const SizedBox(height: 10),
-            _field(_phone, 'Phone', Icons.phone_outlined,
+            const SizedBox(height: 12),
+            _field(context, _phone, 'Phone', Icons.phone_outlined,
                 focusNode: _phoneFocus,
                 textInputAction: TextInputAction.next,
                 onFieldSubmitted: (_) =>
                     FocusScope.of(context).requestFocus(_courseFocus),
                 keyboard: TextInputType.phone),
-            const SizedBox(height: 10),
-            _field(_course, 'Course / Program', Icons.book_outlined,
-                focusNode: _courseFocus,
-                textInputAction: TextInputAction.next,
-                onFieldSubmitted: (_) =>
-                    FocusScope.of(context).requestFocus(_studentIdFocus),
-                validator: (v) => v!.isEmpty ? 'Required' : null),
-            const SizedBox(height: 10),
+            const SizedBox(height: 9),
+            DropdownButtonFormField<String>(
+              initialValue: _department,
+              decoration: const InputDecoration(
+                labelText: 'Departments',
+                contentPadding:
+                    EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              ),
+              isExpanded: true,
+              items: _departments
+                  .map((dept) => DropdownMenuItem(
+                      value: dept,
+                      child: Text(
+                        dept,
+                        style: TextStyle(
+                            fontSize: 11,
+                            color: AppTheme.getTextPrimary(context)),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 2,
+                      )))
+                  .toList(),
+              onChanged: (v) => setState(() => _department = v ?? _department),
+            ),
+            const SizedBox(height: 12),
             Row(
               children: [
                 Expanded(
-                  child: _field(_studentId, 'Student ID', Icons.badge_outlined,
+                  child: _field(
+                      context, _studentId, 'Student ID', Icons.badge_outlined,
                       focusNode: _studentIdFocus,
                       textInputAction: TextInputAction.next,
                       onFieldSubmitted: (_) =>
                           FocusScope.of(context).requestFocus(_addressFocus)),
                 ),
-                const SizedBox(width: 10),
+                const SizedBox(height: 7),
+                const SizedBox(width: 12),
                 Expanded(
                   child: DropdownButtonFormField<String>(
                     initialValue: _yearLevel,
@@ -579,8 +640,9 @@ class _RegisterFormState extends State<_RegisterForm> {
                             value: y,
                             child: Text(
                               y,
-                              style: const TextStyle(
-                                  fontSize: 13, color: AppTheme.textPrimary),
+                              style: TextStyle(
+                                  fontSize: 10,
+                                  color: AppTheme.getTextPrimary(context)),
                             )))
                         .toList(),
                     onChanged: (v) => setState(() => _yearLevel = v!),
@@ -588,19 +650,19 @@ class _RegisterFormState extends State<_RegisterForm> {
                 ),
               ],
             ),
-            const SizedBox(height: 10),
-            _field(_address, 'Address', Icons.location_on_outlined,
+            const SizedBox(height: 12),
+            _field(context, _address, 'Address', Icons.location_on_outlined,
                 focusNode: _addressFocus,
                 textInputAction: TextInputAction.next,
                 onFieldSubmitted: (_) =>
                     FocusScope.of(context).requestFocus(_bioFocus)),
-            const SizedBox(height: 10),
+            const SizedBox(height: 12),
             TextFormField(
               focusNode: _bioFocus,
               textInputAction: TextInputAction.next,
               onFieldSubmitted: (_) =>
                   FocusScope.of(context).requestFocus(_passwordFocus),
-              style: const TextStyle(color: AppTheme.textPrimary),
+              style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
               controller: _bio,
               keyboardType: TextInputType.text,
               maxLines: 1,
@@ -609,12 +671,12 @@ class _RegisterFormState extends State<_RegisterForm> {
                 prefixIcon: Icon(Icons.comment_outlined, size: 18),
               ),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 16),
             TextFormField(
               focusNode: _passwordFocus,
               textInputAction: TextInputAction.done,
               onFieldSubmitted: (_) => _register(),
-              style: const TextStyle(color: AppTheme.textPrimary),
+              style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
               controller: _password,
               obscureText: _obscure,
               validator: (v) => v!.isEmpty
@@ -637,12 +699,14 @@ class _RegisterFormState extends State<_RegisterForm> {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: AppTheme.danger.withOpacity(0.08),
+                  color: Theme.of(context)
+                      .colorScheme
+                      .error
+                      .withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(_error!,
-                    style:
-                        const TextStyle(color: AppTheme.danger, fontSize: 13)),
+                    style: TextStyle(color: AppTheme.danger, fontSize: 13)),
               ),
             ],
             if (_success != null) ...[
@@ -650,14 +714,14 @@ class _RegisterFormState extends State<_RegisterForm> {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: Colors.green.withOpacity(0.08),
+                  color: Colors.green.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(_success!,
                     style: const TextStyle(color: Colors.green, fontSize: 13)),
               ),
             ],
-            const SizedBox(height: 16),
+            const SizedBox(height: 20),
             SizedBox(
               height: 46,
               child: ElevatedButton(
@@ -677,7 +741,8 @@ class _RegisterFormState extends State<_RegisterForm> {
     );
   }
 
-  Widget _field(TextEditingController ctrl, String label, IconData icon,
+  Widget _field(BuildContext context, TextEditingController ctrl, String label,
+      IconData icon,
       {TextInputType? keyboard,
       FocusNode? focusNode,
       TextInputAction? textInputAction,
@@ -690,7 +755,7 @@ class _RegisterFormState extends State<_RegisterForm> {
       onFieldSubmitted: onFieldSubmitted,
       keyboardType: keyboard,
       validator: validator,
-      style: const TextStyle(color: AppTheme.textPrimary),
+      style: TextStyle(color: AppTheme.getTextPrimary(context)),
       decoration: InputDecoration(
         labelText: label,
         prefixIcon: Icon(icon, size: 18),

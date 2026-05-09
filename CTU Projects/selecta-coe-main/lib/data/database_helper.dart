@@ -940,7 +940,7 @@ class DatabaseHelper {
       position: map['position'],
       startDate: map['startDate'] ?? '',
       endDate: map['endDate'] ?? '',
-      description: map['description'] ?? '',
+      description: map['description'] ?? '', title: '', dateRange: '',
     );
   }
 
