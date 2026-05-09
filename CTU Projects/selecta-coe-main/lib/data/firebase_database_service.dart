@@ -201,13 +201,14 @@ class FirebaseDatabaseService {
     try {
       await _usersCollection.doc(user.id).update(user.toJson());
 
-      // Update related data
-      await _updateSkillCategories(user);
-      await _updateProjects(user);
-      await _updateCertifications(user);
-      await _updateEducationalAttainments(user);
-      await _updateExperiences(user);
-      await _updateAchievements(user);
+      // Incremental sync: update/add changed docs, delete only removed docs.
+      // This avoids full delete/reinsert on every save and improves latency.
+      await _syncSkillData(user);
+      await _syncProjects(user);
+      await _syncCertifications(user);
+      await _syncEducationalAttainments(user);
+      await _syncExperiences(user);
+      await _syncAchievements(user);
     } catch (e) {
       print('Error updating user in Firebase: $e');
       throw Exception('Failed to update user in Firebase');
@@ -392,9 +393,7 @@ class FirebaseDatabaseService {
       String userId) async {
     try {
       final QuerySnapshot snapshot =
-          await _getUserCollection(userId, 'educational_attainments')
-              .orderBy('year', descending: true)
-              .get();
+          await _getUserCollection(userId, 'educational_attainments').get();
 
       return snapshot.docs
           .map((doc) => EducationalAttainment.fromJson(
@@ -432,9 +431,7 @@ class FirebaseDatabaseService {
   Future<List<Experience>> getExperiencesForUser(String userId) async {
     try {
       final QuerySnapshot snapshot =
-          await _getUserCollection(userId, 'experiences')
-              .orderBy('startDate', descending: true)
-              .get();
+          await _getUserCollection(userId, 'experiences').get();
 
       return snapshot.docs
           .map((doc) => Experience.fromJson(doc.data() as Map<String, dynamic>))
@@ -467,9 +464,7 @@ class FirebaseDatabaseService {
   Future<List<Achievement>> getAchievementsForUser(String userId) async {
     try {
       final QuerySnapshot snapshot =
-          await _getUserCollection(userId, 'achievements')
-              .orderBy('date', descending: true)
-              .get();
+          await _getUserCollection(userId, 'achievements').get();
 
       return snapshot.docs
           .map(
@@ -573,106 +568,110 @@ class FirebaseDatabaseService {
     await _achievementsCollection.doc(id).delete();
   }
 
-  // Update helper methods
-  Future<void> _updateSkillCategories(UserAccount user) async {
-    // Delete existing categories and skills
-    await _deleteSkillCategoriesForUser(user.id);
+  // Incremental sync helpers
+  Future<void> _syncProjects(UserAccount user) async {
+    await _syncById(
+      userId: user.id,
+      collectionName: 'projects',
+      items: user.projects,
+      idOf: (p) => p.id,
+      toJson: (p) => p.toJson(),
+    );
+  }
 
-    // Insert new categories and skills
+  Future<void> _syncCertifications(UserAccount user) async {
+    await _syncById(
+      userId: user.id,
+      collectionName: 'certifications',
+      items: user.certifications,
+      idOf: (c) => c.id,
+      toJson: (c) => c.toJson(),
+    );
+  }
+
+  Future<void> _syncEducationalAttainments(UserAccount user) async {
+    await _syncById(
+      userId: user.id,
+      collectionName: 'educational_attainments',
+      items: user.educationalAttainments,
+      idOf: (e) => e.id,
+      toJson: (e) => e.toJson(),
+    );
+  }
+
+  Future<void> _syncExperiences(UserAccount user) async {
+    await _syncById(
+      userId: user.id,
+      collectionName: 'experiences',
+      items: user.experiences,
+      idOf: (e) => e.id,
+      toJson: (e) => e.toJson(),
+    );
+  }
+
+  Future<void> _syncAchievements(UserAccount user) async {
+    await _syncById(
+      userId: user.id,
+      collectionName: 'achievements',
+      items: user.achievements,
+      idOf: (a) => a.id,
+      toJson: (a) => a.toJson(),
+    );
+  }
+
+  Future<void> _syncSkillData(UserAccount user) async {
+    await _syncById(
+      userId: user.id,
+      collectionName: 'skill_categories',
+      items: user.skillCategories,
+      idOf: (c) => c.id,
+      toJson: (c) => c.toJson(),
+    );
+
+    final allSkills = <Map<String, dynamic>>[];
     for (final category in user.skillCategories) {
-      await insertSkillCategory(category, user.id);
       for (final skill in category.skills) {
-        await insertSkill(skill, category.id, user.id);
+        final json = skill.toJson();
+        json['categoryId'] = category.id;
+        allSkills.add(json);
       }
     }
+
+    await _syncById<Map<String, dynamic>>(
+      userId: user.id,
+      collectionName: 'skills',
+      items: allSkills,
+      idOf: (s) => (s['id'] ?? '').toString(),
+      toJson: (s) => s,
+    );
   }
 
-  Future<void> _deleteSkillCategoriesForUser(String userId) async {
-    final snapshot = await _skillCategoriesCollection
-        .where('userId', isEqualTo: userId)
-        .get();
+  Future<void> _syncById<T>({
+    required String userId,
+    required String collectionName,
+    required List<T> items,
+    required String Function(T item) idOf,
+    required Map<String, dynamic> Function(T item) toJson,
+  }) async {
+    final collection = _getUserCollection(userId, collectionName);
+    final snapshot = await collection.get();
+    final existingIds = snapshot.docs.map((d) => d.id).toSet();
+    final desiredIds = items.map(idOf).toSet();
 
-    for (var doc in snapshot.docs) {
-      // Delete skills in this category
-      await _skillsCollection.where('categoryId', isEqualTo: doc.id).get().then(
-          (skillSnapshot) => skillSnapshot.docs
-              .forEach((skillDoc) => skillDoc.reference.delete()));
+    final batch = FirebaseFirestore.instance.batch();
 
-      // Delete the category
-      await doc.reference.delete();
-    }
-  }
-
-  Future<void> _updateProjects(UserAccount user) async {
-    // Delete existing projects
-    final snapshot =
-        await _projectsCollection.where('userId', isEqualTo: user.id).get();
-    for (var doc in snapshot.docs) {
-      await doc.reference.delete();
+    for (final item in items) {
+      final id = idOf(item);
+      final data = toJson(item);
+      data['userId'] = userId;
+      batch.set(collection.doc(id), data, SetOptions(merge: true));
     }
 
-    // Insert new projects
-    for (final project in user.projects) {
-      await insertProject(project, user.id);
-    }
-  }
-
-  Future<void> _updateCertifications(UserAccount user) async {
-    // Delete existing certifications
-    final snapshot = await _certificationsCollection
-        .where('userId', isEqualTo: user.id)
-        .get();
-    for (var doc in snapshot.docs) {
-      await doc.reference.delete();
+    for (final id in existingIds.difference(desiredIds)) {
+      batch.delete(collection.doc(id));
     }
 
-    // Insert new certifications
-    for (final certification in user.certifications) {
-      await insertCertification(certification, user.id);
-    }
-  }
-
-  Future<void> _updateEducationalAttainments(UserAccount user) async {
-    // Delete existing educational attainments
-    final snapshot = await _educationalAttainmentsCollection
-        .where('userId', isEqualTo: user.id)
-        .get();
-    for (var doc in snapshot.docs) {
-      await doc.reference.delete();
-    }
-
-    // Insert new educational attainments
-    for (final education in user.educationalAttainments) {
-      await insertEducationalAttainment(education, user.id);
-    }
-  }
-
-  Future<void> _updateExperiences(UserAccount user) async {
-    // Delete existing experiences
-    final snapshot =
-        await _experiencesCollection.where('userId', isEqualTo: user.id).get();
-    for (var doc in snapshot.docs) {
-      await doc.reference.delete();
-    }
-
-    // Insert new experiences
-    for (final experience in user.experiences) {
-      await insertExperience(experience, user.id);
-    }
-  }
-
-  Future<void> _updateAchievements(UserAccount user) async {
-    // Delete existing achievements
-    final snapshot =
-        await _achievementsCollection.where('userId', isEqualTo: user.id).get();
-    for (var doc in snapshot.docs) {
-      await doc.reference.delete();
-    }
-
-    // Insert new achievements
-    for (final achievement in user.achievements) {
-      await insertAchievement(achievement, user.id);
-    }
+    await batch.commit();
   }
 
   // Search functionality - Optimized for better performance

@@ -245,25 +245,41 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ? _pickedImageFile!.path
         : _displayUser?.avatarUrl ?? '';
 
+    final existing = _displayUser!;
     final updatedUser = UserAccount(
-      id: _displayUser!.id,
+      id: existing.id,
       name: _name?.text.trim() ?? '',
       email: _email?.text.trim() ?? '',
       phone: _phone?.text.trim() ?? '',
-      password: _displayUser!.password,
-      userType: _displayUser!.userType,
+      password: existing.password,
+      userType: existing.userType,
       course: _course?.text.trim() ?? '',
       yearLevel: _yearLevelController?.text.trim() ?? '1st Year',
       studentId: _studentId?.text.trim() ?? '',
       address: _location?.text.trim() ?? '',
-      avatarInitials: _displayUser!.avatarInitials,
+      department: existing.department,
+      avatarInitials: existing.avatarInitials,
       avatarUrl: newAvatarUrl,
       bio: _bio?.text.trim() ?? '',
       instagramUrl: _instagramUrl?.text.trim() ?? '',
       facebookUrl: _facebookUrl?.text.trim() ?? '',
-      skillCategories: _displayUser!.skillCategories,
-      projects: _displayUser!.projects,
-      certifications: _displayUser!.certifications,
+      skillCategories: existing.skillCategories,
+      projects: existing.projects,
+      certifications: existing.certifications,
+      educationalAttainments: existing.educationalAttainments,
+      experiences: existing.experiences,
+      achievements: existing.achievements,
+      careerObjective: existing.careerObjective,
+      skillsPrivate: existing.skillsPrivate,
+      projectsPrivate: existing.projectsPrivate,
+      certificationsPrivate: existing.certificationsPrivate,
+      experiencesPrivate: existing.experiencesPrivate,
+      achievementsPrivate: existing.achievementsPrivate,
+      careerObjectivePrivate: existing.careerObjectivePrivate,
+      approvedViewers: existing.approvedViewers,
+      profileViews: existing.profileViews,
+      profileLikes: existing.profileLikes,
+      likedBy: existing.likedBy,
     );
 
     AppStore().updateCurrentUser(updatedUser);
@@ -373,7 +389,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceVariant,
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
             color: Theme.of(context).colorScheme.outline.withOpacity(0.3)),
@@ -505,7 +521,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceVariant,
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
             color: Theme.of(context).colorScheme.outline.withOpacity(0.3)),
@@ -632,7 +648,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceVariant,
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
             color: Theme.of(context).colorScheme.outline.withOpacity(0.3)),
@@ -872,7 +888,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Stack(
       children: [
         Container(
-          color: Theme.of(context).colorScheme.surfaceVariant,
+          color: Theme.of(context).colorScheme.surfaceContainerHighest,
           child: ListView(
             padding: const EdgeInsets.all(16),
             children: [
@@ -951,7 +967,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.surfaceVariant,
+                    color: Theme.of(context).colorScheme.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
                         color: Theme.of(context)
@@ -1015,7 +1031,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     ? Colors.pink
                                     : Theme.of(context)
                                         .colorScheme
-                                        .surfaceVariant,
+                                        .surfaceContainerHighest,
                                 behavior: SnackBarBehavior.floating,
                                 shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(8)),
@@ -1031,7 +1047,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 ? Colors.pink.withOpacity(0.1)
                                 : Theme.of(context)
                                     .colorScheme
-                                    .surfaceVariant
+                                    .surfaceContainerHighest
                                     .withOpacity(0.1),
                             borderRadius: BorderRadius.circular(20),
                             border: Border.all(
@@ -1145,7 +1161,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.surfaceVariant,
+                    color: Theme.of(context).colorScheme.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
                         color: Theme.of(context)
@@ -1242,7 +1258,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surfaceVariant,
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
                       color: Theme.of(context)
@@ -1376,7 +1392,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.surfaceVariant,
+                    color: Theme.of(context).colorScheme.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
                         color: Theme.of(context)
@@ -1420,7 +1436,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surfaceVariant,
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
                       color: Theme.of(context)
@@ -1480,7 +1496,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.surfaceVariant,
+                    color: Theme.of(context).colorScheme.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
                         color: Theme.of(context)
@@ -1544,7 +1560,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.surfaceVariant,
+                    color: Theme.of(context).colorScheme.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
                         color: Theme.of(context)
@@ -1592,7 +1608,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.surfaceVariant,
+                    color: Theme.of(context).colorScheme.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
                         color: Theme.of(context)
@@ -1675,7 +1691,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceVariant,
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
             color: Theme.of(context).colorScheme.outline.withOpacity(0.3)),
@@ -1778,7 +1794,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceVariant,
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
             color: Theme.of(context).colorScheme.outline.withOpacity(0.3)),
@@ -1830,7 +1846,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 padding: const EdgeInsets.all(12),
                 margin: const EdgeInsets.only(bottom: 8),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surfaceVariant,
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
                       color: Theme.of(context)
@@ -1880,7 +1896,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceVariant,
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
             color: Theme.of(context).colorScheme.outline.withOpacity(0.3)),
@@ -1932,7 +1948,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 padding: const EdgeInsets.all(12),
                 margin: const EdgeInsets.only(bottom: 8),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surfaceVariant,
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
                       color: Theme.of(context)

@@ -304,7 +304,7 @@ class AppStore extends ChangeNotifier {
 
     final isLiked = targetUser.likedBy.contains(_currentUser!.id);
     print(
-        'DEBUG: User ${_currentUser!.id} liking ${targetUserId}, currently liked: $isLiked');
+        'DEBUG: User ${_currentUser!.id} liking $targetUserId, currently liked: $isLiked');
 
     if (isLiked) {
       // Unlike
@@ -335,7 +335,7 @@ class AppStore extends ChangeNotifier {
     }
     final isLiked = targetUser.likedBy.contains(_currentUser!.id);
     print(
-        'DEBUG: User ${_currentUser!.id} checking if liked ${targetUserId}: $isLiked');
+        'DEBUG: User ${_currentUser!.id} checking if liked $targetUserId: $isLiked');
     print('DEBUG: Target user likedBy list: ${targetUser.likedBy}');
     return isLiked;
   }

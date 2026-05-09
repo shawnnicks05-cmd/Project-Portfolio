@@ -1,6 +1,5 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:path/path.dart';
 import 'package:provider/provider.dart';
 import '../data/app_store.dart';
 import '../models/models.dart';
@@ -510,7 +509,7 @@ class _DashboardTabState extends State<_DashboardTab> {
     }
 
     return Container(
-      color: Theme.of(context).colorScheme.surfaceVariant,
+      color: Theme.of(context).colorScheme.surfaceContainerHighest,
       child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -518,22 +517,20 @@ class _DashboardTabState extends State<_DashboardTab> {
           const SizedBox(height: 16),
           _StatsRow(user: user),
           const SizedBox(height: 20),
-          if (!user.skillsPrivate && user.skillCategories.isNotEmpty) ...[
+          if (user.skillCategories.isNotEmpty) ...[
             const _SectionHeader(title: 'Top Competencies'),
             const SizedBox(height: 10),
             ...user.skillCategories
-                .take(2)
                 .map((cat) => _CompetencyCard(category: cat)),
           ],
           const SizedBox(height: 20),
-          if (!user.projectsPrivate && user.projects.isNotEmpty) ...[
+          if (user.projects.isNotEmpty) ...[
             const _SectionHeader(title: 'Recent Projects'),
             const SizedBox(height: 10),
-            ...user.projects.take(2).map((p) => _ProjectCard(project: p)),
+            ...user.projects.map((p) => _ProjectCard(project: p)),
           ],
           const SizedBox(height: 20),
-          if (!user.certificationsPrivate &&
-              user.certifications.isNotEmpty) ...[
+          if (user.certifications.isNotEmpty) ...[
             const _SectionHeader(title: 'Certifications'),
             const SizedBox(height: 10),
             _CertGrid(certs: user.certifications),
@@ -545,13 +542,13 @@ class _DashboardTabState extends State<_DashboardTab> {
             _EducationGrid(education: user.educationalAttainments),
           ],
           const SizedBox(height: 20),
-          if (!user.experiencesPrivate && user.experiences.isNotEmpty) ...[
+          if (user.experiences.isNotEmpty) ...[
             const _SectionHeader(title: 'Experience'),
             const SizedBox(height: 10),
             _ExperienceGrid(experiences: user.experiences),
           ],
           const SizedBox(height: 20),
-          if (!user.achievementsPrivate && user.achievements.isNotEmpty) ...[
+          if (user.achievements.isNotEmpty) ...[
             const _SectionHeader(title: 'Achievements'),
             const SizedBox(height: 10),
             _AchievementGrid(achievements: user.achievements),
@@ -841,7 +838,7 @@ class _StatCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
         decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surfaceVariant,
+          color: Theme.of(context).colorScheme.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
               color: Theme.of(context).colorScheme.outline.withOpacity(0.3)),
@@ -888,7 +885,7 @@ class _CompetencyCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceVariant,
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
             color: Theme.of(context).colorScheme.outline.withOpacity(0.3)),
@@ -940,7 +937,7 @@ class _SkillRow extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: Theme.of(context)
                       .colorScheme
-                      .surfaceVariant
+                      .surfaceContainerHighest
                       .withOpacity(0.1),
                   borderRadius: BorderRadius.circular(20),
                 ),
@@ -980,7 +977,7 @@ class _ProjectCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceVariant,
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
             color: Theme.of(context).colorScheme.outline.withOpacity(0.3)),
@@ -1051,7 +1048,9 @@ class _ProjectCard extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 8, vertical: 3),
                       decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.surfaceVariant,
+                        color: Theme.of(context)
+                            .colorScheme
+                            .surfaceContainerHighest,
                         borderRadius: BorderRadius.circular(6),
                         border: Border.all(
                             color: Theme.of(context)
@@ -1065,25 +1064,6 @@ class _ProjectCard extends StatelessWidget {
                               color: Theme.of(context).colorScheme.onSurface)),
                     ))
                 .toList(),
-          ),
-          const SizedBox(height: 10),
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton(
-              onPressed: () {},
-              style: OutlinedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                side: BorderSide(
-                    color:
-                        Theme.of(context).colorScheme.outline.withOpacity(0.3)),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8)),
-              ),
-              child: Text('Edit Project',
-                  style: TextStyle(
-                      fontSize: 13,
-                      color: Theme.of(context).colorScheme.onSurface)),
-            ),
           ),
         ],
       ),
@@ -1121,7 +1101,7 @@ class _CertTile extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceVariant,
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
             color: Theme.of(context).colorScheme.outline.withOpacity(0.3)),
@@ -1198,7 +1178,7 @@ class _EducationTile extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surfaceVariant,
+          color: Theme.of(context).colorScheme.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
               color: Theme.of(context).colorScheme.outline.withOpacity(0.3)),
@@ -1272,18 +1252,18 @@ class _EducationTile extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildDetailRow('School Name', education.schoolName),
+            _buildDetailRow(context, 'School Name', education.schoolName),
             if (education.degree.isNotEmpty) ...[
               const SizedBox(height: 12),
-              _buildDetailRow('Degree', education.degree),
+              _buildDetailRow(context, 'Degree', education.degree),
             ],
             if (education.year.isNotEmpty) ...[
               const SizedBox(height: 12),
-              _buildDetailRow('Year', education.year),
+              _buildDetailRow(context, 'Year', education.year),
             ],
             if (education.address.isNotEmpty) ...[
               const SizedBox(height: 12),
-              _buildDetailRow('Address', education.address),
+              _buildDetailRow(context, 'Address', education.address),
             ],
           ],
         ),
@@ -1297,19 +1277,17 @@ class _EducationTile extends StatelessWidget {
     );
   }
 
-  Widget _buildDetailRow(String label, String value) {
+  Widget _buildDetailRow(BuildContext context, String label, String value) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(label,
-            style: TextStyle(
-                fontSize: 12,
-                color: AppTheme.getTextMuted(context as BuildContext))),
+            style:
+                TextStyle(fontSize: 12, color: AppTheme.getTextMuted(context))),
         const SizedBox(height: 4),
         Text(value,
             style: TextStyle(
-                fontSize: 14,
-                color: AppTheme.getTextPrimary(context as BuildContext))),
+                fontSize: 14, color: AppTheme.getTextPrimary(context))),
       ],
     );
   }
@@ -1348,7 +1326,7 @@ class _ExperienceTile extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surfaceVariant,
+          color: Theme.of(context).colorScheme.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
               color: Theme.of(context).colorScheme.outline.withOpacity(0.3)),
@@ -1385,11 +1363,13 @@ class _ExperienceTile extends StatelessWidget {
             ),
             const SizedBox(height: 2),
             Text(experience.company,
-                style: TextStyle(fontSize: 10, color: AppTheme.getTextSecondary(context)),
+                style: TextStyle(
+                    fontSize: 10, color: AppTheme.getTextSecondary(context)),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis),
             Text('${experience.startDate} - ${experience.endDate}',
-                style: TextStyle(fontSize: 10, color: AppTheme.getTextSecondary(context)),
+                style: TextStyle(
+                    fontSize: 10, color: AppTheme.getTextSecondary(context)),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis),
           ],
@@ -1417,15 +1397,15 @@ class _ExperienceTile extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildDetailRow('Position', experience.position),
+            _buildDetailRow(context, 'Position', experience.position),
             const SizedBox(height: 12),
-            _buildDetailRow('Company', experience.company),
+            _buildDetailRow(context, 'Company', experience.company),
             const SizedBox(height: 12),
-            _buildDetailRow(
-                'Duration', '${experience.startDate} - ${experience.endDate}'),
+            _buildDetailRow(context, 'Duration',
+                '${experience.startDate} - ${experience.endDate}'),
             if (experience.description.isNotEmpty) ...[
               const SizedBox(height: 12),
-              _buildDetailRow('Description', experience.description),
+              _buildDetailRow(context, 'Description', experience.description),
             ],
           ],
         ),
@@ -1439,19 +1419,17 @@ class _ExperienceTile extends StatelessWidget {
     );
   }
 
-  Widget _buildDetailRow(String label, String value) {
+  Widget _buildDetailRow(BuildContext context, String label, String value) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(label,
-            style: TextStyle(
-                fontSize: 12,
-                color: AppTheme.getTextMuted(context as BuildContext))),
+            style:
+                TextStyle(fontSize: 12, color: AppTheme.getTextMuted(context))),
         const SizedBox(height: 4),
         Text(value,
             style: TextStyle(
-                fontSize: 14,
-                color: AppTheme.getTextPrimary(context as BuildContext))),
+                fontSize: 14, color: AppTheme.getTextPrimary(context))),
       ],
     );
   }
@@ -1490,7 +1468,7 @@ class _AchievementTile extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surfaceVariant,
+          color: Theme.of(context).colorScheme.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
               color: Theme.of(context).colorScheme.outline.withOpacity(0.3)),
@@ -1525,11 +1503,13 @@ class _AchievementTile extends StatelessWidget {
                 overflow: TextOverflow.ellipsis),
             const Spacer(),
             Text(achievement.category,
-                style: TextStyle(fontSize: 10, color: AppTheme.getTextSecondary(context)),
+                style: TextStyle(
+                    fontSize: 10, color: AppTheme.getTextSecondary(context)),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis),
             Text(achievement.date,
-                style: TextStyle(fontSize: 10, color: AppTheme.getTextSecondary(context)),
+                style: TextStyle(
+                    fontSize: 10, color: AppTheme.getTextSecondary(context)),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis),
           ],
@@ -1557,14 +1537,14 @@ class _AchievementTile extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildDetailRow('Title', achievement.title),
+            _buildDetailRow(context, 'Title', achievement.title),
             const SizedBox(height: 12),
-            _buildDetailRow('Category', achievement.category),
+            _buildDetailRow(context, 'Category', achievement.category),
             const SizedBox(height: 12),
-            _buildDetailRow('Date', achievement.date),
+            _buildDetailRow(context, 'Date', achievement.date),
             if (achievement.description.isNotEmpty) ...[
               const SizedBox(height: 12),
-              _buildDetailRow('Description', achievement.description),
+              _buildDetailRow(context, 'Description', achievement.description),
             ],
           ],
         ),
@@ -1578,19 +1558,17 @@ class _AchievementTile extends StatelessWidget {
     );
   }
 
-  Widget _buildDetailRow(String label, String value) {
+  Widget _buildDetailRow(BuildContext context, String label, String value) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(label,
-            style: TextStyle(
-                fontSize: 12,
-                color: AppTheme.getTextMuted(context as BuildContext))),
+            style:
+                TextStyle(fontSize: 12, color: AppTheme.getTextMuted(context))),
         const SizedBox(height: 4),
         Text(value,
             style: TextStyle(
-                fontSize: 14,
-                color: AppTheme.getTextPrimary(context as BuildContext))),
+                fontSize: 14, color: AppTheme.getTextPrimary(context))),
       ],
     );
   }

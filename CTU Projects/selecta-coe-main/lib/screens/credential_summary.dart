@@ -61,6 +61,17 @@ InputDecoration _darkLabelInput(String label, BuildContext context) =>
           borderSide: BorderSide(color: Theme.of(context).colorScheme.primary)),
     );
 
+const int _maxSummaryItems = 15;
+
+void _showLimitReached(BuildContext context, String sectionName) {
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Text('Maximum of $_maxSummaryItems items allowed for $sectionName.'),
+      behavior: SnackBarBehavior.floating,
+    ),
+  );
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 
 class DatabaseScreen extends StatefulWidget {
@@ -91,12 +102,11 @@ class _DatabaseScreenState extends State<DatabaseScreen>
     return Column(
       children: [
         Container(
-          color: Theme.of(context).colorScheme.surfaceVariant,
+          color: Theme.of(context).colorScheme.surfaceContainerHighest,
           child: TabBar(
             controller: _tab,
             labelColor: Theme.of(context).colorScheme.primary,
-            unselectedLabelColor:
-                AppTheme.getTextSecondary(context),
+            unselectedLabelColor: AppTheme.getTextSecondary(context),
             indicatorColor: AppTheme.primary,
             tabs: const [
               Tab(text: 'Skills'),
@@ -158,7 +168,13 @@ class _SkillsTabState extends State<_SkillsTab> {
           bottom: 16,
           right: 16,
           child: FloatingActionButton.extended(
-            onPressed: () => _showAddCategoryDialog(context),
+            onPressed: () {
+              if (user.skillCategories.length >= _maxSummaryItems) {
+                _showLimitReached(context, 'Skills');
+                return;
+              }
+              _showAddCategoryDialog(context);
+            },
             backgroundColor: Theme.of(context).colorScheme.primary,
             foregroundColor: Theme.of(context).colorScheme.onPrimary,
             icon: const Icon(Icons.add),
@@ -171,39 +187,57 @@ class _SkillsTabState extends State<_SkillsTab> {
 
   void _showAddCategoryDialog(BuildContext context) {
     final ctrl = TextEditingController();
+    bool isSubmitting = false;
     showDialog(
       context: context,
-      builder: (_) => AlertDialog(
-        backgroundColor: _getDialogBg(context),
-        title: Text(
-          'New Skill Category',
-          style: TextStyle(
-              color: _getTextColor(context), fontWeight: FontWeight.w600),
-        ),
-        content: TextField(
-          controller: ctrl,
-          autofocus: true,
-          style: TextStyle(color: _getTextColor(context)),
-          decoration: _darkInput('e.g. Programming Languages', context),
-        ),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel')),
-          ElevatedButton(
-            onPressed: () async {
-              if (ctrl.text.trim().isEmpty) return;
-              await AppStore().addSkillCategory(SkillCategory(
-                id: const Uuid().v4(),
-                name: ctrl.text.trim(),
-              ));
-              if (!context.mounted) return;
-              Navigator.pop(context);
-              setState(() {});
-            },
-            child: const Text('Add'),
+      builder: (_) => StatefulBuilder(
+        builder: (dialogContext, setSt) => AlertDialog(
+          backgroundColor: _getDialogBg(context),
+          title: Text(
+            'New Skill Category',
+            style: TextStyle(
+                color: _getTextColor(context), fontWeight: FontWeight.w600),
           ),
-        ],
+          content: TextField(
+            controller: ctrl,
+            autofocus: true,
+            style: TextStyle(color: _getTextColor(context)),
+            decoration: _darkInput('e.g. Programming Languages', context),
+          ),
+          actions: [
+            TextButton(
+              onPressed: isSubmitting ? null : () => Navigator.pop(dialogContext),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: isSubmitting
+                  ? null
+                  : () async {
+                      if (ctrl.text.trim().isEmpty) return;
+                      if (AppStore().currentUser!.skillCategories.length >=
+                          _maxSummaryItems) {
+                        _showLimitReached(context, 'Skills');
+                        return;
+                      }
+                      setSt(() => isSubmitting = true);
+                      await AppStore().addSkillCategory(SkillCategory(
+                        id: const Uuid().v4(),
+                        name: ctrl.text.trim(),
+                      ));
+                      if (!dialogContext.mounted) return;
+                      Navigator.pop(dialogContext);
+                      setState(() {});
+                    },
+              child: isSubmitting
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Text('Add'),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -219,7 +253,7 @@ class _CategoryCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceVariant,
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
             color: Theme.of(context).colorScheme.outline.withOpacity(0.3)),
@@ -242,7 +276,13 @@ class _CategoryCard extends StatelessWidget {
                 IconButton(
                   icon: Icon(Icons.add,
                       color: Theme.of(context).colorScheme.primary, size: 20),
-                  onPressed: () => _showAddSkillDialog(context),
+                  onPressed: () {
+                    if (category.skills.length >= _maxSummaryItems) {
+                      _showLimitReached(context, 'Skills');
+                      return;
+                    }
+                    _showAddSkillDialog(context);
+                  },
                   tooltip: 'Add skill',
                 ),
               ],
@@ -275,6 +315,7 @@ class _CategoryCard extends StatelessWidget {
     final nameCtrl = TextEditingController();
     String level = 'Intermediate';
     double percent = 50;
+    bool isSubmitting = false;
 
     showDialog(
       context: context,
@@ -326,22 +367,35 @@ class _CategoryCard extends StatelessWidget {
                 onPressed: () => Navigator.pop(ctx),
                 child: const Text('Cancel')),
             ElevatedButton(
-              onPressed: () async {
-                if (nameCtrl.text.trim().isEmpty) return;
-                await AppStore().addSkillToCategory(
-                  category.id,
-                  Skill(
-                    id: const Uuid().v4(),
-                    name: nameCtrl.text.trim(),
-                    level: level,
-                    proficiencyPercent: percent,
-                  ),
-                );
-                if (!ctx.mounted) return;
-                Navigator.pop(ctx);
-                onChanged();
-              },
-              child: const Text('Add'),
+              onPressed: isSubmitting
+                  ? null
+                  : () async {
+                      if (nameCtrl.text.trim().isEmpty) return;
+                      if (category.skills.length >= _maxSummaryItems) {
+                        _showLimitReached(context, 'Skills');
+                        return;
+                      }
+                      setSt(() => isSubmitting = true);
+                      await AppStore().addSkillToCategory(
+                        category.id,
+                        Skill(
+                          id: const Uuid().v4(),
+                          name: nameCtrl.text.trim(),
+                          level: level,
+                          proficiencyPercent: percent,
+                        ),
+                      );
+                      if (!ctx.mounted) return;
+                      Navigator.pop(ctx);
+                      onChanged();
+                    },
+              child: isSubmitting
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Text('Add'),
             ),
           ],
         );
@@ -370,8 +424,8 @@ class _SkillTile extends StatelessWidget {
                     style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
-                        color: Theme.of(context).brightness == Brightness.dark 
-                            ? Colors.white 
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? Colors.white
                             : Colors.black87)),
               ),
               Container(
@@ -384,8 +438,8 @@ class _SkillTile extends StatelessWidget {
                     style: TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.w600,
-                        color: Theme.of(context).brightness == Brightness.dark 
-                            ? Colors.white 
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? Colors.white
                             : Colors.black87)),
               ),
               const SizedBox(width: 6),
@@ -424,8 +478,8 @@ class _SkillTile extends StatelessWidget {
                   style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w500,
-                      color: Theme.of(context).brightness == Brightness.dark 
-                          ? Colors.white70 
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? Colors.white70
                           : Colors.black54)),
             ],
           ),
@@ -466,7 +520,13 @@ class _ProjectsTabState extends State<_ProjectsTab> {
           bottom: 16,
           right: 16,
           child: FloatingActionButton.extended(
-            onPressed: () => _showAddDialog(context),
+            onPressed: () {
+              if (user.projects.length >= _maxSummaryItems) {
+                _showLimitReached(context, 'Projects');
+                return;
+              }
+              _showAddDialog(context);
+            },
             backgroundColor: Theme.of(context).colorScheme.primary,
             foregroundColor: Theme.of(context).colorScheme.onPrimary,
             icon: const Icon(Icons.add),
@@ -483,6 +543,7 @@ class _ProjectsTabState extends State<_ProjectsTab> {
     final dateCtrl = TextEditingController();
     final tagsCtrl = TextEditingController();
     int members = 1;
+    bool isSubmitting = false;
 
     showDialog(
       context: context,
@@ -550,26 +611,40 @@ class _ProjectsTabState extends State<_ProjectsTab> {
                 onPressed: () => Navigator.pop(ctx),
                 child: const Text('Cancel')),
             ElevatedButton(
-              onPressed: () async {
-                if (titleCtrl.text.trim().isEmpty) return;
-                final tags = tagsCtrl.text
-                    .split(' ')
-                    .map((t) => t.trim())
-                    .where((t) => t.isNotEmpty)
-                    .toList();
-                await AppStore().addProject(Project(
-                  id: const Uuid().v4(),
-                  title: titleCtrl.text.trim(),
-                  description: descCtrl.text.trim(),
-                  date: dateCtrl.text.trim(),
-                  memberCount: members,
-                  tags: tags,
-                ));
-                if (!ctx.mounted) return;
-                Navigator.pop(ctx);
-                _refresh();
-              },
-              child: const Text('Add'),
+              onPressed: isSubmitting
+                  ? null
+                  : () async {
+                      if (titleCtrl.text.trim().isEmpty) return;
+                      if (AppStore().currentUser!.projects.length >=
+                          _maxSummaryItems) {
+                        _showLimitReached(context, 'Projects');
+                        return;
+                      }
+                      setSt(() => isSubmitting = true);
+                      final tags = tagsCtrl.text
+                          .split(' ')
+                          .map((t) => t.trim())
+                          .where((t) => t.isNotEmpty)
+                          .toList();
+                      await AppStore().addProject(Project(
+                        id: const Uuid().v4(),
+                        title: titleCtrl.text.trim(),
+                        description: descCtrl.text.trim(),
+                        date: dateCtrl.text.trim(),
+                        memberCount: members,
+                        tags: tags,
+                      ));
+                      if (!ctx.mounted) return;
+                      Navigator.pop(ctx);
+                      _refresh();
+                    },
+              child: isSubmitting
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Text('Add'),
             ),
           ],
         );
@@ -588,7 +663,7 @@ class _ProjectTile extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceVariant,
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
             color: Theme.of(context).colorScheme.outline.withOpacity(0.3)),
@@ -682,7 +757,13 @@ class _EducationTabState extends State<_EducationTab> {
           bottom: 16,
           right: 16,
           child: FloatingActionButton.extended(
-            onPressed: () => _showAddDialog(context),
+            onPressed: () {
+              if (user.educationalAttainments.length >= _maxSummaryItems) {
+                _showLimitReached(context, 'Education');
+                return;
+              }
+              _showAddDialog(context);
+            },
             backgroundColor: Theme.of(context).colorScheme.primary,
             foregroundColor: Theme.of(context).colorScheme.onPrimary,
             icon: const Icon(Icons.add),
@@ -698,76 +779,94 @@ class _EducationTabState extends State<_EducationTab> {
     final degreeCtrl = TextEditingController();
     final yearCtrl = TextEditingController();
     final addressCtrl = TextEditingController();
+    bool isSubmitting = false;
 
     showDialog(
       context: context,
-      builder: (_) => AlertDialog(
-        backgroundColor: _getDialogBg(context),
-        title: Text(
-          'Add Education',
-          style: TextStyle(
-              color: _getTextColor(context), fontWeight: FontWeight.w600),
-        ),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: schoolCtrl,
-                autofocus: true,
-                style: TextStyle(color: _getTextColor(context)),
-                decoration: _darkInput('School Name', context),
-                textAlign: TextAlign.left,
-              ),
-              const SizedBox(height: 14),
-              TextField(
-                controller: degreeCtrl,
-                textAlign: TextAlign.left,
-                style: TextStyle(color: _getTextColor(context)),
-                decoration: _darkInput('Degree', context),
-              ),
-              const SizedBox(height: 14),
-              TextField(
-                controller: yearCtrl,
-                textAlign: TextAlign.left,
-                style: TextStyle(color: _getTextColor(context)),
-                decoration: _darkInput('Year', context),
-              ),
-              const SizedBox(height: 14),
-              TextField(
-                controller: addressCtrl,
-                textAlign: TextAlign.left,
-                style: TextStyle(color: _getTextColor(context)),
-                decoration: _darkInput('Address', context),
-              ),
-            ],
+      builder: (_) => StatefulBuilder(
+        builder: (dialogContext, setSt) => AlertDialog(
+          backgroundColor: _getDialogBg(context),
+          title: Text(
+            'Add Education',
+            style: TextStyle(
+                color: _getTextColor(context), fontWeight: FontWeight.w600),
           ),
-        ),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel')),
-          ElevatedButton(
-            onPressed: () async {
-              if (schoolCtrl.text.isNotEmpty) {
-                final education = EducationalAttainment(
-                  id: const Uuid().v4(),
-                  schoolName: schoolCtrl.text.trim(),
-                  degree: degreeCtrl.text.trim(),
-                  year: yearCtrl.text.trim(),
-                  address: addressCtrl.text.trim(),
-                );
-                await AppStore().addEducationalAttainment(education);
-                Navigator.pop(context);
-                _refresh();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Education added successfully')),
-                );
-              }
-            },
-            child: const Text('Add'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: schoolCtrl,
+                  autofocus: true,
+                  style: TextStyle(color: _getTextColor(context)),
+                  decoration: _darkInput('School Name', context),
+                  textAlign: TextAlign.left,
+                ),
+                const SizedBox(height: 14),
+                TextField(
+                  controller: degreeCtrl,
+                  textAlign: TextAlign.left,
+                  style: TextStyle(color: _getTextColor(context)),
+                  decoration: _darkInput('Degree', context),
+                ),
+                const SizedBox(height: 14),
+                TextField(
+                  controller: yearCtrl,
+                  textAlign: TextAlign.left,
+                  style: TextStyle(color: _getTextColor(context)),
+                  decoration: _darkInput('Year', context),
+                ),
+                const SizedBox(height: 14),
+                TextField(
+                  controller: addressCtrl,
+                  textAlign: TextAlign.left,
+                  style: TextStyle(color: _getTextColor(context)),
+                  decoration: _darkInput('Address', context),
+                ),
+              ],
+            ),
           ),
-        ],
+          actions: [
+            TextButton(
+              onPressed: isSubmitting ? null : () => Navigator.pop(dialogContext),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: isSubmitting
+                  ? null
+                  : () async {
+                      if (schoolCtrl.text.isEmpty) return;
+                      if (AppStore().currentUser!.educationalAttainments.length >=
+                          _maxSummaryItems) {
+                        _showLimitReached(context, 'Education');
+                        return;
+                      }
+                      setSt(() => isSubmitting = true);
+                      final education = EducationalAttainment(
+                        id: const Uuid().v4(),
+                        schoolName: schoolCtrl.text.trim(),
+                        degree: degreeCtrl.text.trim(),
+                        year: yearCtrl.text.trim(),
+                        address: addressCtrl.text.trim(),
+                      );
+                      await AppStore().addEducationalAttainment(education);
+                      if (!dialogContext.mounted) return;
+                      Navigator.pop(dialogContext);
+                      _refresh();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Education added successfully')),
+                      );
+                    },
+              child: isSubmitting
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Text('Add'),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -786,7 +885,7 @@ class _EducationTile extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceVariant,
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
             color: Theme.of(context).colorScheme.outline.withOpacity(0.3)),
@@ -875,10 +974,12 @@ class _EducationTile extends StatelessWidget {
     final degreeCtrl = TextEditingController(text: education.degree);
     final yearCtrl = TextEditingController(text: education.year);
     final addressCtrl = TextEditingController(text: education.address);
+    bool isSubmitting = false;
 
     showDialog(
       context: context,
-      builder: (_) => AlertDialog(
+      builder: (_) => StatefulBuilder(
+        builder: (dialogContext, setSt) => AlertDialog(
         backgroundColor: _getDialogBg(context),
         title: Text(
           'Edit Education',
@@ -918,12 +1019,15 @@ class _EducationTile extends StatelessWidget {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: isSubmitting ? null : () => Navigator.pop(dialogContext),
             child: const Text('Cancel'),
           ),
           ElevatedButton(
-            onPressed: () async {
+            onPressed: isSubmitting
+                ? null
+                : () async {
               if (schoolCtrl.text.isNotEmpty) {
+                setSt(() => isSubmitting = true);
                 final updatedEducation = EducationalAttainment(
                   id: education.id,
                   schoolName: schoolCtrl.text.trim(),
@@ -932,7 +1036,8 @@ class _EducationTile extends StatelessWidget {
                   address: addressCtrl.text.trim(),
                 );
                 await AppStore().updateEducationalAttainment(updatedEducation);
-                Navigator.pop(context);
+                if (!dialogContext.mounted) return;
+                Navigator.pop(dialogContext);
                 onChanged();
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
@@ -940,9 +1045,16 @@ class _EducationTile extends StatelessWidget {
                 );
               }
             },
-            child: const Text('Save'),
+            child: isSubmitting
+                ? const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Text('Save'),
           ),
         ],
+      ),
       ),
     );
   }
@@ -1015,7 +1127,13 @@ class _CertificationsTabState extends State<_CertificationsTab> {
           bottom: 16,
           right: 16,
           child: FloatingActionButton.extended(
-            onPressed: () => _showAddDialog(context),
+            onPressed: () {
+              if (user.certifications.length >= _maxSummaryItems) {
+                _showLimitReached(context, 'Certifications');
+                return;
+              }
+              _showAddDialog(context);
+            },
             backgroundColor: Theme.of(context).colorScheme.primary,
             foregroundColor: Theme.of(context).colorScheme.onPrimary,
             icon: const Icon(Icons.add),
@@ -1031,66 +1149,84 @@ class _CertificationsTabState extends State<_CertificationsTab> {
     final issuerCtrl = TextEditingController();
     final dateCtrl = TextEditingController();
     final idCtrl = TextEditingController();
+    bool isSubmitting = false;
 
     showDialog(
       context: context,
-      builder: (_) => AlertDialog(
-        backgroundColor: _getDialogBg(context),
-        title: Text(
-          'Add Certification',
-          style: TextStyle(
-              color: _getTextColor(context), fontWeight: FontWeight.w600),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: titleCtrl,
-              autofocus: true,
-              style: TextStyle(color: _getTextColor(context)),
-              decoration: _darkInput('Certification title', context),
+      builder: (_) => StatefulBuilder(
+        builder: (dialogContext, setSt) => AlertDialog(
+          backgroundColor: _getDialogBg(context),
+          title: Text(
+            'Add Certification',
+            style: TextStyle(
+                color: _getTextColor(context), fontWeight: FontWeight.w600),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: titleCtrl,
+                autofocus: true,
+                style: TextStyle(color: _getTextColor(context)),
+                decoration: _darkInput('Certification title', context),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: issuerCtrl,
+                style: TextStyle(color: _getTextColor(context)),
+                decoration: _darkInput('Issuing organization', context),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: dateCtrl,
+                style: TextStyle(color: _getTextColor(context)),
+                decoration: _darkInput('Date (e.g. March 2026)', context),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: idCtrl,
+                style: TextStyle(color: _getTextColor(context)),
+                decoration: _darkInput('Certification ID', context),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: isSubmitting ? null : () => Navigator.pop(dialogContext),
+              child: const Text('Cancel'),
             ),
-            const SizedBox(height: 10),
-            TextField(
-              controller: issuerCtrl,
-              style: TextStyle(color: _getTextColor(context)),
-              decoration: _darkInput('Issuing organization', context),
-            ),
-            const SizedBox(height: 10),
-            TextField(
-              controller: dateCtrl,
-              style: TextStyle(color: _getTextColor(context)),
-              decoration: _darkInput('Date (e.g. March 2026)', context),
-            ),
-            const SizedBox(height: 10),
-            TextField(
-              controller: idCtrl,
-              style: TextStyle(color: _getTextColor(context)),
-              decoration: _darkInput('Certification ID', context),
+            ElevatedButton(
+              onPressed: isSubmitting
+                  ? null
+                  : () async {
+                      if (titleCtrl.text.trim().isEmpty) return;
+                      if (AppStore().currentUser!.certifications.length >=
+                          _maxSummaryItems) {
+                        _showLimitReached(context, 'Certifications');
+                        return;
+                      }
+                      setSt(() => isSubmitting = true);
+                      await AppStore().addCertification(Certification(
+                        id: const Uuid().v4(),
+                        title: titleCtrl.text.trim(),
+                        issuer: issuerCtrl.text.trim(),
+                        date: dateCtrl.text.trim(),
+                        certId: idCtrl.text.trim(),
+                      ));
+                      if (!dialogContext.mounted) return;
+                      Navigator.pop(dialogContext);
+                      _refresh();
+                    },
+              child: isSubmitting
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Text('Add'),
             ),
           ],
         ),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel')),
-          ElevatedButton(
-            onPressed: () async {
-              if (titleCtrl.text.trim().isEmpty) return;
-              await AppStore().addCertification(Certification(
-                id: const Uuid().v4(),
-                title: titleCtrl.text.trim(),
-                issuer: issuerCtrl.text.trim(),
-                date: dateCtrl.text.trim(),
-                certId: idCtrl.text.trim(),
-              ));
-              if (!context.mounted) return;
-              Navigator.pop(context);
-              _refresh();
-            },
-            child: const Text('Add'),
-          ),
-        ],
       ),
     );
   }
@@ -1106,7 +1242,7 @@ class _CertTile extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceVariant,
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
             color: Theme.of(context).colorScheme.outline.withOpacity(0.3)),
@@ -1212,7 +1348,13 @@ class _ExperienceTabState extends State<_ExperienceTab> {
           bottom: 16,
           right: 16,
           child: FloatingActionButton.extended(
-            onPressed: () => _showAddExperienceDialog(context),
+            onPressed: () {
+              if (experiences.length >= _maxSummaryItems) {
+                _showLimitReached(context, 'Experience');
+                return;
+              }
+              _showAddExperienceDialog(context);
+            },
             backgroundColor: Theme.of(context).colorScheme.primary,
             foregroundColor: Theme.of(context).colorScheme.onPrimary,
             icon: const Icon(Icons.add),
@@ -1233,7 +1375,7 @@ class _ExperienceTile extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceVariant,
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
             color: Theme.of(context).colorScheme.outline.withOpacity(0.3)),
@@ -1297,10 +1439,12 @@ class _ExperienceTile extends StatelessWidget {
     final startDateCtrl = TextEditingController(text: experience.startDate);
     final endDateCtrl = TextEditingController(text: experience.endDate);
     final descriptionCtrl = TextEditingController(text: experience.description);
+    bool isSubmitting = false;
 
     showDialog(
       context: context,
-      builder: (_) => AlertDialog(
+      builder: (_) => StatefulBuilder(
+        builder: (dialogContext, setSt) => AlertDialog(
         backgroundColor: _getDialogBg(context),
         title: Text(
           'Edit Work Experience',
@@ -1395,15 +1539,18 @@ class _ExperienceTile extends StatelessWidget {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: isSubmitting ? null : () => Navigator.pop(dialogContext),
             child: Text('Cancel', style: TextStyle(color: AppTheme.textMuted)),
           ),
           ElevatedButton(
-            onPressed: () async {
+            onPressed: isSubmitting
+                ? null
+                : () async {
               if (companyCtrl.text.trim().isEmpty ||
                   positionCtrl.text.trim().isEmpty) {
                 return;
               }
+              setSt(() => isSubmitting = true);
 
               final updatedExperience = Experience(
                 id: experience.id,
@@ -1417,12 +1564,22 @@ class _ExperienceTile extends StatelessWidget {
               );
 
               await AppStore().updateExperience(updatedExperience);
-              if (context.mounted) Navigator.pop(context);
+              if (dialogContext.mounted) Navigator.pop(dialogContext);
             },
             style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primary),
-            child: const Text('Save', style: TextStyle(color: Colors.white)),
+            child: isSubmitting
+                ? const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  )
+                : const Text('Save', style: TextStyle(color: Colors.white)),
           ),
         ],
+      ),
       ),
     );
   }
@@ -1467,133 +1624,154 @@ void _showAddExperienceDialog(BuildContext context) {
   final startDateCtrl = TextEditingController();
   final endDateCtrl = TextEditingController();
   final descriptionCtrl = TextEditingController();
+  bool isSubmitting = false;
 
   showDialog(
     context: context,
-    builder: (_) => AlertDialog(
-      backgroundColor: _getDialogBg(context),
-      title: Text(
-        'Add Work Experience',
-        style: TextStyle(
-            color: _getTextColor(context), fontWeight: FontWeight.w600),
-      ),
-      content: SizedBox(
-        width: 400,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: companyCtrl,
-              style: TextStyle(color: _getTextColor(context)),
-              decoration: InputDecoration(
-                labelText: 'Company',
-                labelStyle: TextStyle(color: _getTextMuted(context)),
-                enabledBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(color: _getBorder(context))),
-                focusedBorder: UnderlineInputBorder(
-                    borderSide:
-                        BorderSide(color: Theme.of(context).primaryColor)),
+    builder: (_) => StatefulBuilder(
+      builder: (dialogContext, setSt) => AlertDialog(
+        backgroundColor: _getDialogBg(context),
+        title: Text(
+          'Add Work Experience',
+          style: TextStyle(
+              color: _getTextColor(context), fontWeight: FontWeight.w600),
+        ),
+        content: SizedBox(
+          width: 400,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: companyCtrl,
+                style: TextStyle(color: _getTextColor(context)),
+                decoration: InputDecoration(
+                  labelText: 'Company',
+                  labelStyle: TextStyle(color: _getTextMuted(context)),
+                  enabledBorder: UnderlineInputBorder(
+                      borderSide: BorderSide(color: _getBorder(context))),
+                  focusedBorder: UnderlineInputBorder(
+                      borderSide:
+                          BorderSide(color: Theme.of(context).primaryColor)),
+                ),
               ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: positionCtrl,
-              style: TextStyle(color: _getTextColor(context)),
-              decoration: InputDecoration(
-                labelText: 'Position',
-                labelStyle: TextStyle(color: _getTextMuted(context)),
-                enabledBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(color: _getBorder(context))),
-                focusedBorder: UnderlineInputBorder(
-                    borderSide:
-                        BorderSide(color: Theme.of(context).primaryColor)),
+              const SizedBox(height: 12),
+              TextField(
+                controller: positionCtrl,
+                style: TextStyle(color: _getTextColor(context)),
+                decoration: InputDecoration(
+                  labelText: 'Position',
+                  labelStyle: TextStyle(color: _getTextMuted(context)),
+                  enabledBorder: UnderlineInputBorder(
+                      borderSide: BorderSide(color: _getBorder(context))),
+                  focusedBorder: UnderlineInputBorder(
+                      borderSide:
+                          BorderSide(color: Theme.of(context).primaryColor)),
+                ),
               ),
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: startDateCtrl,
-                    style: TextStyle(color: _getTextColor(context)),
-                    decoration: InputDecoration(
-                      labelText: 'Start Date',
-                      labelStyle: TextStyle(color: _getTextMuted(context)),
-                      enabledBorder: UnderlineInputBorder(
-                          borderSide: BorderSide(color: _getBorder(context))),
-                      focusedBorder: UnderlineInputBorder(
-                          borderSide: BorderSide(
-                              color: Theme.of(context).primaryColor)),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: startDateCtrl,
+                      style: TextStyle(color: _getTextColor(context)),
+                      decoration: InputDecoration(
+                        labelText: 'Start Date',
+                        labelStyle: TextStyle(color: _getTextMuted(context)),
+                        enabledBorder: UnderlineInputBorder(
+                            borderSide: BorderSide(color: _getBorder(context))),
+                        focusedBorder: UnderlineInputBorder(
+                            borderSide: BorderSide(
+                                color: Theme.of(context).primaryColor)),
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: TextField(
-                    controller: endDateCtrl,
-                    style: TextStyle(color: _getTextColor(context)),
-                    decoration: InputDecoration(
-                      labelText: 'End Date',
-                      labelStyle: TextStyle(color: _getTextMuted(context)),
-                      enabledBorder: UnderlineInputBorder(
-                          borderSide: BorderSide(color: _getBorder(context))),
-                      focusedBorder: UnderlineInputBorder(
-                          borderSide: BorderSide(
-                              color: Theme.of(context).primaryColor)),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: TextField(
+                      controller: endDateCtrl,
+                      style: TextStyle(color: _getTextColor(context)),
+                      decoration: InputDecoration(
+                        labelText: 'End Date',
+                        labelStyle: TextStyle(color: _getTextMuted(context)),
+                        enabledBorder: UnderlineInputBorder(
+                            borderSide: BorderSide(color: _getBorder(context))),
+                        focusedBorder: UnderlineInputBorder(
+                            borderSide: BorderSide(
+                                color: Theme.of(context).primaryColor)),
+                      ),
                     ),
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: descriptionCtrl,
-              style: TextStyle(color: _getTextColor(context)),
-              maxLines: 3,
-              decoration: InputDecoration(
-                labelText: 'Description',
-                labelStyle: TextStyle(color: _getTextMuted(context)),
-                enabledBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(color: _getBorder(context))),
-                focusedBorder: UnderlineInputBorder(
-                    borderSide:
-                        BorderSide(color: Theme.of(context).primaryColor)),
+                ],
               ),
-            ),
-          ],
+              const SizedBox(height: 12),
+              TextField(
+                controller: descriptionCtrl,
+                style: TextStyle(color: _getTextColor(context)),
+                maxLines: 3,
+                decoration: InputDecoration(
+                  labelText: 'Description',
+                  labelStyle: TextStyle(color: _getTextMuted(context)),
+                  enabledBorder: UnderlineInputBorder(
+                      borderSide: BorderSide(color: _getBorder(context))),
+                  focusedBorder: UnderlineInputBorder(
+                      borderSide:
+                          BorderSide(color: Theme.of(context).primaryColor)),
+                ),
+              ),
+            ],
+          ),
         ),
+        actions: [
+          TextButton(
+            onPressed:
+                isSubmitting ? null : () => Navigator.pop(dialogContext),
+            child:
+                Text('Cancel', style: TextStyle(color: _getTextMuted(context))),
+          ),
+          ElevatedButton(
+            onPressed: isSubmitting
+                ? null
+                : () async {
+                    if (companyCtrl.text.trim().isEmpty ||
+                        positionCtrl.text.trim().isEmpty) {
+                      return;
+                    }
+                    if (AppStore().currentUser!.experiences.length >=
+                        _maxSummaryItems) {
+                      _showLimitReached(context, 'Experience');
+                      return;
+                    }
+                    setSt(() => isSubmitting = true);
+
+                    final experience = Experience(
+                      id: const Uuid().v4(),
+                      company: companyCtrl.text.trim(),
+                      position: positionCtrl.text.trim(),
+                      startDate: startDateCtrl.text.trim(),
+                      endDate: endDateCtrl.text.trim(),
+                      description: descriptionCtrl.text.trim(),
+                      title: '',
+                      dateRange: '',
+                    );
+
+                    await AppStore().addExperience(experience);
+                    if (dialogContext.mounted) Navigator.pop(dialogContext);
+                  },
+            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primary),
+            child: isSubmitting
+                ? const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  )
+                : const Text('Add', style: TextStyle(color: Colors.white)),
+          ),
+        ],
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child:
-              Text('Cancel', style: TextStyle(color: _getTextMuted(context))),
-        ),
-        ElevatedButton(
-          onPressed: () async {
-            if (companyCtrl.text.trim().isEmpty ||
-                positionCtrl.text.trim().isEmpty) {
-              return;
-            }
-
-            final experience = Experience(
-              id: const Uuid().v4(),
-              company: companyCtrl.text.trim(),
-              position: positionCtrl.text.trim(),
-              startDate: startDateCtrl.text.trim(),
-              endDate: endDateCtrl.text.trim(),
-              description: descriptionCtrl.text.trim(),
-              title: '',
-              dateRange: '',
-            );
-
-            await AppStore().addExperience(experience);
-            if (context.mounted) Navigator.pop(context);
-          },
-          style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primary),
-          child: const Text('Add', style: TextStyle(color: Colors.white)),
-        ),
-      ],
     ),
   );
 }
@@ -1604,107 +1782,128 @@ void _showAddAchievementDialog(BuildContext context) {
   final descriptionCtrl = TextEditingController();
   final dateCtrl = TextEditingController();
   final categoryCtrl = TextEditingController();
+  bool isSubmitting = false;
 
   showDialog(
     context: context,
-    builder: (_) => AlertDialog(
-      backgroundColor: _getDialogBg(context),
-      title: Text(
-        'Add Achievement',
-        style: TextStyle(
-            color: _getTextColor(context), fontWeight: FontWeight.w600),
-      ),
-      content: SizedBox(
-        width: 400,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: titleCtrl,
-              style: TextStyle(color: _getTextColor(context)),
-              decoration: InputDecoration(
-                labelText: 'Title',
-                labelStyle: TextStyle(color: _getTextMuted(context)),
-                enabledBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(color: _getBorder(context))),
-                focusedBorder: UnderlineInputBorder(
-                    borderSide:
-                        BorderSide(color: Theme.of(context).primaryColor)),
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: categoryCtrl,
-              style: TextStyle(color: _getTextColor(context)),
-              decoration: InputDecoration(
-                labelText: 'Category',
-                labelStyle: TextStyle(color: _getTextMuted(context)),
-                enabledBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(color: _getBorder(context))),
-                focusedBorder: UnderlineInputBorder(
-                    borderSide:
-                        BorderSide(color: Theme.of(context).primaryColor)),
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: dateCtrl,
-              style: TextStyle(color: _getTextColor(context)),
-              decoration: InputDecoration(
-                labelText: 'Date',
-                labelStyle: TextStyle(color: _getTextMuted(context)),
-                enabledBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(color: _getBorder(context))),
-                focusedBorder: UnderlineInputBorder(
-                    borderSide:
-                        BorderSide(color: Theme.of(context).primaryColor)),
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: descriptionCtrl,
-              style: TextStyle(color: _getTextColor(context)),
-              maxLines: 3,
-              decoration: InputDecoration(
-                labelText: 'Description',
-                labelStyle: TextStyle(color: _getTextMuted(context)),
-                enabledBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(color: _getBorder(context))),
-                focusedBorder: UnderlineInputBorder(
-                    borderSide:
-                        BorderSide(color: Theme.of(context).primaryColor)),
-              ),
-            ),
-          ],
+    builder: (_) => StatefulBuilder(
+      builder: (dialogContext, setSt) => AlertDialog(
+        backgroundColor: _getDialogBg(context),
+        title: Text(
+          'Add Achievement',
+          style: TextStyle(
+              color: _getTextColor(context), fontWeight: FontWeight.w600),
         ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child:
-              Text('Cancel', style: TextStyle(color: _getTextMuted(context))),
+        content: SizedBox(
+          width: 400,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: titleCtrl,
+                style: TextStyle(color: _getTextColor(context)),
+                decoration: InputDecoration(
+                  labelText: 'Title',
+                  labelStyle: TextStyle(color: _getTextMuted(context)),
+                  enabledBorder: UnderlineInputBorder(
+                      borderSide: BorderSide(color: _getBorder(context))),
+                  focusedBorder: UnderlineInputBorder(
+                      borderSide:
+                          BorderSide(color: Theme.of(context).primaryColor)),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: categoryCtrl,
+                style: TextStyle(color: _getTextColor(context)),
+                decoration: InputDecoration(
+                  labelText: 'Category',
+                  labelStyle: TextStyle(color: _getTextMuted(context)),
+                  enabledBorder: UnderlineInputBorder(
+                      borderSide: BorderSide(color: _getBorder(context))),
+                  focusedBorder: UnderlineInputBorder(
+                      borderSide:
+                          BorderSide(color: Theme.of(context).primaryColor)),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: dateCtrl,
+                style: TextStyle(color: _getTextColor(context)),
+                decoration: InputDecoration(
+                  labelText: 'Date',
+                  labelStyle: TextStyle(color: _getTextMuted(context)),
+                  enabledBorder: UnderlineInputBorder(
+                      borderSide: BorderSide(color: _getBorder(context))),
+                  focusedBorder: UnderlineInputBorder(
+                      borderSide:
+                          BorderSide(color: Theme.of(context).primaryColor)),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: descriptionCtrl,
+                style: TextStyle(color: _getTextColor(context)),
+                maxLines: 3,
+                decoration: InputDecoration(
+                  labelText: 'Description',
+                  labelStyle: TextStyle(color: _getTextMuted(context)),
+                  enabledBorder: UnderlineInputBorder(
+                      borderSide: BorderSide(color: _getBorder(context))),
+                  focusedBorder: UnderlineInputBorder(
+                      borderSide:
+                          BorderSide(color: Theme.of(context).primaryColor)),
+                ),
+              ),
+            ],
+          ),
         ),
-        ElevatedButton(
-          onPressed: () async {
-            if (titleCtrl.text.trim().isEmpty) {
-              return;
-            }
+        actions: [
+          TextButton(
+            onPressed:
+                isSubmitting ? null : () => Navigator.pop(dialogContext),
+            child:
+                Text('Cancel', style: TextStyle(color: _getTextMuted(context))),
+          ),
+          ElevatedButton(
+            onPressed: isSubmitting
+                ? null
+                : () async {
+                    if (titleCtrl.text.trim().isEmpty) {
+                      return;
+                    }
+                    if (AppStore().currentUser!.achievements.length >=
+                        _maxSummaryItems) {
+                      _showLimitReached(context, 'Achievements');
+                      return;
+                    }
+                    setSt(() => isSubmitting = true);
 
-            final achievement = Achievement(
-              id: const Uuid().v4(),
-              title: titleCtrl.text.trim(),
-              description: descriptionCtrl.text.trim(),
-              date: dateCtrl.text.trim(),
-              category: categoryCtrl.text.trim(),
-            );
+                    final achievement = Achievement(
+                      id: const Uuid().v4(),
+                      title: titleCtrl.text.trim(),
+                      description: descriptionCtrl.text.trim(),
+                      date: dateCtrl.text.trim(),
+                      category: categoryCtrl.text.trim(),
+                    );
 
-            await AppStore().addAchievement(achievement);
-            if (context.mounted) Navigator.pop(context);
-          },
-          style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primary),
-          child: const Text('Add', style: TextStyle(color: Colors.white)),
-        ),
-      ],
+                    await AppStore().addAchievement(achievement);
+                    if (dialogContext.mounted) Navigator.pop(dialogContext);
+                  },
+            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primary),
+            child: isSubmitting
+                ? const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  )
+                : const Text('Add', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
     ),
   );
 }
@@ -1741,7 +1940,13 @@ class _AchievementsTabState extends State<_AchievementsTab> {
           bottom: 16,
           right: 16,
           child: FloatingActionButton.extended(
-            onPressed: () => _showAddAchievementDialog(context),
+            onPressed: () {
+              if (achievements.length >= _maxSummaryItems) {
+                _showLimitReached(context, 'Achievements');
+                return;
+              }
+              _showAddAchievementDialog(context);
+            },
             backgroundColor: Theme.of(context).colorScheme.primary,
             foregroundColor: Theme.of(context).colorScheme.onPrimary,
             icon: const Icon(Icons.add),
@@ -1762,7 +1967,7 @@ class _AchievementTile extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceVariant,
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
             color: Theme.of(context).colorScheme.outline.withOpacity(0.3)),
@@ -1829,10 +2034,12 @@ class _AchievementTile extends StatelessWidget {
         TextEditingController(text: achievement.description);
     final dateCtrl = TextEditingController(text: achievement.date);
     final categoryCtrl = TextEditingController(text: achievement.category);
+    bool isSubmitting = false;
 
     showDialog(
       context: context,
-      builder: (_) => AlertDialog(
+      builder: (_) => StatefulBuilder(
+        builder: (dialogContext, setSt) => AlertDialog(
         backgroundColor: _getDialogBg(context),
         title: Text(
           'Edit Achievement',
@@ -1904,15 +2111,18 @@ class _AchievementTile extends StatelessWidget {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: isSubmitting ? null : () => Navigator.pop(dialogContext),
             child:
                 Text('Cancel', style: TextStyle(color: _getTextMuted(context))),
           ),
           ElevatedButton(
-            onPressed: () async {
+            onPressed: isSubmitting
+                ? null
+                : () async {
               if (titleCtrl.text.trim().isEmpty) {
                 return;
               }
+              setSt(() => isSubmitting = true);
 
               final updatedAchievement = Achievement(
                 id: achievement.id,
@@ -1923,12 +2133,22 @@ class _AchievementTile extends StatelessWidget {
               );
 
               await AppStore().updateAchievement(updatedAchievement);
-              if (context.mounted) Navigator.pop(context);
+              if (dialogContext.mounted) Navigator.pop(dialogContext);
             },
             style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primary),
-            child: const Text('Save', style: TextStyle(color: Colors.white)),
+            child: isSubmitting
+                ? const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  )
+                : const Text('Save', style: TextStyle(color: Colors.white)),
           ),
         ],
+      ),
       ),
     );
   }

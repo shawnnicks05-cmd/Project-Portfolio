@@ -26,7 +26,7 @@ class DatabaseExporter {
           .replaceAll(RegExp(r'[^\w\s-]'), '_')
           .replaceAll(RegExp(r'\s+'), '_')
           .toLowerCase();
-      final filename = 'Account_${cleanName}.txt';
+      final filename = 'Account_$cleanName.txt';
       final file = File('${directory.path}/$filename');
 
       // Get Firebase service and all data
