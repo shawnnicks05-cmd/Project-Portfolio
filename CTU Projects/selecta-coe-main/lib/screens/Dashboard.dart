@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:path/path.dart';
 import 'package:provider/provider.dart';
 import '../data/app_store.dart';
 import '../models/models.dart';
@@ -11,17 +12,10 @@ import 'search_screen.dart';
 
 // ─── Theme helper functions ───────────────────────────────────────────────
 
-
-
-
-
-
 Color _getTextColor(BuildContext context) {
   final theme = Theme.of(context);
   return theme.brightness == Brightness.dark ? Colors.white : Colors.black87;
 }
-
-
 
 Color _getTextMuted(BuildContext context) {
   final theme = Theme.of(context);
@@ -29,8 +23,6 @@ Color _getTextMuted(BuildContext context) {
       ? Colors.white54
       : Colors.grey.shade600;
 }
-
-
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -109,7 +101,8 @@ class _HomeScreenState extends State<HomeScreen>
         backgroundColor: Theme.of(context).colorScheme.primary,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.menu, color: Theme.of(context).colorScheme.onPrimary, size: 26),
+          icon: Icon(Icons.menu,
+              color: Theme.of(context).colorScheme.onPrimary, size: 26),
           onPressed: _toggleSidebar,
           tooltip: 'Menu',
         ),
@@ -198,6 +191,7 @@ class _HomeScreenState extends State<HomeScreen>
 // ── Shared avatar helper (local file + network + initials fallback) ──────────
 
 Widget _buildAvatarCircle({
+  required BuildContext context,
   required double size,
   required String avatarUrl,
   required String initials,
@@ -231,7 +225,7 @@ Widget _buildAvatarCircle({
     height: size,
     decoration: BoxDecoration(
       shape: BoxShape.circle,
-      color: AppTheme.primary,
+      color: AppTheme.getPrimary(context),
     ),
     child: ClipOval(child: child),
   );
@@ -291,6 +285,7 @@ class _SideDrawer extends StatelessWidget {
                 children: [
                   // Avatar — shows photo if available
                   _buildAvatarCircle(
+                    context: context,
                     size: 44,
                     avatarUrl: user?.avatarUrl ?? '',
                     initials: user?.name.isNotEmpty == true
@@ -439,14 +434,18 @@ class _NavItem extends StatelessWidget {
           children: [
             Icon(
               isSelected ? activeIcon : icon,
-              color: isSelected ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+              color: isSelected
+                  ? Theme.of(context).colorScheme.primary
+                  : Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
               size: 22,
             ),
             const SizedBox(width: 14),
             Text(
               label,
               style: TextStyle(
-                color: isSelected ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onSurface,
+                color: isSelected
+                    ? Theme.of(context).colorScheme.primary
+                    : Theme.of(context).colorScheme.onSurface,
                 fontWeight: isSelected ? FontWeight.w700 : FontWeight.normal,
                 fontSize: 14,
               ),
@@ -626,12 +625,14 @@ class _ProfileCardState extends State<_ProfileCard> {
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Theme.of(context).colorScheme.outline.withOpacity(0.3)),
+        border: Border.all(
+            color: Theme.of(context).colorScheme.outline.withOpacity(0.3)),
       ),
       child: Row(
         children: [
           // ── Avatar — handles local file, network URL, and initials ──
           _buildAvatarCircle(
+            context: context,
             size: 54,
             avatarUrl: widget.user.avatarUrl,
             initials: widget.user.avatarInitials,
@@ -661,8 +662,12 @@ class _ProfileCardState extends State<_ProfileCard> {
                   const SizedBox(width: 4),
                   Flexible(
                     child: Text(widget.user.email,
-                        style:
-                            TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
+                        style: TextStyle(
+                            fontSize: 11,
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurface
+                                .withOpacity(0.6)),
                         overflow: TextOverflow.ellipsis),
                   ),
                 ]),
@@ -680,7 +685,9 @@ class _ProfileCardState extends State<_ProfileCard> {
                     : Colors.transparent,
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
-                  color: _isLiked ? Colors.pink : Theme.of(context).colorScheme.outline.withOpacity(0.3),
+                  color: _isLiked
+                      ? Colors.pink
+                      : Theme.of(context).colorScheme.outline.withOpacity(0.3),
                   width: 1,
                 ),
               ),
@@ -691,13 +698,23 @@ class _ProfileCardState extends State<_ProfileCard> {
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
                         valueColor: AlwaysStoppedAnimation<Color>(
-                          _isLiked ? Colors.pink : Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                          _isLiked
+                              ? Colors.pink
+                              : Theme.of(context)
+                                  .colorScheme
+                                  .onSurface
+                                  .withOpacity(0.6),
                         ),
                       ),
                     )
                   : Icon(
                       _isLiked ? Icons.favorite : Icons.favorite_border,
-                      color: _isLiked ? Colors.pink : Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                      color: _isLiked
+                          ? Colors.pink
+                          : Theme.of(context)
+                              .colorScheme
+                              .onSurface
+                              .withOpacity(0.6),
                       size: 20,
                     ),
             ),
@@ -753,7 +770,7 @@ class _StatsRowState extends State<_StatsRow> {
                   : '${displayUser?.totalSkills ?? 0}',
               label: 'Total Skills',
               icon: Icons.workspace_premium_outlined,
-              color: AppTheme.primary,
+              color: AppTheme.getPrimary(context),
             ),
           ),
           const SizedBox(width: 10),
@@ -824,9 +841,10 @@ class _StatCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
         decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
+          color: Theme.of(context).colorScheme.surfaceVariant,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Theme.of(context).colorScheme.outline.withOpacity(0.3)),
+          border: Border.all(
+              color: Theme.of(context).colorScheme.outline.withOpacity(0.3)),
         ),
         child: Column(
           children: [
@@ -838,7 +856,7 @@ class _StatCard extends StatelessWidget {
             const SizedBox(height: 2),
             Text(label,
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 10, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6))),
+                style: TextStyle(fontSize: 10, color: color)),
           ],
         ),
       ),
@@ -872,7 +890,8 @@ class _CompetencyCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surfaceVariant,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Theme.of(context).colorScheme.outline.withOpacity(0.3)),
+        border: Border.all(
+            color: Theme.of(context).colorScheme.outline.withOpacity(0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -886,7 +905,9 @@ class _CompetencyCard extends StatelessWidget {
                       fontSize: 15,
                       color: Theme.of(context).colorScheme.onSurface)),
               Icon(Icons.add_circle_outline,
-                  size: 18, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
+                  size: 18,
+                  color:
+                      Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
             ],
           ),
           const SizedBox(height: 10),
@@ -911,12 +932,16 @@ class _SkillRow extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(skill.name,
-                  style:
-                      TextStyle(fontSize: 15, color: Theme.of(context).colorScheme.onSurface)),
+                  style: TextStyle(
+                      fontSize: 15,
+                      color: Theme.of(context).colorScheme.onSurface)),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.1),
+                  color: Theme.of(context)
+                      .colorScheme
+                      .surfaceVariant
+                      .withOpacity(0.1),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(skill.level,
@@ -932,7 +957,8 @@ class _SkillRow extends StatelessWidget {
             borderRadius: BorderRadius.circular(4),
             child: LinearProgressIndicator(
               value: skill.proficiencyPercent / 100,
-              backgroundColor: Theme.of(context).colorScheme.outline.withOpacity(0.3),
+              backgroundColor:
+                  Theme.of(context).colorScheme.outline.withOpacity(0.3),
               valueColor: AlwaysStoppedAnimation<Color>(
                   Theme.of(context).colorScheme.primary),
               minHeight: 6,
@@ -956,7 +982,8 @@ class _ProjectCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surfaceVariant,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Theme.of(context).colorScheme.outline.withOpacity(0.3)),
+        border: Border.all(
+            color: Theme.of(context).colorScheme.outline.withOpacity(0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -971,31 +998,48 @@ class _ProjectCard extends StatelessWidget {
                         fontSize: 14,
                         color: Theme.of(context).colorScheme.onSurface)),
               ),
-              Icon(Icons.open_in_new, size: 16, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
+              Icon(Icons.open_in_new,
+                  size: 16,
+                  color:
+                      Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
             ],
           ),
           const SizedBox(height: 6),
           Text(project.description,
               style: TextStyle(
-                  fontSize: 12, color: Theme.of(context).colorScheme.onSurface, height: 1.4),
+                  fontSize: 12,
+                  color: Theme.of(context).colorScheme.onSurface,
+                  height: 1.4),
               maxLines: 2,
               overflow: TextOverflow.ellipsis),
           const SizedBox(height: 10),
           Row(
             children: [
               Icon(Icons.calendar_today_outlined,
-                  size: 12, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
+                  size: 12,
+                  color:
+                      Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
               const SizedBox(width: 4),
               Text(project.date,
-                  style:
-                      TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6))),
+                  style: TextStyle(
+                      fontSize: 11,
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withOpacity(0.6))),
               const SizedBox(width: 12),
               Icon(Icons.people_outline,
-                  size: 12, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
+                  size: 12,
+                  color:
+                      Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
               const SizedBox(width: 4),
               Text('${project.memberCount} members',
-                  style:
-                      TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6))),
+                  style: TextStyle(
+                      fontSize: 11,
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withOpacity(0.6))),
             ],
           ),
           const SizedBox(height: 8),
@@ -1009,11 +1053,16 @@ class _ProjectCard extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: Theme.of(context).colorScheme.surfaceVariant,
                         borderRadius: BorderRadius.circular(6),
-                        border: Border.all(color: Theme.of(context).colorScheme.outline.withOpacity(0.3)),
+                        border: Border.all(
+                            color: Theme.of(context)
+                                .colorScheme
+                                .outline
+                                .withOpacity(0.3)),
                       ),
                       child: Text(t,
                           style: TextStyle(
-                              fontSize: 11, color: Theme.of(context).colorScheme.onSurface)),
+                              fontSize: 11,
+                              color: Theme.of(context).colorScheme.onSurface)),
                     ))
                 .toList(),
           ),
@@ -1024,12 +1073,16 @@ class _ProjectCard extends StatelessWidget {
               onPressed: () {},
               style: OutlinedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 8),
-                side: BorderSide(color: Theme.of(context).colorScheme.outline.withOpacity(0.3)),
+                side: BorderSide(
+                    color:
+                        Theme.of(context).colorScheme.outline.withOpacity(0.3)),
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8)),
               ),
               child: Text('Edit Project',
-                  style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onSurface)),
+                  style: TextStyle(
+                      fontSize: 13,
+                      color: Theme.of(context).colorScheme.onSurface)),
             ),
           ),
         ],
@@ -1070,7 +1123,8 @@ class _CertTile extends StatelessWidget {
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surfaceVariant,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Theme.of(context).colorScheme.outline.withOpacity(0.3)),
+        border: Border.all(
+            color: Theme.of(context).colorScheme.outline.withOpacity(0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1096,12 +1150,13 @@ class _CertTile extends StatelessWidget {
               style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
-                  color: AppTheme.textPrimary),
+                  color: AppTheme.getTextPrimary(context)),
               maxLines: 2,
               overflow: TextOverflow.ellipsis),
           const Spacer(),
           Text(cert.date,
-              style: TextStyle(fontSize: 10, color: AppTheme.textMuted),
+              style: TextStyle(
+                  fontSize: 10, color: AppTheme.getTextMuted(context)),
               maxLines: 1,
               overflow: TextOverflow.ellipsis),
         ],
@@ -1143,9 +1198,10 @@ class _EducationTile extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
+          color: Theme.of(context).colorScheme.surfaceVariant,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Theme.of(context).colorScheme.outline.withOpacity(0.3)),
+          border: Border.all(
+              color: Theme.of(context).colorScheme.outline.withOpacity(0.3)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1157,10 +1213,11 @@ class _EducationTile extends StatelessWidget {
                   width: 28,
                   height: 28,
                   decoration: BoxDecoration(
-                    color: AppTheme.primary.withOpacity(0.12),
+                    color: AppTheme.getPrimary(context).withOpacity(0.12),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Icon(Icons.school, size: 16, color: AppTheme.primary),
+                  child: Icon(Icons.school,
+                      size: 16, color: AppTheme.getPrimary(context)),
                 ),
                 const Spacer(),
                 Icon(Icons.open_in_new,
@@ -1172,19 +1229,21 @@ class _EducationTile extends StatelessWidget {
                 style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    color: AppTheme.textPrimary),
+                    color: AppTheme.getTextPrimary(context)),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis),
             if (education.degree.isNotEmpty) ...[
               const SizedBox(height: 1),
               Text(education.degree,
-                  style: TextStyle(fontSize: 10, color: AppTheme.textSecondary),
+                  style: TextStyle(
+                      fontSize: 10, color: AppTheme.getTextSecondary(context)),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis),
             ],
             if (education.year.isNotEmpty) ...[
               Text(education.year,
-                  style: TextStyle(fontSize: 10, color: AppTheme.textSecondary),
+                  style: TextStyle(
+                      fontSize: 10, color: AppTheme.getTextSecondary(context)),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis),
             ],
@@ -1198,14 +1257,15 @@ class _EducationTile extends StatelessWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: AppTheme.surface,
+        backgroundColor: AppTheme.getSurface(context),
         title: Row(
           children: [
-            Icon(Icons.school, color: AppTheme.primary, size: 20),
+            Icon(Icons.school, color: AppTheme.getPrimary(context), size: 20),
             SizedBox(width: 8),
             Text('Education Details',
                 style: TextStyle(
-                    color: AppTheme.textPrimary, fontWeight: FontWeight.w600)),
+                    color: AppTheme.getTextPrimary(context),
+                    fontWeight: FontWeight.w600)),
           ],
         ),
         content: Column(
@@ -1241,10 +1301,15 @@ class _EducationTile extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: TextStyle(fontSize: 12, color: AppTheme.textMuted)),
+        Text(label,
+            style: TextStyle(
+                fontSize: 12,
+                color: AppTheme.getTextMuted(context as BuildContext))),
         const SizedBox(height: 4),
         Text(value,
-            style: TextStyle(fontSize: 14, color: AppTheme.textPrimary)),
+            style: TextStyle(
+                fontSize: 14,
+                color: AppTheme.getTextPrimary(context as BuildContext))),
       ],
     );
   }
@@ -1283,9 +1348,10 @@ class _ExperienceTile extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
+          color: Theme.of(context).colorScheme.surfaceVariant,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Theme.of(context).colorScheme.outline.withOpacity(0.3)),
+          border: Border.all(
+              color: Theme.of(context).colorScheme.outline.withOpacity(0.3)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1296,30 +1362,34 @@ class _ExperienceTile extends StatelessWidget {
                   width: 28,
                   height: 28,
                   decoration: BoxDecoration(
-                    color: AppTheme.success.withOpacity(0.12),
+                    color: AppTheme.getSuccess(context).withOpacity(0.12),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Icon(Icons.work, size: 16, color: AppTheme.success),
+                  child: Icon(Icons.work,
+                      size: 16, color: AppTheme.getSuccess(context)),
                 ),
                 const Spacer(),
-                Icon(Icons.open_in_new, size: 14, color: AppTheme.textMuted),
+                Icon(Icons.open_in_new,
+                    size: 14, color: AppTheme.getTextMuted(context)),
               ],
             ),
-            const SizedBox(height: 6),
-            Text(experience.position,
-                style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: AppTheme.textPrimary),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis),
-            const Spacer(),
+            const SizedBox(height: 4),
+            Flexible(
+              child: Text(experience.position,
+                  style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.getTextPrimary(context)),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis),
+            ),
+            const SizedBox(height: 2),
             Text(experience.company,
-                style: TextStyle(fontSize: 10, color: AppTheme.textSecondary),
+                style: TextStyle(fontSize: 10, color: AppTheme.getTextSecondary(context)),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis),
             Text('${experience.startDate} - ${experience.endDate}',
-                style: TextStyle(fontSize: 10, color: AppTheme.textSecondary),
+                style: TextStyle(fontSize: 10, color: AppTheme.getTextSecondary(context)),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis),
           ],
@@ -1332,14 +1402,15 @@ class _ExperienceTile extends StatelessWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: AppTheme.surface,
+        backgroundColor: AppTheme.getSurface(context),
         title: Row(
           children: [
-            Icon(Icons.work, color: AppTheme.success, size: 20),
+            Icon(Icons.work, color: AppTheme.getSuccess(context), size: 20),
             SizedBox(width: 8),
             Text('Experience Details',
                 style: TextStyle(
-                    color: AppTheme.textPrimary, fontWeight: FontWeight.w600)),
+                    color: AppTheme.getTextPrimary(context),
+                    fontWeight: FontWeight.w600)),
           ],
         ),
         content: Column(
@@ -1373,10 +1444,14 @@ class _ExperienceTile extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(label,
-            style:  TextStyle(fontSize: 12, color: AppTheme.textMuted)),
+            style: TextStyle(
+                fontSize: 12,
+                color: AppTheme.getTextMuted(context as BuildContext))),
         const SizedBox(height: 4),
         Text(value,
-            style:  TextStyle(fontSize: 14, color: AppTheme.textPrimary)),
+            style: TextStyle(
+                fontSize: 14,
+                color: AppTheme.getTextPrimary(context as BuildContext))),
       ],
     );
   }
@@ -1415,9 +1490,10 @@ class _AchievementTile extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
+          color: Theme.of(context).colorScheme.surfaceVariant,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Theme.of(context).colorScheme.outline.withOpacity(0.3)),
+          border: Border.all(
+              color: Theme.of(context).colorScheme.outline.withOpacity(0.3)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1435,27 +1511,25 @@ class _AchievementTile extends StatelessWidget {
                       size: 16, color: Color(0xFFF97316)),
                 ),
                 const Spacer(),
-                 Icon(Icons.open_in_new,
-                    size: 14, color: AppTheme.textMuted),
+                Icon(Icons.open_in_new,
+                    size: 14, color: AppTheme.getTextMuted(context)),
               ],
             ),
             const SizedBox(height: 6),
             Text(achievement.title,
-                style:  TextStyle(
+                style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    color: AppTheme.textPrimary),
+                    color: AppTheme.getTextPrimary(context)),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis),
             const Spacer(),
             Text(achievement.category,
-                style:  TextStyle(
-                    fontSize: 10, color: AppTheme.textSecondary),
+                style: TextStyle(fontSize: 10, color: AppTheme.getTextSecondary(context)),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis),
             Text(achievement.date,
-                style:  TextStyle(
-                    fontSize: 10, color: AppTheme.textSecondary),
+                style: TextStyle(fontSize: 10, color: AppTheme.getTextSecondary(context)),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis),
           ],
@@ -1468,14 +1542,15 @@ class _AchievementTile extends StatelessWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: AppTheme.surface,
-        title:  Row(
+        backgroundColor: AppTheme.getSurface(context),
+        title: Row(
           children: [
             Icon(Icons.emoji_events, color: Color(0xFFF97316), size: 20),
             SizedBox(width: 8),
             Text('Achievement Details',
                 style: TextStyle(
-                    color: AppTheme.textPrimary, fontWeight: FontWeight.w600)),
+                    color: AppTheme.getTextPrimary(context),
+                    fontWeight: FontWeight.w600)),
           ],
         ),
         content: Column(
@@ -1508,10 +1583,14 @@ class _AchievementTile extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(label,
-            style:  TextStyle(fontSize: 12, color: AppTheme.textMuted)),
+            style: TextStyle(
+                fontSize: 12,
+                color: AppTheme.getTextMuted(context as BuildContext))),
         const SizedBox(height: 4),
         Text(value,
-            style:  TextStyle(fontSize: 14, color: AppTheme.textPrimary)),
+            style: TextStyle(
+                fontSize: 14,
+                color: AppTheme.getTextPrimary(context as BuildContext))),
       ],
     );
   }

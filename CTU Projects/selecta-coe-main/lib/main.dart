@@ -45,6 +45,14 @@ void main() async {
 
   await AppStore().init();
 
+  // Create test data if Firebase is available
+  try {
+    final firebaseService = FirebaseDatabaseService();
+    await firebaseService.createTestData();
+  } catch (e) {
+    print('Test data creation skipped: $e');
+  }
+
   final themeProvider = ThemeProvider();
   await themeProvider.init();
   runApp(SelectaCOEApp(themeProvider: themeProvider));

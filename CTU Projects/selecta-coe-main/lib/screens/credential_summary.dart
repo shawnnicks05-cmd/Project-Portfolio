@@ -96,7 +96,7 @@ class _DatabaseScreenState extends State<DatabaseScreen>
             controller: _tab,
             labelColor: Theme.of(context).colorScheme.primary,
             unselectedLabelColor:
-                Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                AppTheme.getTextSecondary(context),
             indicatorColor: AppTheme.primary,
             tabs: const [
               Tab(text: 'Skills'),
@@ -219,7 +219,7 @@ class _CategoryCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
+        color: Theme.of(context).colorScheme.surfaceVariant,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
             color: Theme.of(context).colorScheme.outline.withOpacity(0.3)),
@@ -236,7 +236,7 @@ class _CategoryCard extends StatelessWidget {
                     style: TextStyle(
                         fontWeight: FontWeight.w600,
                         fontSize: 14,
-                        color: Theme.of(context).colorScheme.onSurface),
+                        color: _getTextColor(context)),
                   ),
                 ),
                 IconButton(
@@ -369,7 +369,10 @@ class _SkillTile extends StatelessWidget {
                 child: Text(skill.name,
                     style: TextStyle(
                         fontSize: 13,
-                        color: Theme.of(context).colorScheme.onSurface)),
+                        fontWeight: FontWeight.w600,
+                        color: Theme.of(context).brightness == Brightness.dark 
+                            ? Colors.white 
+                            : Colors.black87)),
               ),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
@@ -380,8 +383,10 @@ class _SkillTile extends StatelessWidget {
                 child: Text(skill.level,
                     style: TextStyle(
                         fontSize: 10,
-                        color: Theme.of(context).colorScheme.primary,
-                        fontWeight: FontWeight.w600)),
+                        fontWeight: FontWeight.w600,
+                        color: Theme.of(context).brightness == Brightness.dark 
+                            ? Colors.white 
+                            : Colors.black87)),
               ),
               const SizedBox(width: 6),
               GestureDetector(
@@ -418,10 +423,10 @@ class _SkillTile extends StatelessWidget {
               Text('${skill.proficiencyPercent.round()}%',
                   style: TextStyle(
                       fontSize: 11,
-                      color: Theme.of(context)
-                          .colorScheme
-                          .onSurface
-                          .withOpacity(0.6))),
+                      fontWeight: FontWeight.w500,
+                      color: Theme.of(context).brightness == Brightness.dark 
+                          ? Colors.white70 
+                          : Colors.black54)),
             ],
           ),
         ],
@@ -583,7 +588,7 @@ class _ProjectTile extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
+        color: Theme.of(context).colorScheme.surfaceVariant,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
             color: Theme.of(context).colorScheme.outline.withOpacity(0.3)),
@@ -781,7 +786,7 @@ class _EducationTile extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
+        color: Theme.of(context).colorScheme.surfaceVariant,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
             color: Theme.of(context).colorScheme.outline.withOpacity(0.3)),
@@ -1101,7 +1106,7 @@ class _CertTile extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
+        color: Theme.of(context).colorScheme.surfaceVariant,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
             color: Theme.of(context).colorScheme.outline.withOpacity(0.3)),
@@ -1228,7 +1233,7 @@ class _ExperienceTile extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
+        color: Theme.of(context).colorScheme.surfaceVariant,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
             color: Theme.of(context).colorScheme.outline.withOpacity(0.3)),
@@ -1406,7 +1411,9 @@ class _ExperienceTile extends StatelessWidget {
                 position: positionCtrl.text.trim(),
                 startDate: startDateCtrl.text.trim(),
                 endDate: endDateCtrl.text.trim(),
-                description: descriptionCtrl.text.trim(), title: '', dateRange: '',
+                description: descriptionCtrl.text.trim(),
+                title: '',
+                dateRange: '',
               );
 
               await AppStore().updateExperience(updatedExperience);
@@ -1575,7 +1582,9 @@ void _showAddExperienceDialog(BuildContext context) {
               position: positionCtrl.text.trim(),
               startDate: startDateCtrl.text.trim(),
               endDate: endDateCtrl.text.trim(),
-              description: descriptionCtrl.text.trim(), title: '', dateRange: '',
+              description: descriptionCtrl.text.trim(),
+              title: '',
+              dateRange: '',
             );
 
             await AppStore().addExperience(experience);
@@ -1753,7 +1762,7 @@ class _AchievementTile extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
+        color: Theme.of(context).colorScheme.surfaceVariant,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
             color: Theme.of(context).colorScheme.outline.withOpacity(0.3)),

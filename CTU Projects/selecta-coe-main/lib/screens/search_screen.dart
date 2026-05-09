@@ -377,7 +377,7 @@ void _showRecordDetails(BuildContext context, Map<String, dynamic> record) {
 
   showModalBottomSheet<void>(
     context: context,
-    backgroundColor: AppTheme.surfaceVariant,
+    backgroundColor: Theme.of(context).colorScheme.surface,
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
     ),
@@ -392,44 +392,44 @@ void _showRecordDetails(BuildContext context, Map<String, dynamic> record) {
                 style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w700,
-                    color: AppTheme.getTextPrimary(context))),
+                    color: Theme.of(context).colorScheme.onSurface)),
             const SizedBox(height: 8),
             Text('by $user',
-                style: TextStyle(fontSize: 13, color: AppTheme.getTextSecondary(context))),
+                style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6))),
             const SizedBox(height: 16),
             if (type == 'profile') ...[
               Text('Course: ${record['course'] ?? ''}',
-                  style: TextStyle(color: AppTheme.getTextPrimary(context))),
+                  style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
               const SizedBox(height: 6),
               Text('Year Level: ${record['yearLevel'] ?? ''}',
-                  style: TextStyle(color: AppTheme.getTextPrimary(context))),
+                  style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
               const SizedBox(height: 6),
               Text('Student ID: ${record['studentId'] ?? ''}',
-                  style: TextStyle(color: AppTheme.getTextPrimary(context))),
+                  style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
               const SizedBox(height: 6),
               Text('Location: ${record['location'] ?? ''}',
-                  style: TextStyle(color: AppTheme.getTextPrimary(context))),
+                  style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
               if ((record['bio'] as String?)?.isNotEmpty ?? false) ...[
                 const SizedBox(height: 12),
                 Text('Bio',
                     style: TextStyle(
                         fontSize: 12,
-                        color: AppTheme.getTextMuted(context),
+                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                         fontWeight: FontWeight.w600)),
                 SizedBox(height: 4),
                 Text(record['bio'] as String,
                     style:
-                        TextStyle(color: AppTheme.getTextSecondary(context), fontSize: 14)),
+                        TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.8), fontSize: 14)),
               ]
             ] else ...[
               Text(description,
                   style:
-                      TextStyle(color: AppTheme.getTextSecondary(context), fontSize: 14)),
+                      TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.8), fontSize: 14)),
               const SizedBox(height: 12),
               if (type == 'skill')
                 Text('Skill percent: ${record['percent']?.toInt() ?? 0}%',
                     style:
-                        TextStyle(fontSize: 14, color: AppTheme.getTextPrimary(context))),
+                        TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.onSurface)),
             ],
             const SizedBox(height: 20),
             Row(
