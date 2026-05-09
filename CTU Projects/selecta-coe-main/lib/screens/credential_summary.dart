@@ -1,9 +1,9 @@
 // lib/screens/database_screen.dart
 import 'package:flutter/material.dart';
-import 'package:uuid/uuid.dart';
 import '../data/app_store.dart';
 import '../models/models.dart';
 import '../theme.dart';
+import '../widgets/pill_header.dart';
 
 // ─── Shared theme-aware dialog helpers ───────────────────────────────────────────────
 
@@ -72,6 +72,28 @@ void _showLimitReached(BuildContext context, String sectionName) {
   );
 }
 
+String _stableDocId(String raw, {required String prefix}) {
+  // Create a stable, human-readable id instead of random UUIDs.
+  // Firestore doc ids cannot contain '/'.
+  final base = raw
+      .trim()
+      .toLowerCase()
+      .replaceAll('/', '-')
+      .replaceAll(RegExp(r'\s+'), '_')
+      .replaceAll(RegExp(r'[^a-z0-9_-]'), '');
+
+  if (base.isEmpty) {
+    return '${prefix}_${DateTime.now().millisecondsSinceEpoch}';
+  }
+
+  return base.length > 80 ? base.substring(0, 80) : base;
+}
+
+String _uniqueId(String baseId, Set<String> existingIds) {
+  if (!existingIds.contains(baseId)) return baseId;
+  return '${baseId}_${DateTime.now().millisecondsSinceEpoch}';
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 
 class DatabaseScreen extends StatefulWidget {
@@ -99,23 +121,42 @@ class _DatabaseScreenState extends State<DatabaseScreen>
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return Column(
       children: [
-        Container(
-          color: Theme.of(context).colorScheme.surfaceContainerHighest,
-          child: TabBar(
-            controller: _tab,
-            labelColor: Theme.of(context).colorScheme.primary,
-            unselectedLabelColor: AppTheme.getTextSecondary(context),
-            indicatorColor: AppTheme.primary,
-            tabs: const [
-              Tab(text: 'Skills'),
-              Tab(text: 'Projects'),
-              Tab(text: 'Certifications'),
-              Tab(text: 'Education'),
-              Tab(text: 'Experience'),
-              Tab(text: 'Achievements'),
-            ],
+        PillHeader(
+          title: 'Credential Summary',
+          leadingIcon: Icons.menu,
+          onLeadingTap: null,
+          actions: [
+            Icon(Icons.more_vert, size: 18, color: scheme.primary),
+          ],
+          padding: const EdgeInsets.fromLTRB(12, 10, 12, 6),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+          child: Container(
+            decoration: BoxDecoration(
+              color: scheme.surfaceContainerHighest,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: scheme.outline.withOpacity(0.25)),
+            ),
+            child: TabBar(
+              controller: _tab,
+              labelColor: scheme.primary,
+              unselectedLabelColor: scheme.onSurface.withOpacity(0.65),
+              indicatorColor: scheme.primary,
+              dividerColor: Colors.transparent,
+              isScrollable: true,
+              tabs: const [
+                Tab(text: 'Skills'),
+                Tab(text: 'Projects'),
+                Tab(text: 'Certifications'),
+                Tab(text: 'Education'),
+                Tab(text: 'Experience'),
+                Tab(text: 'Achievements'),
+              ],
+            ),
           ),
         ),
         Expanded(
@@ -220,9 +261,16 @@ class _SkillsTabState extends State<_SkillsTab> {
                         return;
                       }
                       setSt(() => isSubmitting = true);
+                      final name = ctrl.text.trim();
+                      final baseId = _stableDocId(name, prefix: 'cat');
+                      final existingIds = AppStore()
+                          .currentUser!
+                          .skillCategories
+                          .map((c) => c.id)
+                          .toSet();
                       await AppStore().addSkillCategory(SkillCategory(
-                        id: const Uuid().v4(),
-                        name: ctrl.text.trim(),
+                        id: _uniqueId(baseId, existingIds),
+                        name: name,
                       ));
                       if (!dialogContext.mounted) return;
                       Navigator.pop(dialogContext);
@@ -365,7 +413,8 @@ class _CategoryCard extends StatelessWidget {
           actions: [
             TextButton(
                 onPressed: () => Navigator.pop(ctx),
-                child: const Text('Cancel')),
+                child: Text('Cancel',
+                    style: TextStyle(color: _getTextMuted(context)))),
             ElevatedButton(
               onPressed: isSubmitting
                   ? null
@@ -376,11 +425,15 @@ class _CategoryCard extends StatelessWidget {
                         return;
                       }
                       setSt(() => isSubmitting = true);
+                      final skillName = nameCtrl.text.trim();
+                      final baseId = _stableDocId(skillName, prefix: 'skill');
+                      final existingIds =
+                          category.skills.map((s) => s.id).toSet();
                       await AppStore().addSkillToCategory(
                         category.id,
                         Skill(
-                          id: const Uuid().v4(),
-                          name: nameCtrl.text.trim(),
+                          id: _uniqueId(baseId, existingIds),
+                          name: skillName,
                           level: level,
                           proficiencyPercent: percent,
                         ),
@@ -626,9 +679,16 @@ class _ProjectsTabState extends State<_ProjectsTab> {
                           .map((t) => t.trim())
                           .where((t) => t.isNotEmpty)
                           .toList();
+                      final title = titleCtrl.text.trim();
+                      final baseId = _stableDocId(title, prefix: 'proj');
+                      final existingIds = AppStore()
+                          .currentUser!
+                          .projects
+                          .map((p) => p.id)
+                          .toSet();
                       await AppStore().addProject(Project(
-                        id: const Uuid().v4(),
-                        title: titleCtrl.text.trim(),
+                        id: _uniqueId(baseId, existingIds),
+                        title: title,
                         description: descCtrl.text.trim(),
                         date: dateCtrl.text.trim(),
                         memberCount: members,
@@ -707,13 +767,23 @@ class _ProjectTile extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 7, vertical: 2),
                       decoration: BoxDecoration(
-                        color: AppTheme.surfaceVariant,
+                        // Match navigation "selected" styling (primary tint).
+                        color: Theme.of(context)
+                            .colorScheme
+                            .primary
+                            .withOpacity(0.12),
                         borderRadius: BorderRadius.circular(6),
-                        border: Border.all(color: AppTheme.border),
+                        border: Border.all(
+                          color: Theme.of(context)
+                              .colorScheme
+                              .primary
+                              .withOpacity(0.25),
+                        ),
                       ),
                       child: Text(t,
                           style: TextStyle(
-                              fontSize: 11, color: _getTextColor(context))),
+                              fontSize: 11,
+                              color: Theme.of(context).colorScheme.primary)),
                     ))
                 .toList(),
           ),
@@ -842,9 +912,16 @@ class _EducationTabState extends State<_EducationTab> {
                         return;
                       }
                       setSt(() => isSubmitting = true);
+                      final schoolName = schoolCtrl.text.trim();
+                      final baseId = _stableDocId(schoolName, prefix: 'edu');
+                      final existingIds = AppStore()
+                          .currentUser!
+                          .educationalAttainments
+                          .map((e) => e.id)
+                          .toSet();
                       final education = EducationalAttainment(
-                        id: const Uuid().v4(),
-                        schoolName: schoolCtrl.text.trim(),
+                        id: _uniqueId(baseId, existingIds),
+                        schoolName: schoolName,
                         degree: degreeCtrl.text.trim(),
                         year: yearCtrl.text.trim(),
                         address: addressCtrl.text.trim(),
@@ -924,33 +1001,33 @@ class _EducationTile extends StatelessWidget {
                 if (education.degree.isNotEmpty) ...[
                   Text('Degree',
                       style:
-                          TextStyle(fontSize: 10, color: AppTheme.textMuted)),
+                          TextStyle(fontSize: 10, color: AppTheme.getTextMuted(context))),
                   const SizedBox(height: 2),
                   SizedBox(
                       width: double.infinity,
                       child: Text(education.degree,
                           textAlign: TextAlign.left,
                           style: TextStyle(
-                              fontSize: 12, color: AppTheme.textSecondary))),
+                              fontSize: 12, color: AppTheme.getTextSecondary(context)))),
                   const SizedBox(height: 8),
                 ],
                 if (education.year.isNotEmpty) ...[
                   Text('Year',
                       style:
-                          TextStyle(fontSize: 10, color: AppTheme.textMuted)),
+                          TextStyle(fontSize: 10, color: AppTheme.getTextMuted(context))),
                   const SizedBox(height: 2),
                   SizedBox(
                       width: double.infinity,
                       child: Text(education.year,
                           textAlign: TextAlign.left,
                           style: TextStyle(
-                              fontSize: 12, color: AppTheme.textSecondary))),
+                              fontSize: 12, color: AppTheme.getTextSecondary(context)))),
                   const SizedBox(height: 8),
                 ],
                 if (education.address.isNotEmpty) ...[
                   Text('Address',
                       style:
-                          TextStyle(fontSize: 10, color: AppTheme.textMuted)),
+                          TextStyle(fontSize: 10, color: AppTheme.getTextMuted(context))),
                   const SizedBox(height: 2),
                   SizedBox(
                       width: double.infinity,
@@ -958,7 +1035,7 @@ class _EducationTile extends StatelessWidget {
                           textAlign: TextAlign.left,
                           style: TextStyle(
                               fontSize: 12,
-                              color: AppTheme.textSecondary,
+                              color: AppTheme.getTextSecondary(context),
                               height: 1.4))),
                 ],
               ],
@@ -1206,9 +1283,18 @@ class _CertificationsTabState extends State<_CertificationsTab> {
                         return;
                       }
                       setSt(() => isSubmitting = true);
+
+                      final title = titleCtrl.text.trim();
+                      final baseId = _stableDocId(title, prefix: 'cert');
+                      final existingIds = AppStore()
+                          .currentUser!
+                          .certifications
+                          .map((c) => c.id)
+                          .toSet();
+
                       await AppStore().addCertification(Certification(
-                        id: const Uuid().v4(),
-                        title: titleCtrl.text.trim(),
+                        id: _uniqueId(baseId, existingIds),
+                        title: title,
                         issuer: issuerCtrl.text.trim(),
                         date: dateCtrl.text.trim(),
                         certId: idCtrl.text.trim(),
@@ -1540,7 +1626,7 @@ class _ExperienceTile extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: isSubmitting ? null : () => Navigator.pop(dialogContext),
-            child: Text('Cancel', style: TextStyle(color: AppTheme.textMuted)),
+            child: Text('Cancel', style: TextStyle(color: AppTheme.getTextMuted(context))),
           ),
           ElevatedButton(
             onPressed: isSubmitting
@@ -1601,7 +1687,7 @@ class _ExperienceTile extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('Cancel', style: TextStyle(color: AppTheme.textMuted)),
+            child: Text('Cancel', style: TextStyle(color: AppTheme.getTextMuted(context))),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -1744,10 +1830,19 @@ void _showAddExperienceDialog(BuildContext context) {
                     }
                     setSt(() => isSubmitting = true);
 
+                    final company = companyCtrl.text.trim();
+                    final position = positionCtrl.text.trim();
+                    final baseId =
+                        _stableDocId('$position-$company', prefix: 'exp');
+                    final existingIds = AppStore()
+                        .currentUser!
+                        .experiences
+                        .map((e) => e.id)
+                        .toSet();
                     final experience = Experience(
-                      id: const Uuid().v4(),
-                      company: companyCtrl.text.trim(),
-                      position: positionCtrl.text.trim(),
+                      id: _uniqueId(baseId, existingIds),
+                      company: company,
+                      position: position,
                       startDate: startDateCtrl.text.trim(),
                       endDate: endDateCtrl.text.trim(),
                       description: descriptionCtrl.text.trim(),
@@ -1879,9 +1974,16 @@ void _showAddAchievementDialog(BuildContext context) {
                     }
                     setSt(() => isSubmitting = true);
 
+                    final title = titleCtrl.text.trim();
+                    final baseId = _stableDocId(title, prefix: 'ach');
+                    final existingIds = AppStore()
+                        .currentUser!
+                        .achievements
+                        .map((a) => a.id)
+                        .toSet();
                     final achievement = Achievement(
-                      id: const Uuid().v4(),
-                      title: titleCtrl.text.trim(),
+                      id: _uniqueId(baseId, existingIds),
+                      title: title,
                       description: descriptionCtrl.text.trim(),
                       date: dateCtrl.text.trim(),
                       category: categoryCtrl.text.trim(),
@@ -1993,7 +2095,7 @@ class _AchievementTile extends StatelessWidget {
                             .withOpacity(0.6))),
                 const SizedBox(height: 4),
                 Text(achievement.date,
-                    style: TextStyle(fontSize: 11, color: AppTheme.textMuted)),
+                    style: TextStyle(fontSize: 11, color: AppTheme.getTextMuted(context))),
               ],
             ),
             trailing: Row(
@@ -2020,7 +2122,7 @@ class _AchievementTile extends StatelessWidget {
               child: Text(achievement.description,
                   style: TextStyle(
                       fontSize: 12,
-                      color: AppTheme.textSecondary,
+                      color: AppTheme.getTextSecondary(context),
                       height: 1.4)),
             ),
         ],
@@ -2170,7 +2272,7 @@ class _AchievementTile extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('Cancel', style: TextStyle(color: AppTheme.textMuted)),
+            child: Text('Cancel', style: TextStyle(color: AppTheme.getTextMuted(context))),
           ),
           ElevatedButton(
             onPressed: () async {

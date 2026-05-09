@@ -68,6 +68,25 @@ class AppStore extends ChangeNotifier {
     }
   }
 
+  void _upsertAccountLocal(UserAccount updated) {
+    final idx = _accounts.indexWhere((a) => a.id == updated.id);
+    if (idx != -1) {
+      _accounts[idx] = updated;
+    } else {
+      _accounts.add(updated);
+    }
+  }
+
+  Future<void> _updateOtherUser(UserAccount updated) async {
+    // Update someone else's profile without switching the logged-in user.
+    _upsertAccountLocal(updated);
+    try {
+      await FirebaseDatabaseService().updateUser(updated);
+    } catch (e) {
+      print('Error updating other user in Firebase: $e');
+    }
+  }
+
   Future<bool> login(String email, String password) async {
     print('Login attempt: email="$email", password="$password"');
     print('Available accounts count: ${_accounts.length}');
@@ -272,7 +291,9 @@ class AppStore extends ChangeNotifier {
     final viewedUser = await getUserById(viewedUserId);
     if (viewedUser != null) {
       viewedUser.profileViews++;
-      await updateCurrentUser(viewedUser);
+      // IMPORTANT: do not call updateCurrentUser(viewedUser) here,
+      // otherwise the app switches the logged-in account to the viewed user.
+      await _updateOtherUser(viewedUser);
     }
 
     // Remove if already exists, then add to beginning
@@ -318,7 +339,9 @@ class AppStore extends ChangeNotifier {
       print('DEBUG: Liked - new count: ${targetUser.profileLikes}');
     }
 
-    await updateCurrentUser(targetUser);
+    // IMPORTANT: do not call updateCurrentUser(targetUser) here,
+    // otherwise the app switches the logged-in account to the target user.
+    await _updateOtherUser(targetUser);
     notifyListeners();
     return !isLiked; // Return new like status
   }

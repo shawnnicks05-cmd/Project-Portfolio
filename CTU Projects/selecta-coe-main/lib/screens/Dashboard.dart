@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -8,6 +9,7 @@ import '../theme_provider.dart';
 import 'credential_summary.dart';
 import 'profile_screen.dart';
 import 'search_screen.dart';
+import '../widgets/pill_header.dart';
 
 // ─── Theme helper functions ───────────────────────────────────────────────
 
@@ -96,60 +98,21 @@ class _HomeScreenState extends State<HomeScreen>
   Widget build(BuildContext context) {
     final pages = _pages;
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.primary,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.menu,
-              color: Theme.of(context).colorScheme.onPrimary, size: 26),
-          onPressed: _toggleSidebar,
-          tooltip: 'Menu',
-        ),
-        title: Row(
-          children: [
-            Container(
-              width: 36,
-              height: 36,
-              decoration: const BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.white,
-              ),
-              child: ClipOval(
-                child: Image.asset(
-                  'assets/LOGO.png',
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => const Icon(
-                    Icons.school,
-                    color: Colors.white,
-                    size: 18,
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 10),
-            const Text(
-              'SELECTA-COE',
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-                letterSpacing: 3,
-              ),
-            ),
-          ],
-        ),
+      appBar: PillHeader(
+        title: 'SELECTA-COE',
+        leadingIcon: Icons.menu,
+        onLeadingTap: _toggleSidebar,
         actions: [
           Consumer<ThemeProvider>(
             builder: (context, themeProvider, child) {
               return IconButton(
-                icon: Icon(
-                  themeProvider.isDarkMode ? Icons.light_mode : Icons.dark_mode,
-                  color: Theme.of(context).colorScheme.onPrimary,
-                ),
-                onPressed: () => themeProvider.toggleTheme(),
+                onPressed: themeProvider.toggleTheme,
                 tooltip: themeProvider.isDarkMode
                     ? 'Switch to light mode'
                     : 'Switch to dark mode',
+                icon: Icon(themeProvider.isDarkMode
+                    ? Icons.light_mode
+                    : Icons.dark_mode),
               );
             },
           ),
@@ -199,8 +162,18 @@ Widget _buildAvatarCircle({
 
   Widget child;
   if (avatarUrl.isNotEmpty) {
-    final isLocal = avatarUrl.startsWith('/');
-    child = isLocal
+    final isDataUri = avatarUrl.startsWith('data:image');
+    final isLocal = avatarUrl.startsWith('/') ||
+        RegExp(r'^[a-zA-Z]:\\').hasMatch(avatarUrl);
+    child = isDataUri
+        ? Image.memory(
+            base64Decode(avatarUrl.split(',').last),
+            fit: BoxFit.cover,
+            width: size,
+            height: size,
+            errorBuilder: (_, __, ___) => _initialsText(initials, fontSize),
+          )
+        : isLocal
         ? Image.file(
             File(avatarUrl),
             fit: BoxFit.cover,
@@ -508,14 +481,37 @@ class _DashboardTabState extends State<_DashboardTab> {
       return const Center(child: CircularProgressIndicator());
     }
 
+    final scheme = Theme.of(context).colorScheme;
+
     return Container(
-      color: Theme.of(context).colorScheme.surfaceContainerHighest,
+      color: scheme.surface,
       child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          PillHeader(
+            title: 'Dashboard',
+            leadingIcon: Icons.menu,
+            onLeadingTap: null,
+            actions: const [Icon(Icons.more_vert)],
+            useSafeArea: false,
+            padding: EdgeInsets.zero,
+          ),
+          const SizedBox(height: 12),
           _ProfileCard(user: user),
           const SizedBox(height: 16),
-          _StatsRow(user: user),
+          Padding(
+            padding: const EdgeInsets.only(bottom: 4),
+            child: Container(
+              padding: const EdgeInsets.fromLTRB(10, 12, 10, 12),
+              decoration: BoxDecoration(
+                color: scheme.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(12),
+                border:
+                    Border.all(color: scheme.outline.withOpacity(0.25)),
+              ),
+              child: _StatsRow(user: user),
+            ),
+          ),
           const SizedBox(height: 20),
           if (user.skillCategories.isNotEmpty) ...[
             const _SectionHeader(title: 'Top Competencies'),
@@ -620,10 +616,11 @@ class _ProfileCardState extends State<_ProfileCard> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(14),
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(
-            color: Theme.of(context).colorScheme.outline.withOpacity(0.3)),
+            color:
+                Theme.of(context).colorScheme.outline.withOpacity(0.25)),
       ),
       child: Row(
         children: [
@@ -834,28 +831,36 @@ class _StatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-              color: Theme.of(context).colorScheme.outline.withOpacity(0.3)),
-        ),
-        child: Column(
-          children: [
-            Icon(icon, color: color, size: 20),
-            const SizedBox(height: 6),
-            Text(value,
-                style: TextStyle(
-                    fontSize: 18, fontWeight: FontWeight.w800, color: color)),
-            const SizedBox(height: 2),
-            Text(label,
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 10, color: color)),
-          ],
-        ),
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+      decoration: BoxDecoration(
+        color: scheme.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: scheme.outline.withOpacity(0.25)),
+      ),
+      child: Column(
+        children: [
+          Icon(icon, color: color, size: 18),
+          const SizedBox(height: 6),
+          Text(value,
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
+                  color: color)),
+          const SizedBox(height: 2),
+          Text(label,
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                  fontSize: 9,
+                  height: 1.15,
+                  color: scheme.onSurface.withOpacity(0.72))),
+        ],
       ),
     );
   }
@@ -867,11 +872,27 @@ class _SectionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Text(title,
-        style: TextStyle(
-            fontSize: 15,
-            fontWeight: FontWeight.w700,
-            color: _getTextColor(context)));
+    final scheme = Theme.of(context).colorScheme;
+    return Row(
+      children: [
+        Container(
+          height: 16,
+          width: 4,
+          decoration: BoxDecoration(
+            color: scheme.primary.withOpacity(0.85),
+            borderRadius: BorderRadius.circular(2),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Text(title,
+              style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: _getTextColor(context))),
+        ),
+      ],
+    );
   }
 }
 
@@ -881,14 +902,15 @@ class _CompetencyCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(14),
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+        color: scheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-            color: Theme.of(context).colorScheme.outline.withOpacity(0.3)),
+        border:
+            Border.all(color: scheme.outline.withOpacity(0.25)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -899,12 +921,11 @@ class _CompetencyCard extends StatelessWidget {
               Text(category.name,
                   style: TextStyle(
                       fontWeight: FontWeight.w600,
-                      fontSize: 15,
-                      color: Theme.of(context).colorScheme.onSurface)),
+                      fontSize: 14,
+                      color: _getTextColor(context))),
               Icon(Icons.add_circle_outline,
                   size: 18,
-                  color:
-                      Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
+                  color: Theme.of(context).colorScheme.primary),
             ],
           ),
           const SizedBox(height: 10),
@@ -930,21 +951,24 @@ class _SkillRow extends StatelessWidget {
             children: [
               Text(skill.name,
                   style: TextStyle(
-                      fontSize: 15,
-                      color: Theme.of(context).colorScheme.onSurface)),
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: _getTextColor(context))),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                 decoration: BoxDecoration(
                   color: Theme.of(context)
                       .colorScheme
-                      .surfaceContainerHighest
+                      .primary
                       .withOpacity(0.1),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(skill.level,
                     style: TextStyle(
-                        fontSize: 11,
-                        color: Theme.of(context).colorScheme.onSurface,
+                        fontSize: 10,
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? Colors.white
+                            : Colors.black87,
                         fontWeight: FontWeight.w600)),
               ),
             ],
@@ -973,14 +997,15 @@ class _ProjectCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
+      margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+        color: scheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-            color: Theme.of(context).colorScheme.outline.withOpacity(0.3)),
+        border:
+            Border.all(color: scheme.outline.withOpacity(0.25)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -993,7 +1018,7 @@ class _ProjectCard extends StatelessWidget {
                     style: TextStyle(
                         fontWeight: FontWeight.w600,
                         fontSize: 14,
-                        color: Theme.of(context).colorScheme.onSurface)),
+                        color: _getTextColor(context))),
               ),
               Icon(Icons.open_in_new,
                   size: 16,
@@ -1005,7 +1030,10 @@ class _ProjectCard extends StatelessWidget {
           Text(project.description,
               style: TextStyle(
                   fontSize: 12,
-                  color: Theme.of(context).colorScheme.onSurface,
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onSurface
+                      .withOpacity(0.85),
                   height: 1.4),
               maxLines: 2,
               overflow: TextOverflow.ellipsis),
@@ -1046,22 +1074,23 @@ class _ProjectCard extends StatelessWidget {
             children: project.tags
                 .map((t) => Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 3),
+                          horizontal: 7, vertical: 2),
                       decoration: BoxDecoration(
                         color: Theme.of(context)
                             .colorScheme
-                            .surfaceContainerHighest,
+                            .primary
+                            .withOpacity(0.12),
                         borderRadius: BorderRadius.circular(6),
                         border: Border.all(
                             color: Theme.of(context)
                                 .colorScheme
-                                .outline
-                                .withOpacity(0.3)),
+                                .primary
+                                .withOpacity(0.25)),
                       ),
                       child: Text(t,
                           style: TextStyle(
                               fontSize: 11,
-                              color: Theme.of(context).colorScheme.onSurface)),
+                              color: Theme.of(context).colorScheme.primary)),
                     ))
                 .toList(),
           ),
@@ -1098,13 +1127,14 @@ class _CertTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+        color: scheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-            color: Theme.of(context).colorScheme.outline.withOpacity(0.3)),
+        border:
+            Border.all(color: scheme.outline.withOpacity(0.25)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1181,7 +1211,8 @@ class _EducationTile extends StatelessWidget {
           color: Theme.of(context).colorScheme.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-              color: Theme.of(context).colorScheme.outline.withOpacity(0.3)),
+              color:
+                  Theme.of(context).colorScheme.outline.withOpacity(0.25)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1329,7 +1360,8 @@ class _ExperienceTile extends StatelessWidget {
           color: Theme.of(context).colorScheme.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-              color: Theme.of(context).colorScheme.outline.withOpacity(0.3)),
+              color:
+                  Theme.of(context).colorScheme.outline.withOpacity(0.25)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1471,7 +1503,8 @@ class _AchievementTile extends StatelessWidget {
           color: Theme.of(context).colorScheme.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-              color: Theme.of(context).colorScheme.outline.withOpacity(0.3)),
+              color:
+                  Theme.of(context).colorScheme.outline.withOpacity(0.25)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

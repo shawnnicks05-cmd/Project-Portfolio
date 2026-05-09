@@ -109,6 +109,14 @@ class AppTheme {
           primary: darkPrimary,
           secondary: darkAccent,
           surface: darkSurface,
+          // Match the Search tab's neutral dark greys across containers.
+          surfaceVariant: darkSurfaceVariant,
+          surfaceContainerLowest: darkSurface,
+          surfaceContainerLow: darkSurface,
+          surfaceContainer: darkSurface,
+          surfaceContainerHigh: darkSurfaceVariant,
+          surfaceContainerHighest: darkSurfaceVariant,
+          outline: darkBorder,
         ),
         scaffoldBackgroundColor: darkBackground,
         appBarTheme: const AppBarTheme(

@@ -5,6 +5,7 @@ import '../data/app_store.dart';
 import '../models/models.dart';
 import '../theme.dart';
 import '../theme_provider.dart';
+import '../widgets/pill_header.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -99,21 +100,21 @@ class _AuthScreenState extends State<AuthScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
+      appBar: PillHeader(
+        title: 'SELECTA-COE',
+        leadingIcon: Icons.school,
+        onLeadingTap: null,
         actions: [
           Consumer<ThemeProvider>(
             builder: (context, themeProvider, child) {
               return IconButton(
-                icon: Icon(
-                  themeProvider.isDarkMode ? Icons.light_mode : Icons.dark_mode,
-                  color: Theme.of(context).colorScheme.onSurface,
-                ),
-                onPressed: () {
-                  themeProvider.toggleTheme();
-                },
-                tooltip: 'Toggle theme',
+                onPressed: themeProvider.toggleTheme,
+                tooltip: themeProvider.isDarkMode
+                    ? 'Switch to light mode'
+                    : 'Switch to dark mode',
+                icon: Icon(themeProvider.isDarkMode
+                    ? Icons.light_mode
+                    : Icons.dark_mode),
               );
             },
           ),
@@ -346,7 +347,8 @@ class _LoginFormState extends State<_LoginForm> {
             focusNode: _passFocus,
             textInputAction: TextInputAction.done,
             onFieldSubmitted: (_) => _login(),
-            style: TextStyle(color: AppTheme.textPrimary),
+            // Use theme-aware text color (black in light mode, white in dark mode).
+            style: TextStyle(color: AppTheme.getTextPrimary(context)),
             controller: _pass,
             obscureText: _obscure,
             decoration: InputDecoration(

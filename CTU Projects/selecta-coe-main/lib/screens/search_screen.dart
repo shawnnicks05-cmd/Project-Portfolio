@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../data/app_store.dart';
 import '../screens/profile_screen.dart';
 import '../theme.dart';
+import '../widgets/pill_header.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
@@ -14,7 +15,7 @@ class SearchScreen extends StatefulWidget {
 class _SearchScreenState extends State<SearchScreen> {
   final _ctrl = TextEditingController();
   String _query = '';
-  String _filter = 'All'; // All, Users, Skills, Projects, Certifications
+  String _filter = 'All'; // All, Users, Skills, Projects, Certifications, ...
   String _sort = 'Name'; // Name, Type, User
 
   @override
@@ -32,6 +33,9 @@ class _SearchScreenState extends State<SearchScreen> {
         'Skills': 'skill',
         'Projects': 'project',
         'Certifications': 'certification',
+        'Education': 'education',
+        'Experience': 'experience',
+        'Achievements': 'achievement',
       };
       final type = typeMap[_filter] ?? _filter.toLowerCase();
       all = all.where((r) => (r['type'] as String) == type).toList();
@@ -51,10 +55,11 @@ class _SearchScreenState extends State<SearchScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: AppTheme.getSurface(context),
-        elevation: 0,
-        title: const Text('Search'),
+      appBar: PillHeader(
+        title: 'Search',
+        leadingIcon: Icons.search,
+        onLeadingTap: null,
+        actions: const [Icon(Icons.more_vert)],
       ),
       body: Container(
         color: AppTheme.getSurfaceVariant(context),
@@ -106,7 +111,10 @@ class _SearchScreenState extends State<SearchScreen> {
                         'Users',
                         'Skills',
                         'Projects',
-                        'Certifications'
+                        'Certifications',
+                        'Education',
+                        'Experience',
+                        'Achievements',
                       ]
                           .map((f) => Padding(
                                 padding: const EdgeInsets.only(right: 6),
@@ -275,6 +283,21 @@ class _ResultTile extends StatelessWidget {
         typeIcon = Icons.folder_outlined;
         typeLabel = 'Project';
         break;
+      case 'education':
+        typeColor = AppTheme.getPrimary(context);
+        typeIcon = Icons.school_outlined;
+        typeLabel = 'Education';
+        break;
+      case 'experience':
+        typeColor = AppTheme.getSuccess(context);
+        typeIcon = Icons.work_outline;
+        typeLabel = 'Experience';
+        break;
+      case 'achievement':
+        typeColor = const Color(0xFFF97316);
+        typeIcon = Icons.emoji_events_outlined;
+        typeLabel = 'Achievement';
+        break;
       case 'profile':
         typeColor = AppTheme.getAccent(context);
         typeIcon = Icons.person_outline;
@@ -356,6 +379,20 @@ class _ResultTile extends StatelessWidget {
     } else if (type == 'profile') {
       return Text('${r['course'] ?? ''} • ${r['yearLevel'] ?? ''}',
           style: TextStyle(fontSize: 11, color: AppTheme.getTextSecondary(context)));
+    } else if (type == 'education') {
+      final degree = (r['degree'] as String?) ?? '';
+      final year = (r['year'] as String?) ?? '';
+      final text = [degree, year].where((s) => s.trim().isNotEmpty).join(' • ');
+      return Text(text,
+          style: TextStyle(fontSize: 11, color: AppTheme.getTextSecondary(context)));
+    } else if (type == 'experience') {
+      final company = (r['company'] as String?) ?? '';
+      return Text(company,
+          style: TextStyle(fontSize: 11, color: AppTheme.getTextSecondary(context)));
+    } else if (type == 'achievement') {
+      final cat = (r['category'] as String?) ?? '';
+      return Text(cat,
+          style: TextStyle(fontSize: 11, color: AppTheme.getTextSecondary(context)));
     } else {
       return Text(r['issuer'] ?? '',
           style: TextStyle(fontSize: 11, color: AppTheme.getTextSecondary(context)));
@@ -373,6 +410,12 @@ void _showRecordDetails(BuildContext context, Map<String, dynamic> record) {
           ? record['description'] ?? ''
           : type == 'certification'
               ? 'Issued by ${record['issuer'] ?? ''}'
+              : type == 'education'
+                  ? '${record['degree'] ?? ''} ${record['year'] ?? ''}'.trim()
+                  : type == 'experience'
+                      ? '${record['company'] ?? ''} • ${record['startDate'] ?? ''}-${record['endDate'] ?? ''}'
+                      : type == 'achievement'
+                          ? '${record['category'] ?? ''} • ${record['date'] ?? ''}'
               : record['bio'] ?? '';
 
   showModalBottomSheet<void>(
@@ -443,18 +486,11 @@ void _showRecordDetails(BuildContext context, Map<String, dynamic> record) {
                         Navigator.of(context).push(MaterialPageRoute(
                           builder: (_) => Scaffold(
                             backgroundColor: AppTheme.getSurfaceVariant(context),
-                            appBar: AppBar(
-                              backgroundColor: AppTheme.primary,
-                              elevation: 0,
-                              leading: const BackButton(color: Colors.white),
-                              title: Text(
-                                record['name'] as String? ?? 'Profile',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 18,
-                                ),
-                              ),
+                            appBar: PillHeader(
+                              title: record['name'] as String? ?? 'Profile',
+                              leadingIcon: Icons.arrow_back,
+                              onLeadingTap: () => Navigator.of(context).pop(),
+                              actions: const [Icon(Icons.more_vert)],
                             ),
                             body: ProfileScreen(
                               userId: record['userId'] as String,

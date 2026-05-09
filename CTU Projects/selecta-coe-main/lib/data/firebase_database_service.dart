@@ -13,15 +13,6 @@ class FirebaseDatabaseService {
   final CollectionReference _usersCollection =
       FirebaseFirestore.instance.collection('users');
 
-  // Additional collections for compatibility
-  final CollectionReference _skillCategoriesCollection =
-      FirebaseFirestore.instance.collection('skill_categories');
-  final CollectionReference _skillsCollection =
-      FirebaseFirestore.instance.collection('skills');
-  final CollectionReference _projectsCollection =
-      FirebaseFirestore.instance.collection('projects');
-  final CollectionReference _certificationsCollection =
-      FirebaseFirestore.instance.collection('certifications');
   final CollectionReference _educationalAttainmentsCollection =
       FirebaseFirestore.instance.collection('educational_attainments');
   final CollectionReference _experiencesCollection =
@@ -224,65 +215,33 @@ class FirebaseDatabaseService {
   }
 
   Future<void> _deleteRelatedData(String userId) async {
-    // Delete skill categories and skills
-    final skillCategoriesSnapshot = await _skillCategoriesCollection
-        .where('userId', isEqualTo: userId)
-        .get();
-
-    for (var doc in skillCategoriesSnapshot.docs) {
-      // Delete skills in this category
-      await _skillsCollection.where('categoryId', isEqualTo: doc.id).get().then(
-          (snapshot) =>
-              snapshot.docs.forEach((skillDoc) => skillDoc.reference.delete()));
-
-      // Delete the category
-      await doc.reference.delete();
+    // Related data is stored under per-user subcollections, so delete there.
+    // (Firestore has no single-call recursive delete in client SDK.)
+    Future<void> deleteAllDocs(String collectionName) async {
+      final collection = _getUserCollection(userId, collectionName);
+      final snapshot = await collection.get();
+      final batch = FirebaseFirestore.instance.batch();
+      for (final d in snapshot.docs) {
+        batch.delete(d.reference);
+      }
+      await batch.commit();
     }
 
-    // Delete projects
-    final projectsSnapshot =
-        await _projectsCollection.where('userId', isEqualTo: userId).get();
-    for (var doc in projectsSnapshot.docs) {
-      await doc.reference.delete();
-    }
-
-    // Delete certifications
-    final certificationsSnapshot = await _certificationsCollection
-        .where('userId', isEqualTo: userId)
-        .get();
-    for (var doc in certificationsSnapshot.docs) {
-      await doc.reference.delete();
-    }
-
-    // Delete educational attainments
-    final educationSnapshot = await _educationalAttainmentsCollection
-        .where('userId', isEqualTo: userId)
-        .get();
-    for (var doc in educationSnapshot.docs) {
-      await doc.reference.delete();
-    }
-
-    // Delete experiences
-    final experiencesSnapshot =
-        await _experiencesCollection.where('userId', isEqualTo: userId).get();
-    for (var doc in experiencesSnapshot.docs) {
-      await doc.reference.delete();
-    }
-
-    // Delete achievements
-    final achievementsSnapshot =
-        await _achievementsCollection.where('userId', isEqualTo: userId).get();
-    for (var doc in achievementsSnapshot.docs) {
-      await doc.reference.delete();
-    }
+    await deleteAllDocs('skills');
+    await deleteAllDocs('skill_categories');
+    await deleteAllDocs('projects');
+    await deleteAllDocs('certifications');
+    await deleteAllDocs('educational_attainments');
+    await deleteAllDocs('experiences');
+    await deleteAllDocs('achievements');
   }
 
   // Skill Category operations
   Future<List<SkillCategory>> getSkillCategoriesForUser(String userId) async {
     try {
-      final QuerySnapshot snapshot = await _skillCategoriesCollection
-          .where('userId', isEqualTo: userId)
-          .get();
+      // Categories are stored per-user under: users/{userId}/skill_categories
+      final QuerySnapshot snapshot =
+          await _getUserCollection(userId, 'skill_categories').get();
 
       List<SkillCategory> categories = [];
       for (var doc in snapshot.docs) {
@@ -677,7 +636,6 @@ class FirebaseDatabaseService {
   // Search functionality - Optimized for better performance
   Future<List<Map<String, dynamic>>> searchRecords(String query) async {
     try {
-      final results = <Map<String, dynamic>>[];
       final q = query.trim().toLowerCase();
       print('Firebase searchRecords: Searching for "$q"');
 
@@ -685,18 +643,21 @@ class FirebaseDatabaseService {
       print(
           'Firebase searchRecords: Loaded ${snapshot.docs.length} users for filtering');
 
-      for (final doc in snapshot.docs) {
+      final perUserResults = await Future.wait(snapshot.docs.map((doc) async {
+        final userResults = <Map<String, dynamic>>[];
         final user = UserAccount.fromJson(doc.data() as Map<String, dynamic>);
 
-        if (q.isEmpty ||
+        final matchesProfile = q.isEmpty ||
             _matchesQuery(user.name, q) ||
             _matchesQuery(user.course, q) ||
             _matchesQuery(user.yearLevel, q) ||
             _matchesQuery(user.studentId, q) ||
             _matchesQuery(user.address, q) ||
             _matchesQuery(user.bio, q) ||
-            _matchesQuery(user.email, q)) {
-          results.add({
+            _matchesQuery(user.email, q);
+
+        if (matchesProfile) {
+          userResults.add({
             'type': 'profile',
             'user': user.name,
             'userId': user.id,
@@ -711,7 +672,142 @@ class FirebaseDatabaseService {
             'facebookUrl': user.facebookUrl,
           });
         }
-      }
+
+        // Load all related collections in parallel for faster search.
+        final related = await Future.wait([
+          getSkillCategoriesForUser(user.id),
+          getProjectsForUser(user.id),
+          getCertificationsForUser(user.id),
+          getEducationalAttainmentsForUser(user.id),
+          getExperiencesForUser(user.id),
+          getAchievementsForUser(user.id),
+        ]);
+
+        final skillCategories = related[0] as List<SkillCategory>;
+        final projects = related[1] as List<Project>;
+        final certs = related[2] as List<Certification>;
+        final education = related[3] as List<EducationalAttainment>;
+        final experiences = related[4] as List<Experience>;
+        final achievements = related[5] as List<Achievement>;
+
+        for (final cat in skillCategories) {
+          for (final skill in cat.skills) {
+            final matchesSkill = q.isEmpty ||
+                _matchesQuery(skill.name, q) ||
+                _matchesQuery(skill.level, q) ||
+                _matchesQuery(cat.name, q);
+            if (matchesSkill) {
+              userResults.add({
+                'type': 'skill',
+                'user': user.name,
+                'userId': user.id,
+                'category': cat.name,
+                'name': skill.name,
+                'level': skill.level,
+                'percent': skill.proficiencyPercent,
+              });
+            }
+          }
+        }
+
+        for (final project in projects) {
+          final matchesProject = q.isEmpty ||
+              _matchesQuery(project.title, q) ||
+              _matchesQuery(project.description, q) ||
+              project.tags.any((t) => _matchesQuery(t, q));
+          if (matchesProject) {
+            userResults.add({
+              'type': 'project',
+              'user': user.name,
+              'userId': user.id,
+              'name': project.title,
+              'description': project.description,
+              'date': project.date,
+              'tags': project.tags,
+            });
+          }
+        }
+
+        for (final cert in certs) {
+          final matchesCert = q.isEmpty ||
+              _matchesQuery(cert.title, q) ||
+              _matchesQuery(cert.issuer, q) ||
+              _matchesQuery(cert.certId, q);
+          if (matchesCert) {
+            userResults.add({
+              'type': 'certification',
+              'user': user.name,
+              'userId': user.id,
+              'name': cert.title,
+              'issuer': cert.issuer,
+              'date': cert.date,
+              'certId': cert.certId,
+            });
+          }
+        }
+
+        for (final edu in education) {
+          final matchesEdu = q.isEmpty ||
+              _matchesQuery(edu.schoolName, q) ||
+              _matchesQuery(edu.degree, q) ||
+              _matchesQuery(edu.year, q) ||
+              _matchesQuery(edu.address, q);
+          if (matchesEdu) {
+            userResults.add({
+              'type': 'education',
+              'user': user.name,
+              'userId': user.id,
+              'name': edu.schoolName,
+              'degree': edu.degree,
+              'year': edu.year,
+              'address': edu.address,
+            });
+          }
+        }
+
+        for (final exp in experiences) {
+          final matchesExp = q.isEmpty ||
+              _matchesQuery(exp.company, q) ||
+              _matchesQuery(exp.position, q) ||
+              _matchesQuery(exp.description, q) ||
+              _matchesQuery(exp.startDate, q) ||
+              _matchesQuery(exp.endDate, q);
+          if (matchesExp) {
+            userResults.add({
+              'type': 'experience',
+              'user': user.name,
+              'userId': user.id,
+              'name': exp.position,
+              'company': exp.company,
+              'startDate': exp.startDate,
+              'endDate': exp.endDate,
+              'description': exp.description,
+            });
+          }
+        }
+
+        for (final ach in achievements) {
+          final matchesAch = q.isEmpty ||
+              _matchesQuery(ach.title, q) ||
+              _matchesQuery(ach.category, q) ||
+              _matchesQuery(ach.description, q) ||
+              _matchesQuery(ach.date, q);
+          if (matchesAch) {
+            userResults.add({
+              'type': 'achievement',
+              'user': user.name,
+              'userId': user.id,
+              'name': ach.title,
+              'category': ach.category,
+              'date': ach.date,
+              'description': ach.description,
+            });
+          }
+        }
+        return userResults;
+      }));
+
+      final results = perUserResults.expand((e) => e).toList();
 
       print('Firebase searchRecords: Found ${results.length} matching results');
       return results;
