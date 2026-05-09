@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "725196261038",
+    "project_id": "portal-a51ee",
+    "storage_bucket": "portal-a51ee.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:725196261038:android:1f72525f6322dd978bcf3f",
+        "android_client_info": {
+          "package_name": "com.selecta.ctuportfolio"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC8e367cv3uL_FQDkegNoWmloGbdYnfwsA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

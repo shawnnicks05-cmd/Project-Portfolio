@@ -228,7 +228,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
 
     if (source != null) {
-      final picked = await _picker.getImage(source: source);
+      final picked = await _picker.pickImage(source: source);
       if (picked != null) {
         setState(() => _pickedImageFile = File(picked.path));
       }
@@ -394,8 +394,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     children: [
                       const Text(
                         'Degree',
-                        style: TextStyle(
-                            fontSize: 10, color: AppTheme.textMuted),
+                        style:
+                            TextStyle(fontSize: 10, color: AppTheme.textMuted),
                       ),
                       const SizedBox(height: 2),
                       Text(
@@ -422,8 +422,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     children: [
                       const Text(
                         'Year',
-                        style: TextStyle(
-                            fontSize: 10, color: AppTheme.textMuted),
+                        style:
+                            TextStyle(fontSize: 10, color: AppTheme.textMuted),
                       ),
                       const SizedBox(height: 2),
                       Text(
@@ -450,8 +450,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     children: [
                       const Text(
                         'Address',
-                        style: TextStyle(
-                            fontSize: 10, color: AppTheme.textMuted),
+                        style:
+                            TextStyle(fontSize: 10, color: AppTheme.textMuted),
                       ),
                       const SizedBox(height: 2),
                       Text(
@@ -511,8 +511,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   children: [
                     const Text(
                       'Company',
-                      style: TextStyle(
-                          fontSize: 10, color: AppTheme.textMuted),
+                      style: TextStyle(fontSize: 10, color: AppTheme.textMuted),
                     ),
                     const SizedBox(height: 2),
                     Text(
@@ -537,8 +536,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   children: [
                     const Text(
                       'Duration',
-                      style: TextStyle(
-                          fontSize: 10, color: AppTheme.textMuted),
+                      style: TextStyle(fontSize: 10, color: AppTheme.textMuted),
                     ),
                     const SizedBox(height: 2),
                     Text(
@@ -564,8 +562,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     children: [
                       const Text(
                         'Description',
-                        style: TextStyle(
-                            fontSize: 10, color: AppTheme.textMuted),
+                        style:
+                            TextStyle(fontSize: 10, color: AppTheme.textMuted),
                       ),
                       const SizedBox(height: 2),
                       Text(
@@ -626,8 +624,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   children: [
                     const Text(
                       'Category',
-                      style: TextStyle(
-                          fontSize: 10, color: AppTheme.textMuted),
+                      style: TextStyle(fontSize: 10, color: AppTheme.textMuted),
                     ),
                     const SizedBox(height: 2),
                     Text(
@@ -652,8 +649,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   children: [
                     const Text(
                       'Date',
-                      style: TextStyle(
-                          fontSize: 10, color: AppTheme.textMuted),
+                      style: TextStyle(fontSize: 10, color: AppTheme.textMuted),
                     ),
                     const SizedBox(height: 2),
                     Text(
@@ -679,8 +675,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     children: [
                       const Text(
                         'Description',
-                        style: TextStyle(
-                            fontSize: 10, color: AppTheme.textMuted),
+                        style:
+                            TextStyle(fontSize: 10, color: AppTheme.textMuted),
                       ),
                       const SizedBox(height: 2),
                       Text(
@@ -1384,8 +1380,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 children: [
                   const Row(
                     children: [
-                      Icon(Icons.school,
-                          color: AppTheme.primary, size: 20),
+                      Icon(Icons.school, color: AppTheme.primary, size: 20),
                       SizedBox(width: 8),
                       Text('Education',
                           style: TextStyle(
@@ -1460,7 +1455,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
             ),
           ],
-          
+
           // Add skills section if not private or viewing own profile
           if (!user.skillsPrivate || _canEdit) ...[
             _buildSkillsSection(user),
