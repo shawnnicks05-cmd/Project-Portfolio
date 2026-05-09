@@ -277,21 +277,28 @@ class AppStore extends ChangeNotifier {
   }
 
   Future<bool> toggleProfileLike(String targetUserId) async {
-    if (_currentUser == null || targetUserId == _currentUser!.id) return false;
+    if (_currentUser == null) return false;
+
+    // For demo/testing purposes, allow liking own profile
+    // In production, you might want to uncomment the line below:
+    // if (targetUserId == _currentUser!.id) return false;
 
     final targetUser = await getUserById(targetUserId);
     if (targetUser == null) return false;
 
     final isLiked = targetUser.likedBy.contains(_currentUser!.id);
+    print('DEBUG: User ${_currentUser!.id} liking ${targetUserId}, currently liked: $isLiked');
 
     if (isLiked) {
       // Unlike
       targetUser.likedBy.remove(_currentUser!.id);
       targetUser.profileLikes--;
+      print('DEBUG: Unliked - new count: ${targetUser.profileLikes}');
     } else {
       // Like
       targetUser.likedBy.add(_currentUser!.id);
       targetUser.profileLikes++;
+      print('DEBUG: Liked - new count: ${targetUser.profileLikes}');
     }
 
     await updateCurrentUser(targetUser);
@@ -300,9 +307,19 @@ class AppStore extends ChangeNotifier {
   }
 
   Future<bool> isProfileLiked(String targetUserId) async {
-    if (_currentUser == null) return false;
+    if (_currentUser == null) {
+      print('DEBUG: No current user, returning false');
+      return false;
+    }
     final targetUser = await getUserById(targetUserId);
-    return targetUser?.likedBy.contains(_currentUser!.id) ?? false;
+    if (targetUser == null) {
+      print('DEBUG: Target user not found: $targetUserId');
+      return false;
+    }
+    final isLiked = targetUser.likedBy.contains(_currentUser!.id);
+    print('DEBUG: User ${_currentUser!.id} checking if liked ${targetUserId}: $isLiked');
+    print('DEBUG: Target user likedBy list: ${targetUser.likedBy}');
+    return isLiked;
   }
 
   Future<void> loadRecentlyViewedProfiles() async {

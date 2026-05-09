@@ -16,30 +16,76 @@ class _AuthScreenState extends State<AuthScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tab;
   final GlobalKey<_LoginFormState> _loginFormKey = GlobalKey<_LoginFormState>();
+  String? _pendingAutoFillEmail;
+  String? _pendingAutoFillPassword;
 
   @override
   void initState() {
     super.initState();
     _tab = TabController(length: 2, vsync: this);
+    _tab.addListener(_onTabChanged);
   }
 
   @override
   void dispose() {
+    _tab.removeListener(_onTabChanged);
     _tab.dispose();
     super.dispose();
+  }
+
+  void _onTabChanged() {
+    print('Tab changed to index: ${_tab.index}');
+    print('Pending auto-fill data: email=$_pendingAutoFillEmail, password=$_pendingAutoFillPassword');
+    print('Login form key current state: ${_loginFormKey.currentState != null}');
+    
+    // If we have pending auto-fill data and switched to login tab (index 0)
+    if (_pendingAutoFillEmail != null && 
+        _pendingAutoFillPassword != null && 
+        _tab.index == 0) {
+      print('Attempting auto-fill...');
+      // Small delay to ensure tab animation is complete
+      Future.delayed(const Duration(milliseconds: 200), () {
+        print('Delayed auto-fill attempt - mounted: $mounted, formState: ${_loginFormKey.currentState != null}');
+        if (mounted && _loginFormKey.currentState != null) {
+          print('Calling autoFillCredentials with: $_pendingAutoFillEmail, $_pendingAutoFillPassword');
+          _loginFormKey.currentState!.autoFillCredentials(
+            _pendingAutoFillEmail!,
+            _pendingAutoFillPassword!,
+          );
+          // Clear pending data
+          setState(() {
+            _pendingAutoFillEmail = null;
+            _pendingAutoFillPassword = null;
+          });
+          print('Auto-fill completed and pending data cleared');
+        } else {
+          print('Auto-fill failed - mounted or form state null');
+        }
+      });
+    }
   }
 
   void _handleAutoFill(String email, String password) {
     print('Auto-fill handler called with: email=$email, password=$password');
     
-    // Add delay to ensure login form is ready and tab switch is complete
-    Future.delayed(const Duration(milliseconds: 200), () {
-      if (_loginFormKey.currentState != null) {
-        print('Auto-filling credentials: email=$email, password=$password');
+    // Always switch to login tab and wait for it to complete
+    _tab.animateTo(0);
+    
+    // Wait for tab animation to complete, then auto-fill
+    Future.delayed(const Duration(milliseconds: 500), () {
+      if (mounted && _loginFormKey.currentState != null) {
+        print('Auto-filling credentials after tab switch');
         _loginFormKey.currentState!.autoFillCredentials(email, password);
         print('Auto-fill completed successfully');
       } else {
-        print('Login form state not available for auto-fill');
+        print('Auto-fill failed - form state not available');
+        // Try one more time with longer delay
+        Future.delayed(const Duration(milliseconds: 500), () {
+          if (mounted && _loginFormKey.currentState != null) {
+            _loginFormKey.currentState!.autoFillCredentials(email, password);
+            print('Auto-fill completed on retry');
+          }
+        });
       }
     });
   }
@@ -209,8 +255,18 @@ class _LoginFormState extends State<_LoginForm> {
   }
 
   void autoFillCredentials(String email, String password) {
-    _email.text = email;
-    _pass.text = password;
+    print('autoFillCredentials called with: email=$email, password=$password');
+    print('Current email text before: ${_email.text}');
+    print('Current password text before: ${_pass.text}');
+    
+    setState(() {
+      _email.text = email;
+      _pass.text = password;
+    });
+    
+    print('Current email text after: ${_email.text}');
+    print('Current password text after: ${_pass.text}');
+    print('Auto-fill credentials set successfully');
   }
 
   @override
@@ -416,25 +472,15 @@ class _RegisterFormState extends State<_RegisterForm> {
         _loading = false;
       });
 
-      // Switch to login tab first
-      widget.tabController.animateTo(0);
-      
-      // Wait for tab switch to complete, then auto-fill
-      Future.delayed(const Duration(milliseconds: 300), () {
-        if (mounted) {
-          print('Auto-fill triggered via callback: email=$email, password=$password');
-          widget.onAutoFill?.call(email, password);
-        }
-      });
+      // Trigger auto-fill using the parent's handler
+      widget.onAutoFill?.call(email, password);
 
-      // Clear the registration form after auto-fill is triggered and completed
+      // Clear the registration form after a delay
       Future.delayed(const Duration(milliseconds: 800), () {
         if (mounted) {
           print('Clearing registration form');
           _name.clear();
-          _email.clear();
           _phone.clear();
-          _password.clear();
           _course.clear();
           _studentId.clear();
           _address.clear();

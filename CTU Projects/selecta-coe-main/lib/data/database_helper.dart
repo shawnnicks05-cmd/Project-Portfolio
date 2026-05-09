@@ -13,7 +13,7 @@ class DatabaseHelper {
   Database? _database;
 
   static const String _dbName = 'selecta_coe.db';
-  static const int _dbVersion = 8;
+  static const int _dbVersion = 9;
 
   // Table names
   static const String usersTable = 'users';
@@ -88,6 +88,7 @@ class DatabaseHelper {
       CREATE TABLE $skillsTable (
         id TEXT PRIMARY KEY,
         categoryId TEXT NOT NULL,
+        userId TEXT NOT NULL,
         name TEXT NOT NULL,
         level TEXT NOT NULL,
         proficiencyPercent REAL NOT NULL,
@@ -174,8 +175,10 @@ class DatabaseHelper {
         'CREATE INDEX idx_certifications_user ON $certificationsTable(userId)');
     await db.execute(
         'CREATE INDEX idx_educational_attainments_user ON educational_attainments(userId)');
-    await db.execute('CREATE INDEX idx_experiences_user ON experiences(userId)');
-    await db.execute('CREATE INDEX idx_achievements_user ON achievements(userId)');
+    await db
+        .execute('CREATE INDEX idx_experiences_user ON experiences(userId)');
+    await db
+        .execute('CREATE INDEX idx_achievements_user ON achievements(userId)');
   }
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
@@ -210,20 +213,24 @@ class DatabaseHelper {
         print('Error adding profile views and likes columns: $e');
       }
     }
-    
+
     if (oldVersion < 4) {
       print('Adding education columns...');
       try {
-        await db.execute('ALTER TABLE $usersTable ADD COLUMN schoolName TEXT DEFAULT \'\'');
-        await db.execute('ALTER TABLE $usersTable ADD COLUMN degree TEXT DEFAULT \'\'');
-        await db.execute('ALTER TABLE $usersTable ADD COLUMN year TEXT DEFAULT \'\'');
-        await db.execute('ALTER TABLE $usersTable ADD COLUMN address_EA TEXT DEFAULT \'\'');
+        await db.execute(
+            'ALTER TABLE $usersTable ADD COLUMN schoolName TEXT DEFAULT \'\'');
+        await db.execute(
+            'ALTER TABLE $usersTable ADD COLUMN degree TEXT DEFAULT \'\'');
+        await db.execute(
+            'ALTER TABLE $usersTable ADD COLUMN year TEXT DEFAULT \'\'');
+        await db.execute(
+            'ALTER TABLE $usersTable ADD COLUMN address_EA TEXT DEFAULT \'\'');
         print('Education columns added successfully');
       } catch (e) {
         print('Error adding education columns: $e');
       }
     }
-    
+
     if (oldVersion < 5) {
       print('Adding educational_attainments table...');
       try {
@@ -238,13 +245,14 @@ class DatabaseHelper {
             FOREIGN KEY (userId) REFERENCES $usersTable (id) ON DELETE CASCADE
           )
         ''');
-        await db.execute('CREATE INDEX idx_educational_attainments_user ON educational_attainments(userId)');
+        await db.execute(
+            'CREATE INDEX idx_educational_attainments_user ON educational_attainments(userId)');
         print('Educational attainments table created successfully');
       } catch (e) {
         print('Error creating educational_attainments table: $e');
       }
     }
-    
+
     if (oldVersion < 6) {
       print('Adding experience and achievements tables...');
       try {
@@ -260,8 +268,9 @@ class DatabaseHelper {
             FOREIGN KEY (userId) REFERENCES $usersTable (id) ON DELETE CASCADE
           )
         ''');
-        await db.execute('CREATE INDEX idx_experiences_user ON experiences(userId)');
-        
+        await db.execute(
+            'CREATE INDEX idx_experiences_user ON experiences(userId)');
+
         await db.execute('''
           CREATE TABLE achievements (
             id TEXT PRIMARY KEY,
@@ -273,75 +282,97 @@ class DatabaseHelper {
             FOREIGN KEY (userId) REFERENCES $usersTable (id) ON DELETE CASCADE
           )
         ''');
-        await db.execute('CREATE INDEX idx_achievements_user ON achievements(userId)');
-        
+        await db.execute(
+            'CREATE INDEX idx_achievements_user ON achievements(userId)');
+
         // Add careerObjective column to users table
-        await db.execute('ALTER TABLE $usersTable ADD COLUMN careerObjective TEXT DEFAULT \'\'');
-        
+        await db.execute(
+            'ALTER TABLE $usersTable ADD COLUMN careerObjective TEXT DEFAULT \'\'');
+
         // Add privacy columns for new features
-        await db.execute('ALTER TABLE $usersTable ADD COLUMN experiencesPrivate INTEGER DEFAULT 0');
-        await db.execute('ALTER TABLE $usersTable ADD COLUMN achievementsPrivate INTEGER DEFAULT 0');
-        await db.execute('ALTER TABLE $usersTable ADD COLUMN careerObjectivePrivate INTEGER DEFAULT 0');
-        
+        await db.execute(
+            'ALTER TABLE $usersTable ADD COLUMN experiencesPrivate INTEGER DEFAULT 0');
+        await db.execute(
+            'ALTER TABLE $usersTable ADD COLUMN achievementsPrivate INTEGER DEFAULT 0');
+        await db.execute(
+            'ALTER TABLE $usersTable ADD COLUMN careerObjectivePrivate INTEGER DEFAULT 0');
+
         print('Experience and achievements tables created successfully');
       } catch (e) {
         print('Error creating experience and achievements tables: $e');
       }
     }
-    
+
     if (oldVersion < 7) {
       print('Adding careerObjective column if missing...');
       try {
-        await db.execute('ALTER TABLE $usersTable ADD COLUMN careerObjective TEXT DEFAULT \'\'');
+        await db.execute(
+            'ALTER TABLE $usersTable ADD COLUMN careerObjective TEXT DEFAULT \'\'');
         print('careerObjective column added successfully');
       } catch (e) {
         print('Error adding careerObjective column (may already exist): $e');
       }
-      
+
       // Safety check: ensure all privacy columns exist
       try {
-        await db.execute('ALTER TABLE $usersTable ADD COLUMN experiencesPrivate INTEGER DEFAULT 0');
+        await db.execute(
+            'ALTER TABLE $usersTable ADD COLUMN experiencesPrivate INTEGER DEFAULT 0');
         print('experiencesPrivate column added successfully');
       } catch (e) {
         print('experiencesPrivate column may already exist: $e');
       }
-      
+
       try {
-        await db.execute('ALTER TABLE $usersTable ADD COLUMN achievementsPrivate INTEGER DEFAULT 0');
+        await db.execute(
+            'ALTER TABLE $usersTable ADD COLUMN achievementsPrivate INTEGER DEFAULT 0');
         print('achievementsPrivate column added successfully');
       } catch (e) {
         print('achievementsPrivate column may already exist: $e');
       }
-      
+
       try {
-        await db.execute('ALTER TABLE $usersTable ADD COLUMN careerObjectivePrivate INTEGER DEFAULT 0');
+        await db.execute(
+            'ALTER TABLE $usersTable ADD COLUMN careerObjectivePrivate INTEGER DEFAULT 0');
         print('careerObjectivePrivate column added successfully');
       } catch (e) {
         print('careerObjectivePrivate column may already exist: $e');
       }
     }
-    
+
     if (oldVersion < 8) {
       print('Version 8 upgrade: Ensuring all privacy columns exist...');
       try {
-        await db.execute('ALTER TABLE $usersTable ADD COLUMN experiencesPrivate INTEGER DEFAULT 0');
+        await db.execute(
+            'ALTER TABLE $usersTable ADD COLUMN experiencesPrivate INTEGER DEFAULT 0');
         print('experiencesPrivate column added in v8 upgrade');
       } catch (e) {
         print('experiencesPrivate column already exists: $e');
       }
-      
+
       try {
-        await db.execute('ALTER TABLE $usersTable ADD COLUMN achievementsPrivate INTEGER DEFAULT 0');
+        await db.execute(
+            'ALTER TABLE $usersTable ADD COLUMN achievementsPrivate INTEGER DEFAULT 0');
         print('achievementsPrivate column added in v8 upgrade');
       } catch (e) {
         print('achievementsPrivate column already exists: $e');
       }
-      
+
       try {
-        await db.execute('ALTER TABLE $usersTable ADD COLUMN careerObjectivePrivate INTEGER DEFAULT 0');
+        await db.execute(
+            'ALTER TABLE $usersTable ADD COLUMN careerObjectivePrivate INTEGER DEFAULT 0');
         print('careerObjectivePrivate column added in v8 upgrade');
       } catch (e) {
         print('careerObjectivePrivate column already exists: $e');
+      }
+    }
+
+    if (oldVersion < 9) {
+      print('Version 9 upgrade: Adding userId column to skills table...');
+      try {
+        await db.execute('ALTER TABLE $skillsTable ADD COLUMN userId TEXT');
+        print('userId column added to skills table in v9 upgrade');
+      } catch (e) {
+        print('userId column already exists in skills table: $e');
       }
     }
   }
@@ -363,7 +394,7 @@ class DatabaseHelper {
       await insertSkillCategory(category, user.id);
 
       for (final skill in category.skills) {
-        await insertSkill(skill, category.id);
+        await insertSkill(skill, category.id, user.id);
       }
     }
 
@@ -405,7 +436,8 @@ class DatabaseHelper {
       user.skillCategories = await getSkillCategoriesForUser(user.id);
       user.projects = await getProjectsForUser(user.id);
       user.certifications = await getCertificationsForUser(user.id);
-      user.educationalAttainments = await getEducationalAttainmentsForUser(user.id);
+      user.educationalAttainments =
+          await getEducationalAttainmentsForUser(user.id);
       user.experiences = await getExperiencesForUser(user.id);
       user.achievements = await getAchievementsForUser(user.id);
 
@@ -434,7 +466,8 @@ class DatabaseHelper {
       user.skillCategories = await getSkillCategoriesForUser(user.id);
       user.projects = await getProjectsForUser(user.id);
       user.certifications = await getCertificationsForUser(user.id);
-      user.educationalAttainments = await getEducationalAttainmentsForUser(user.id);
+      user.educationalAttainments =
+          await getEducationalAttainmentsForUser(user.id);
       user.experiences = await getExperiencesForUser(user.id);
       user.achievements = await getAchievementsForUser(user.id);
 
@@ -461,7 +494,8 @@ class DatabaseHelper {
     user.skillCategories = await getSkillCategoriesForUser(user.id);
     user.projects = await getProjectsForUser(user.id);
     user.certifications = await getCertificationsForUser(user.id);
-    user.educationalAttainments = await getEducationalAttainmentsForUser(user.id);
+    user.educationalAttainments =
+        await getEducationalAttainmentsForUser(user.id);
     user.experiences = await getExperiencesForUser(user.id);
     user.achievements = await getAchievementsForUser(user.id);
 
@@ -536,10 +570,11 @@ class DatabaseHelper {
     return maps.map((map) => _mapToSkill(map)).toList();
   }
 
-  Future<int> insertSkill(Skill skill, String categoryId) async {
+  Future<int> insertSkill(Skill skill, String categoryId, String userId) async {
     final db = await database;
     final map = _skillToMap(skill);
     map['categoryId'] = categoryId;
+    map['userId'] = userId;
 
     try {
       return await db.insert(skillsTable, map);
@@ -554,6 +589,7 @@ class DatabaseHelper {
         );
         final newMap = _skillToMap(newSkill);
         newMap['categoryId'] = categoryId;
+        newMap['userId'] = userId;
         return await db.insert(skillsTable, newMap);
       }
       rethrow;
@@ -598,7 +634,8 @@ class DatabaseHelper {
   }
 
   // Educational Attainment operations
-  Future<List<EducationalAttainment>> getEducationalAttainmentsForUser(String userId) async {
+  Future<List<EducationalAttainment>> getEducationalAttainmentsForUser(
+      String userId) async {
     final db = await database;
     final List<Map<String, dynamic>> maps = await db.query(
       'educational_attainments',
@@ -617,7 +654,8 @@ class DatabaseHelper {
     return await db.insert('educational_attainments', map);
   }
 
-  Future<int> updateEducationalAttainment(EducationalAttainment education) async {
+  Future<int> updateEducationalAttainment(
+      EducationalAttainment education) async {
     final db = await database;
     return await db.update(
       'educational_attainments',
@@ -768,22 +806,22 @@ class DatabaseHelper {
       achievementsPrivate: (map['achievementsPrivate'] as int? ?? 0) == 1,
       careerObjectivePrivate: (map['careerObjectivePrivate'] as int? ?? 0) == 1,
       approvedViewers: map['approvedViewers'] != null
-          ? map['approvedViewers'] is String 
+          ? map['approvedViewers'] is String
               ? List<String>.from(jsonDecode(map['approvedViewers']))
               : List<String>.from(map['approvedViewers'])
           : <String>[],
       profileViews: (map['profileViews'] as int?) ?? 0,
       profileLikes: (map['profileLikes'] as int?) ?? 0,
       likedBy: map['likedBy'] != null
-          ? map['likedBy'] is String 
+          ? map['likedBy'] is String
               ? List<String>.from(jsonDecode(map['likedBy']))
               : List<String>.from(map['likedBy'])
           : <String>[],
       educationalAttainments: const [], // Will be loaded separately
-          experiences: const [], // Will be loaded separately
-          achievements: const [], // Will be loaded separately
-          careerObjective: map['careerObjective'] ?? '',
-          );
+      experiences: const [], // Will be loaded separately
+      achievements: const [], // Will be loaded separately
+      careerObjective: map['careerObjective'] ?? '',
+    );
   }
 
   Map<String, dynamic> _skillCategoryToMap(SkillCategory category) {
@@ -863,7 +901,8 @@ class DatabaseHelper {
     );
   }
 
-  Map<String, dynamic> _educationalAttainmentToMap(EducationalAttainment education) {
+  Map<String, dynamic> _educationalAttainmentToMap(
+      EducationalAttainment education) {
     return {
       'id': education.id,
       'schoolName': education.schoolName,
@@ -942,7 +981,7 @@ class DatabaseHelper {
 
       // Insert skills for this category
       for (final skill in category.skills) {
-        await insertSkill(skill, category.id);
+        await insertSkill(skill, category.id, user.id);
       }
     }
   }

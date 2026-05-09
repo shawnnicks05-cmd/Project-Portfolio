@@ -479,7 +479,7 @@ class _DashboardTabState extends State<_DashboardTab> {
           const SizedBox(height: 16),
           _StatsRow(user: user),
           const SizedBox(height: 20),
-          if (user.skillCategories.isNotEmpty) ...[
+          if (!user.skillsPrivate && user.skillCategories.isNotEmpty) ...[
             const _SectionHeader(title: 'Top Competencies'),
             const SizedBox(height: 10),
             ...user.skillCategories
@@ -487,13 +487,14 @@ class _DashboardTabState extends State<_DashboardTab> {
                 .map((cat) => _CompetencyCard(category: cat)),
           ],
           const SizedBox(height: 20),
-          if (user.projects.isNotEmpty) ...[
+          if (!user.projectsPrivate && user.projects.isNotEmpty) ...[
             const _SectionHeader(title: 'Recent Projects'),
             const SizedBox(height: 10),
             ...user.projects.take(2).map((p) => _ProjectCard(project: p)),
           ],
           const SizedBox(height: 20),
-          if (user.certifications.isNotEmpty) ...[
+          if (!user.certificationsPrivate &&
+              user.certifications.isNotEmpty) ...[
             const _SectionHeader(title: 'Certifications'),
             const SizedBox(height: 10),
             _CertGrid(certs: user.certifications),
@@ -505,13 +506,13 @@ class _DashboardTabState extends State<_DashboardTab> {
             _EducationGrid(education: user.educationalAttainments),
           ],
           const SizedBox(height: 20),
-          if (user.experiences.isNotEmpty) ...[
+          if (!user.experiencesPrivate && user.experiences.isNotEmpty) ...[
             const _SectionHeader(title: 'Experience'),
             const SizedBox(height: 10),
             _ExperienceGrid(experiences: user.experiences),
           ],
           const SizedBox(height: 20),
-          if (user.achievements.isNotEmpty) ...[
+          if (!user.achievementsPrivate && user.achievements.isNotEmpty) ...[
             const _SectionHeader(title: 'Achievements'),
             const SizedBox(height: 10),
             _AchievementGrid(achievements: user.achievements),
@@ -525,9 +526,58 @@ class _DashboardTabState extends State<_DashboardTab> {
 
 // ── _ProfileCard — uses shared avatar helper ─────────────────────────────────
 
-class _ProfileCard extends StatelessWidget {
+class _ProfileCard extends StatefulWidget {
   final UserAccount user;
   const _ProfileCard({required this.user});
+
+  @override
+  State<_ProfileCard> createState() => _ProfileCardState();
+}
+
+class _ProfileCardState extends State<_ProfileCard> {
+  bool _isLiked = false;
+  bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkLikeStatus();
+  }
+
+  Future<void> _checkLikeStatus() async {
+    final store = AppStore();
+    final isLiked = await store.isProfileLiked(widget.user.id);
+    print('DEBUG: Checking like status for user ${widget.user.id}: $isLiked');
+    if (mounted) {
+      setState(() {
+        _isLiked = isLiked;
+      });
+    }
+  }
+
+  Future<void> _toggleLike() async {
+    if (_isLoading) return;
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    final store = AppStore();
+    print(
+        'DEBUG: Toggling like for user ${widget.user.id}, current user: ${store.currentUser?.id}');
+
+    // For demo purposes, allow liking own profile for testing
+    // In production, you might want to hide the like button for own profile
+    final newLikeStatus = await store.toggleProfileLike(widget.user.id);
+    print('DEBUG: Toggle result: $newLikeStatus');
+
+    if (mounted) {
+      setState(() {
+        _isLiked = newLikeStatus;
+        _isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -543,15 +593,15 @@ class _ProfileCard extends StatelessWidget {
           // ── Avatar — handles local file, network URL, and initials ──
           _buildAvatarCircle(
             size: 54,
-            avatarUrl: user.avatarUrl,
-            initials: user.avatarInitials,
+            avatarUrl: widget.user.avatarUrl,
+            initials: widget.user.avatarInitials,
           ),
           const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(user.name,
+                Text(widget.user.name,
                     style: const TextStyle(
                         fontWeight: FontWeight.w700,
                         fontSize: 16,
@@ -561,7 +611,7 @@ class _ProfileCard extends StatelessWidget {
                     style:
                         TextStyle(fontSize: 11, color: AppTheme.textSecondary)),
                 const SizedBox(height: 4),
-                Text('${user.course} • ${user.yearLevel}',
+                Text('${widget.user.course} • ${widget.user.yearLevel}',
                     style: const TextStyle(
                         fontSize: 12, color: AppTheme.textSecondary)),
                 const SizedBox(height: 4),
@@ -570,7 +620,7 @@ class _ProfileCard extends StatelessWidget {
                       size: 12, color: AppTheme.textMuted),
                   const SizedBox(width: 4),
                   Flexible(
-                    child: Text(user.email,
+                    child: Text(widget.user.email,
                         style: const TextStyle(
                             fontSize: 11, color: AppTheme.textMuted),
                         overflow: TextOverflow.ellipsis),
@@ -579,50 +629,119 @@ class _ProfileCard extends StatelessWidget {
               ],
             ),
           ),
+          // ── Like button ──
+          GestureDetector(
+            onTap: _toggleLike,
+            child: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: _isLiked
+                    ? Colors.pink.withOpacity(0.1)
+                    : Colors.transparent,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: _isLiked ? Colors.pink : AppTheme.border,
+                  width: 1,
+                ),
+              ),
+              child: _isLoading
+                  ? SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          _isLiked ? Colors.pink : AppTheme.textMuted,
+                        ),
+                      ),
+                    )
+                  : Icon(
+                      _isLiked ? Icons.favorite : Icons.favorite_border,
+                      color: _isLiked ? Colors.pink : AppTheme.textMuted,
+                      size: 20,
+                    ),
+            ),
+          ),
         ],
       ),
     );
   }
 }
 
-class _StatsRow extends StatelessWidget {
+class _StatsRow extends StatefulWidget {
   final UserAccount user;
   const _StatsRow({required this.user});
 
   @override
+  State<_StatsRow> createState() => _StatsRowState();
+}
+
+class _StatsRowState extends State<_StatsRow> {
+  @override
+  void initState() {
+    super.initState();
+    AppStore().addListener(_onStoreChanged);
+  }
+
+  void _onStoreChanged() {
+    if (mounted) setState(() {});
+  }
+
+  @override
+  void dispose() {
+    AppStore().removeListener(_onStoreChanged);
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final store = AppStore();
+    final currentUser = store.currentUser;
+
+    // Get updated user data from store to reflect like changes
+    final displayUser =
+        currentUser?.id == widget.user.id ? currentUser : widget.user;
+
     return Row(
       children: [
         _StatCard(
-          value: '${user.totalSkills}',
+          value: displayUser?.skillsPrivate == true
+              ? 'Private'
+              : '${displayUser?.totalSkills ?? 0}',
           label: 'Total Skills',
           icon: Icons.workspace_premium_outlined,
           color: AppTheme.primary,
         ),
         const SizedBox(width: 10),
         _StatCard(
-          value: '${user.avgCompetency.round()}%',
+          value: displayUser?.skillsPrivate == true
+              ? 'Private'
+              : '${displayUser?.avgCompetency.round() ?? 0}%',
           label: 'Avg Competency',
           icon: Icons.trending_up,
           color: AppTheme.success,
         ),
         const SizedBox(width: 10),
         _StatCard(
-          value: '${user.projects.length}',
+          value: displayUser?.projectsPrivate == true
+              ? 'Private'
+              : '${displayUser?.projects.length ?? 0}',
           label: 'Projects',
           icon: Icons.folder_outlined,
           color: AppTheme.warning,
         ),
         const SizedBox(width: 10),
         _StatCard(
-          value: '${user.certifications.length}',
+          value: displayUser?.certificationsPrivate == true
+              ? 'Private'
+              : '${displayUser?.certifications.length ?? 0}',
           label: 'Certs',
           icon: Icons.military_tech_outlined,
           color: const Color(0xFFF97316),
         ),
         const SizedBox(width: 10),
         _StatCard(
-          value: '${user.profileLikes}',
+          value: '${displayUser?.profileLikes ?? 0}',
           label: 'Likes',
           icon: Icons.favorite_outline,
           color: Colors.pink,
@@ -987,8 +1106,8 @@ class _EducationTile extends StatelessWidget {
                     color: AppTheme.primary.withOpacity(0.12),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child:
-                      const Icon(Icons.school, size: 16, color: AppTheme.primary),
+                  child: const Icon(Icons.school,
+                      size: 16, color: AppTheme.primary),
                 ),
                 const Spacer(),
                 const Icon(Icons.open_in_new,
@@ -1006,13 +1125,15 @@ class _EducationTile extends StatelessWidget {
             if (education.degree.isNotEmpty) ...[
               const SizedBox(height: 1),
               Text(education.degree,
-                  style: const TextStyle(fontSize: 10, color: AppTheme.textSecondary),
+                  style: const TextStyle(
+                      fontSize: 10, color: AppTheme.textSecondary),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis),
             ],
             if (education.year.isNotEmpty) ...[
               Text(education.year,
-                  style: const TextStyle(fontSize: 10, color: AppTheme.textSecondary),
+                  style: const TextStyle(
+                      fontSize: 10, color: AppTheme.textSecondary),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis),
             ],
@@ -1032,7 +1153,8 @@ class _EducationTile extends StatelessWidget {
             Icon(Icons.school, color: AppTheme.primary, size: 20),
             SizedBox(width: 8),
             Text('Education Details',
-                style: TextStyle(color: AppTheme.textPrimary, fontWeight: FontWeight.w600)),
+                style: TextStyle(
+                    color: AppTheme.textPrimary, fontWeight: FontWeight.w600)),
           ],
         ),
         content: Column(
@@ -1145,11 +1267,13 @@ class _ExperienceTile extends StatelessWidget {
                 overflow: TextOverflow.ellipsis),
             const Spacer(),
             Text(experience.company,
-                style: const TextStyle(fontSize: 10, color: AppTheme.textSecondary),
+                style: const TextStyle(
+                    fontSize: 10, color: AppTheme.textSecondary),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis),
             Text('${experience.startDate} - ${experience.endDate}',
-                style: const TextStyle(fontSize: 10, color: AppTheme.textSecondary),
+                style: const TextStyle(
+                    fontSize: 10, color: AppTheme.textSecondary),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis),
           ],
@@ -1168,7 +1292,8 @@ class _ExperienceTile extends StatelessWidget {
             Icon(Icons.work, color: AppTheme.success, size: 20),
             SizedBox(width: 8),
             Text('Experience Details',
-                style: TextStyle(color: AppTheme.textPrimary, fontWeight: FontWeight.w600)),
+                style: TextStyle(
+                    color: AppTheme.textPrimary, fontWeight: FontWeight.w600)),
           ],
         ),
         content: Column(
@@ -1179,7 +1304,8 @@ class _ExperienceTile extends StatelessWidget {
             const SizedBox(height: 12),
             _buildDetailRow('Company', experience.company),
             const SizedBox(height: 12),
-            _buildDetailRow('Duration', '${experience.startDate} - ${experience.endDate}'),
+            _buildDetailRow(
+                'Duration', '${experience.startDate} - ${experience.endDate}'),
             if (experience.description.isNotEmpty) ...[
               const SizedBox(height: 12),
               _buildDetailRow('Description', experience.description),
@@ -1259,8 +1385,8 @@ class _AchievementTile extends StatelessWidget {
                     color: const Color(0xFFF97316).withOpacity(0.12),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child:
-                      const Icon(Icons.emoji_events, size: 16, color: Color(0xFFF97316)),
+                  child: const Icon(Icons.emoji_events,
+                      size: 16, color: Color(0xFFF97316)),
                 ),
                 const Spacer(),
                 const Icon(Icons.open_in_new,
@@ -1277,11 +1403,13 @@ class _AchievementTile extends StatelessWidget {
                 overflow: TextOverflow.ellipsis),
             const Spacer(),
             Text(achievement.category,
-                style: const TextStyle(fontSize: 10, color: AppTheme.textSecondary),
+                style: const TextStyle(
+                    fontSize: 10, color: AppTheme.textSecondary),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis),
             Text(achievement.date,
-                style: const TextStyle(fontSize: 10, color: AppTheme.textSecondary),
+                style: const TextStyle(
+                    fontSize: 10, color: AppTheme.textSecondary),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis),
           ],
@@ -1300,7 +1428,8 @@ class _AchievementTile extends StatelessWidget {
             Icon(Icons.emoji_events, color: Color(0xFFF97316), size: 20),
             SizedBox(width: 8),
             Text('Achievement Details',
-                style: TextStyle(color: AppTheme.textPrimary, fontWeight: FontWeight.w600)),
+                style: TextStyle(
+                    color: AppTheme.textPrimary, fontWeight: FontWeight.w600)),
           ],
         ),
         content: Column(
