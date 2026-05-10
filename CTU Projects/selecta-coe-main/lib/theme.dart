@@ -109,8 +109,6 @@ class AppTheme {
           primary: darkPrimary,
           secondary: darkAccent,
           surface: darkSurface,
-          // Match the Search tab's neutral dark greys across containers.
-          surfaceVariant: darkSurfaceVariant,
           surfaceContainerLowest: darkSurface,
           surfaceContainerLow: darkSurface,
           surfaceContainer: darkSurface,
