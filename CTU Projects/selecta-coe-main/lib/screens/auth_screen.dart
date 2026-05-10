@@ -7,6 +7,7 @@ import '../theme.dart';
 import '../theme_provider.dart';
 import '../widgets/pill_header.dart';
 import '../widgets/app_logo.dart';
+import 'forgot_password_screen.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -148,7 +149,7 @@ class _AuthScreenState extends State<AuthScreen>
                             ),
                           ),
                           Text(
-                            '   Student Electronic Tracker',
+                            '   Student Electronic Ledger',
                             style: TextStyle(
                                 fontSize: 13,
                                 color: Theme.of(context)
@@ -181,7 +182,9 @@ class _AuthScreenState extends State<AuthScreen>
                         // Tab Bar
                         Container(
                           decoration: BoxDecoration(
-                            color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                            color: Theme.of(context)
+                                .colorScheme
+                                .surfaceContainerHighest,
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: TabBar(
@@ -368,6 +371,24 @@ class _LoginFormState extends State<_LoginForm> {
                       child: CircularProgressIndicator(
                           strokeWidth: 2, color: Colors.white))
                   : const Text('Sign In'),
+            ),
+          ),
+          const SizedBox(height: 12),
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const ForgotPasswordScreen(),
+                ),
+              );
+            },
+            child: Text(
+              'Forgot Password?',
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.primary,
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ),
         ],

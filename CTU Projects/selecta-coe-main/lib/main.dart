@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:selecta_coee/data/firebase_database_service.dart';
 import 'data/app_store.dart';
 import 'screens/auth_screen.dart';
@@ -40,6 +41,10 @@ class _BootstrapAppState extends State<_BootstrapApp> {
       try {
         await Firebase.initializeApp();
         print('Firebase initialized successfully');
+
+        // Initialize Firebase Auth
+        FirebaseAuth.instance;
+        print('Firebase Auth initialized');
 
         final firestore = FirebaseFirestore.instance;
         final testSnapshot = await firestore.collection('users').limit(1).get();

@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/models.dart';
 import 'database_helper.dart';
 import 'firebase_database_service.dart';
+import 'firebase_auth_service.dart';
 import '../utils/database_exporter.dart';
 
 class AppStore extends ChangeNotifier {
@@ -89,30 +90,34 @@ class AppStore extends ChangeNotifier {
 
   Future<bool> login(String email, String password) async {
     print('Login attempt: email="$email", password="$password"');
-    print('Available accounts count: ${_accounts.length}');
-
-    for (var account in _accounts) {
-      print('Available account: id="${account.id}", email="${account.email}"');
+    
+    try {
+      // Use Firebase Auth for authentication only
+      final userCredential = await FirebaseAuthService.signInWithEmailAndPassword(
+        email.trim(), 
+        password.trim()
+      );
+      
+      print('Firebase Auth login successful: ${userCredential.user?.email}');
+      
+      // Load user data from Firestore after successful Firebase Auth
+      final firebaseService = FirebaseDatabaseService();
+      final userData = await firebaseService.getUserByEmail(email.trim());
+      
+      if (userData != null) {
+        print('User data loaded from Firestore: ${userData.id}');
+        _currentUser = userData;
+        await _save();
+        notifyListeners();
+        return true;
+      } else {
+        print('User authenticated but no data found in Firestore');
+        return false;
+      }
+    } catch (e) {
+      print('Firebase Auth login failed: $e');
+      return false;
     }
-
-    // Check in local accounts list (includes SharedPreferences demo + SQLite users)
-    final match = _accounts
-        .where((a) =>
-            a.email.toLowerCase() == email.toLowerCase().trim() &&
-            a.password == password.trim())
-        .toList();
-
-    print('Found matches: ${match.length}');
-    if (match.isNotEmpty) {
-      print('Login successful for user: ${match.first.id}');
-      _currentUser = match.first;
-      await _save();
-      notifyListeners();
-      return true;
-    }
-
-    print('Login failed - no matching account found');
-    return false;
   }
 
   Future<void> logout() async {
@@ -134,11 +139,25 @@ class AppStore extends ChangeNotifier {
       return false;
     }
 
-    // Save to Firebase database
+    // Save to Firebase database and create Firebase Auth user
     try {
+      print('Creating Firebase Auth user for: ${account.email}');
+      final stopwatch = Stopwatch()..start();
+      
+      // Create user in Firebase Auth first
+      await FirebaseAuthService.createUserWithEmailAndPassword(
+        account.email, 
+        account.password
+      );
+      
+      stopwatch.stop();
+      print('Firebase Auth creation took: ${stopwatch.elapsedMilliseconds}ms');
+
       final firebaseService = FirebaseDatabaseService();
+      final firestoreStopwatch = Stopwatch()..start();
       await firebaseService.insertUser(account);
-      print('Account saved to Firebase database');
+      firestoreStopwatch.stop();
+      print('Firestore save took: ${firestoreStopwatch.elapsedMilliseconds}ms');
 
       // Refresh accounts list from database to ensure synchronization
       await _loadAccountsFromDatabase();
@@ -148,15 +167,12 @@ class AppStore extends ChangeNotifier {
       await DatabaseExporter.exportUserAccount(account);
 
       notifyListeners();
-      print('Account creation successful');
+      print('Account creation successful - Total time: ${stopwatch.elapsedMilliseconds + firestoreStopwatch.elapsedMilliseconds}ms');
       return true;
     } catch (e) {
-      print('Error creating account: $e');
-      // For demo purposes, add account locally even if Firebase fails
-      _accounts.add(account);
-      notifyListeners();
-      print('Account added locally for demo purposes');
-      return true;
+      print('Error creating Firebase Auth user: $e');
+      print('Account creation failed - Firebase Auth is required');
+      return false;
     }
   }
 
@@ -234,6 +250,16 @@ class AppStore extends ChangeNotifier {
     if (targetUser == null || !targetUser.certificationsPrivate) return true;
 
     return false; // Private profile - cannot view
+  }
+
+  // Firebase Auth password reset
+  Future<void> sendPasswordResetEmail(String email) async {
+    await FirebaseAuthService.sendPasswordResetEmail(email);
+  }
+
+  // Check if user exists in Firebase Auth
+  Future<bool> checkUserExistsInAuth(String email) async {
+    return await FirebaseAuthService.userExists(email);
   }
 
   Future<void> toggleProfilePrivacy(String section) async {

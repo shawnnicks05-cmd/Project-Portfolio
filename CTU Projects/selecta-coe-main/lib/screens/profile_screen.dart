@@ -1467,39 +1467,43 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             fontSize: 14,
                             color: Theme.of(context).colorScheme.onSurface)),
                     const SizedBox(height: 14),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        SummaryItem(
-                            label: 'Skills',
-                            value: '${user.totalSkills}',
-                            color: Theme.of(context).colorScheme.primary),
-                        const SizedBox(width: 12),
-                        SummaryItem(
-                            label: 'Avg',
-                            value: '${user.avgCompetency.round()}%',
-                            color: const Color.fromARGB(255, 16, 200, 62)),
-                        const SizedBox(width: 12),
-                        SummaryItem(
-                            label: 'Projects',
-                            value: '${user.projects.length}',
-                            color: Theme.of(context).colorScheme.primary),
-                        const SizedBox(width: 12),
-                        SummaryItem(
-                            label: 'Certifications',
-                            value: '${user.certifications.length}',
-                            color: const Color(0xFFF97316)),
-                        const SizedBox(width: 12),
-                        SummaryItem(
-                            label: 'Experience',
-                            value: '${user.experiences.length}',
-                            color: Colors.purple),
-                        const SizedBox(width: 12),
-                        SummaryItem(
-                            label: 'Achievements',
-                            value: '${user.achievements.length}',
-                            color: Colors.amber),
-                      ],
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: [
+                          const SizedBox(width: 20),
+                          SummaryItem(
+                              label: 'Skills',
+                              value: '${user.totalSkills}',
+                              color: Theme.of(context).colorScheme.primary),
+                          const SizedBox(width: 12),
+                          SummaryItem(
+                              label: 'Avg',
+                              value: '${user.avgCompetency.round()}%',
+                              color: const Color.fromARGB(255, 16, 200, 62)),
+                          const SizedBox(width: 12),
+                          SummaryItem(
+                              label: 'Projects',
+                              value: '${user.projects.length}',
+                              color: Theme.of(context).colorScheme.primary),
+                          const SizedBox(width: 12),
+                          SummaryItem(
+                              label: 'Certifications',
+                              value: '${user.certifications.length}',
+                              color: const Color(0xFFF97316)),
+                          const SizedBox(width: 12),
+                          SummaryItem(
+                              label: 'Experience',
+                              value: '${user.experiences.length}',
+                              color: Colors.purple),
+                          const SizedBox(width: 12),
+                          SummaryItem(
+                              label: 'Achievements',
+                              value: '${user.achievements.length}',
+                              color: Colors.amber),
+                          const SizedBox(width: 20),
+                        ],
+                      ),
                     ),
                   ],
                 ),
