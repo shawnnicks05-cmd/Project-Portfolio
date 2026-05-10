@@ -1,263 +1,103 @@
 # SELECTA-COE Project Documentation
-## Student Electronic Ledger & Competency Tracker
+
+A concise guide to the app structure, main files, data flow, and how it is organized.
 
 ---
 
-## 📁 Project Structure Overview
+## What this project is
 
-```
-selecta-coe-main/
-├── lib/
-│   ├── data/
-│   │   ├── app_store.dart          # Main state management
-│   │   └── database_helper.dart    # SQLite database operations
-│   ├── models/
-│   │   └── models.dart             # Data models
-│   ├── screens/
-│   │   ├── auth_screen.dart        # Login/Registration
-│   │   ├── home_screen.dart        # Main dashboard
-│   │   ├── profile_screen.dart     # User profile management
-│   │   ├── search_screen.dart      # Global search functionality
-│   │   └── database_screen.dart    # Skills/Projects/Certifications
-│   ├── theme.dart                  # App theming
-│   └── main.dart                    # App entry point
-├── android/                        # Android configuration
-└── pubspec.yaml                    # Dependencies
-```
+SELECTA-COE is a Flutter app for managing student portfolios and competency tracking.
+Users can save profiles, skills, projects, certifications, education, experience, and achievements.
+The app works offline with SQLite and can sync to Firestore when available.
 
 ---
 
-## 🗄️ Database System
+## Project structure
 
-### `lib/data/database_helper.dart`
-
-**Purpose**: Handles all SQLite database operations for the app.
-
-**Key Tables**:
-1. **users** - User profiles and account information
-2. **skill_categories** - Groups skills by category (e.g., "Programming Languages")
-3. **skills** - Individual skills with proficiency levels
-4. **projects** - Student projects with descriptions and tags
-5. **certifications** - Professional certifications
-
-**Core Functions**:
-
-#### Database Initialization
-```dart
-Future<Database> _initDatabase() async
-```
-- Creates database file at `selecta_coe.db`
-- Sets up all tables with proper schema
-- Creates indexes for performance optimization
-
-#### Table Creation
-```dart
-Future<void> _onCreate(Database db, int version) async
-```
-- Creates 5 main tables with foreign key relationships
-- Establishes indexes for faster queries
-- Ensures data integrity with constraints
-
-#### User Operations
-```dart
-Future<int> insertUser(UserAccount user)           // Add new user
-Future<List<UserAccount>> getAllUsers()            // Get all users
-Future<UserAccount?> getUserByEmail(String email)  // Find user by email
-Future<UserAccount?> getUserById(String id)        // Find user by ID
-Future<int> updateUser(UserAccount user)            // Update user data
-Future<int> deleteUser(String id)                  // Delete user
-```
-
-#### Skill Operations
-```dart
-Future<List<SkillCategory>> getSkillCategoriesForUser(String userId)
-Future<int> insertSkillCategory(SkillCategory category, String userId)
-Future<List<Skill>> getSkillsForCategory(String categoryId)
-Future<int> insertSkill(Skill skill, String categoryId)
-```
-
-#### Project & Certification Operations
-```dart
-Future<List<Project>> getProjectsForUser(String userId)
-Future<int> insertProject(Project project, String userId)
-Future<List<Certification>> getCertificationsForUser(String userId)
-Future<int> insertCertification(Certification certification, String userId)
-```
-
-#### Search Functionality
-```dart
-Future<List<Map<String, dynamic>>> searchRecords(String query) async
-```
-- Performs full-text search across all data types
-- Returns unified results for users, skills, projects, certifications
-- Supports filtering by type and sorting
+- `lib/main.dart` — app startup, theme, routes.
+- `lib/data/app_store.dart` — app state, authentication, CRUD logic.
+- `lib/data/database_helper.dart` — local SQLite database operations.
+- `lib/data/firebase_database_service.dart` — Firestore sync and engagement data.
+- `lib/models/models.dart` — shared model classes.
+- `lib/screens/` — UI screens for auth, home, search, profile, and database.
+- `lib/widgets/` — reusable widgets such as `PillHeader`.
+- `lib/theme.dart` / `lib/theme_provider.dart` — app theming and dark mode.
+- `pubspec.yaml` — dependencies and assets.
 
 ---
 
-## 🏪 State Management
+## Main app flow
 
-### `lib/data/app_store.dart`
-
-**Purpose**: Central state management using Provider pattern with ChangeNotifier.
-
-**Key Properties**:
-```dart
-List<UserAccount> _accounts = []        // All users in system
-UserAccount? _currentUser                // Currently logged-in user
-```
-
-**Core Functions**:
-
-#### Initialization
-```dart
-Future<void> init() async
-```
-- Loads all users from SQLite database
-- Sets up current user from session (SharedPreferences)
-- Creates demo account if no users exist
-- Handles database errors gracefully
-
-#### Authentication
-```dart
-Future<bool> login(String email, String password) async
-```
-- Validates credentials against database
-- Sets current user on successful login
-- Updates session state
-
-```dart
-Future<bool> createAccount(UserAccount account) async
-```
-- Creates new user account in database
-- Checks for email duplicates
-- Auto-logs in new user
-
-```dart
-Future<void> logout() async
-```
-- Clears current user session
-- Removes session from SharedPreferences
-
-#### User Data Management
-```dart
-Future<void> updateCurrentUser(UserAccount updated) async
-```
-- Updates user data in database
-- Synchronizes all related data (skills, projects, certifications)
-
-#### Skill Management
-```dart
-Future<bool> addSkillToCurrentUserFromRecord({required String category, required Skill skill})
-Future<void> addSkillCategory(SkillCategory cat)
-Future<void> addSkillToCategory(String catId, Skill skill)
-Future<void> removeSkill(String catId, String skillId)
-```
-
-#### Project & Certification Management
-```dart
-Future<void> addProject(Project project)
-Future<void> removeProject(String projectId)
-Future<void> addCertification(Certification cert)
-Future<void> removeCertification(String certId)
-```
-
-#### Search & Discovery
-```dart
-Future<List<Map<String, dynamic>>> getAllRecords() async
-Future<List<Map<String, dynamic>>> search(String query) async
-```
+1. Startup begins in `main()`.
+2. App initializes Firebase, theme, and `AppStore` state.
+3. User lands on `AuthScreen`.
+4. After login, app navigates to `HomeScreen`.
+5. From home, user can manage profile, search, and edit records.
 
 ---
 
-## 📊 Data Models
+## Data management
 
-### `lib/models/models.dart`
+### SQLite (`lib/data/database_helper.dart`)
 
-**Purpose**: Defines all data structures used throughout the app.
+- Stores users and related data in `selecta_coe.db`.
+- Handles creation and migration of tables.
+- Provides CRUD functions for users, skills, projects, certifications, education, experience, and achievements.
 
-#### UserAccount
-```dart
-class UserAccount {
-  String id;                    // Unique identifier
-  String name;                  // Full name
-  String email;                 // Email address (unique)
-  String phone;                 // Phone number
-  String password;              // Encrypted password
-  String course;                // Academic course
-  String yearLevel;             // Academic year
-  String studentId;             // Student ID number
-  String location;              // Geographic location
-  String avatarInitials;       // Avatar text initials
-  String avatarUrl;             // Profile image URL
-  String bio;                   // User biography
-  String instagramUrl;          // Social media links
-  String facebookUrl;
-  List<SkillCategory> skillCategories;  // User's skills
-  List<Project> projects;                 // User's projects
-  List<Certification> certifications;    // User's certifications
-}
-```
+### App state (`lib/data/app_store.dart`)
 
-#### SkillCategory
-```dart
-class SkillCategory {
-  String id;           // Unique identifier
-  String name;         // Category name (e.g., "Programming")
-  List<Skill> skills;  // Skills in this category
-}
-```
+- Keeps current user session.
+- Loads data from SQLite on startup.
+- Saves changes from the UI back to the database.
+- Supports login, register, logout, profile updates, and search.
 
-#### Skill
-```dart
-class Skill {
-  String id;                    // Unique identifier
-  String name;                  // Skill name (e.g., "Python")
-  String level;                  // Proficiency level
-  double proficiencyPercent;     // Skill percentage (0-100)
-}
-```
+### Cloud sync (`lib/data/firebase_database_service.dart`)
 
-#### Project
-```dart
-class Project {
-  String id;           // Unique identifier
-  String title;        // Project title
-  String description;   // Project description
-  String date;          // Completion date
-  int memberCount;     // Team size
-  List<String> tags;   // Technology tags
-}
-```
-
-#### Certification
-```dart
-class Certification {
-  String id;      // Unique identifier
-  String title;   // Certification name
-  String issuer;  // Issuing organization
-  String date;    // Issue date
-  String certId;  // Certificate ID
-}
-```
+- Syncs user data to Firestore when online.
+- Records profile views and likes.
+- Provides backup and search support.
 
 ---
 
-## 🖼️ UI Screens
+## Key models
 
-### `lib/screens/auth_screen.dart`
+- `UserAccount` — main user profile and related record lists.
+- `SkillCategory` / `Skill` — grouped skill data.
+- `Project` — project details.
+- `Certification` — certifications and issuer info.
+- `EducationalAttainment` — education history.
+- `Experience` — work or volunteer entries.
+- `Achievement` — awards and recognitions.
 
-**Purpose**: Handles user authentication (login/registration).
+---
 
-**Key Features**:
-- Login form with email/password validation
-- Registration form with all user fields
-- Avatar initial generation
-- Form validation and error handling
-- Integration with AppStore for authentication
+## Primary screens
 
-### `lib/screens/home_screen.dart`
+- `AuthScreen` — login and registration.
+- `HomeScreen` — dashboard with navigation.
+- `DatabaseScreen` — manage skills, projects, certifications, education, experience, achievements.
+- `SearchScreen` — search across users and records.
+- `ProfileScreen` — view/edit profile and privacy settings.
 
-**Purpose**: Main dashboard with tabbed navigation.
+---
+
+## How to use
+
+- `flutter pub get`
+- `flutter run`
+- Login or register to start using the app.
+- Use the database screen to add or edit portfolio items.
+- Use search to find users and records.
+
+---
+
+## Notes
+
+- The app persists theme choice and login session.
+- Local SQLite is the primary storage.
+- Firestore is optional and used for syncing and social features.
+- This document is a brief reference; the code files contain the full implementation details.
+
 
 **Key Features**:
 - Bottom navigation bar with 4 tabs
