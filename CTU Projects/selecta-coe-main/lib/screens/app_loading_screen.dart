@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme.dart';
+import '../widgets/app_logo.dart';
 
 /// Shown while Firebase, local store, and theme finish initializing.
 class AppLoadingScreen extends StatelessWidget {
@@ -16,16 +17,10 @@ class AppLoadingScreen extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Image.asset(
-                  'assets/LOGO.png',
-                  width: 120,
-                  height: 120,
-                  fit: BoxFit.contain,
-                  errorBuilder: (_, __, ___) => Icon(
-                    Icons.school_rounded,
-                    size: 80,
-                    color: AppTheme.lightPrimary,
-                  ),
+                AppLogo(
+                  size: 120,
+                  borderRadius: 14,
+                  fallbackColor: AppTheme.lightPrimary,
                 ),
                 const SizedBox(height: 24),
                 Text(
