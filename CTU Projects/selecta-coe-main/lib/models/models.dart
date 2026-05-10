@@ -118,6 +118,38 @@ class UserAccount {
         'careerObjective': careerObjective,
       };
 
+  /// Firestore **new user** document: account/profile fields only. Portfolio data is
+  /// stored in subcollections, not in the main user document.
+  Map<String, dynamic> toFirestoreRegistrationMap() => {
+        'achievementsPrivate': achievementsPrivate,
+        'address': address,
+        'approvedViewers': approvedViewers,
+        'avatarInitials': avatarInitials,
+        'avatarUrl': avatarUrl,
+        'bio': bio,
+        'careerObjective': careerObjective,
+        'careerObjectivePrivate': careerObjectivePrivate,
+        'certificationsPrivate': certificationsPrivate,
+        'course': course,
+        'department': department,
+        'email': email,
+        'experiencesPrivate': experiencesPrivate,
+        'facebookUrl': facebookUrl,
+        'id': id,
+        'instagramUrl': instagramUrl,
+        'likedBy': likedBy,
+        'name': name,
+        'password': password,
+        'phone': phone,
+        'profileLikes': profileLikes,
+        'profileViews': profileViews,
+        'projectsPrivate': projectsPrivate,
+        'skillsPrivate': skillsPrivate,
+        'studentId': studentId,
+        'userType': userType,
+        'yearLevel': yearLevel,
+      };
+
   factory UserAccount.fromJson(Map<String, dynamic> json) {
     return UserAccount(
       id: json['id'],
@@ -318,7 +350,9 @@ class Experience {
     required this.position,
     required this.startDate,
     required this.endDate,
-    required this.description, required String title, required String dateRange,
+    required this.description,
+    required String title,
+    required String dateRange,
   });
 
   Map<String, dynamic> toJson() => {
@@ -336,7 +370,9 @@ class Experience {
         position: json['position'],
         startDate: json['startDate'],
         endDate: json['endDate'],
-        description: json['description'], title: '', dateRange: '',
+        description: json['description'],
+        title: '',
+        dateRange: '',
       );
 }
 

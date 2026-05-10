@@ -32,35 +32,10 @@ class FirebaseDatabaseService {
   // User operations
   Future<void> insertUser(UserAccount user) async {
     try {
-      // Initialize user data with default values
-      final userData = user.toJson();
+      // Slim parent doc (matches create-account fields only); no nested portfolio maps.
+      await _usersCollection.doc(user.id).set(user.toFirestoreRegistrationMap());
 
-      // Ensure all required fields have default values
-      userData['profileViews'] = userData['profileViews'] ?? 0;
-      userData['profileLikes'] = userData['profileLikes'] ?? 0;
-      userData['likedBy'] = userData['likedBy'] ?? [];
-      userData['approvedViewers'] = userData['approvedViewers'] ?? [];
-      userData['skillsPrivate'] = userData['skillsPrivate'] ?? false;
-      userData['projectsPrivate'] = userData['projectsPrivate'] ?? false;
-      userData['certificationsPrivate'] =
-          userData['certificationsPrivate'] ?? false;
-      userData['experiencesPrivate'] = userData['experiencesPrivate'] ?? false;
-      userData['achievementsPrivate'] =
-          userData['achievementsPrivate'] ?? false;
-      userData['careerObjectivePrivate'] =
-          userData['careerObjectivePrivate'] ?? false;
-      userData['skillCategories'] = userData['skillCategories'] ?? [];
-      userData['projects'] = userData['projects'] ?? [];
-      userData['certifications'] = userData['certifications'] ?? [];
-      userData['educationalAttainments'] =
-          userData['educationalAttainments'] ?? [];
-      userData['experiences'] = userData['experiences'] ?? [];
-      userData['achievements'] = userData['achievements'] ?? [];
-      userData['careerObjective'] = userData['careerObjective'] ?? '';
-
-      await _usersCollection.doc(user.id).set(userData);
-
-      // Save related data to user-specific subcollections
+      // Portfolio rows only under users/{id}/... subcollections (skipped when lists empty).
       await _saveRelatedData(user);
 
       print(
