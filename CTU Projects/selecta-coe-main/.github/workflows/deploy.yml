@@ -31,9 +31,14 @@ jobs:
       working-directory: ./CTU Projects/selecta-coe-main
       run: flutter build web --base-href "/${{ github.event.repository.name }}/CTU%20Projects/selecta-coe-main/"
       
+    - name: Prepare deployment directory
+      run: |
+        mkdir -p deploy/CTU\ Projects/selecta-coe-main
+        cp -r "CTU Projects/selecta-coe-main/build/web"/* deploy/CTU\ Projects/selecta-coe-main/
+        
     - name: Deploy to GitHub Pages
       uses: peaceiris/actions-gh-pages@v3
       if: github.ref == 'refs/heads/main'
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: ./CTU Projects/selecta-coe-main/build/web
+        publish_dir: ./deploy
