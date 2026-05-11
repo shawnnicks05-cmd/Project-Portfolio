@@ -49,22 +49,24 @@ class _AuthScreenState extends State<AuthScreen>
         _pendingAutoFillPassword != null &&
         _tab.index == 0) {
       print('Attempting auto-fill...');
+      // Store data locally to avoid state access issues
+      final email = _pendingAutoFillEmail;
+      final password = _pendingAutoFillPassword;
+      
       // Small delay to ensure tab animation is complete
       Future.delayed(const Duration(milliseconds: 200), () {
         print(
             'Delayed auto-fill attempt - mounted: $mounted, formState: ${_loginFormKey.currentState != null}');
-        if (mounted && _loginFormKey.currentState != null) {
-          print(
-              'Calling autoFillCredentials with: $_pendingAutoFillEmail, $_pendingAutoFillPassword');
-          _loginFormKey.currentState!.autoFillCredentials(
-            _pendingAutoFillEmail!,
-            _pendingAutoFillPassword!,
-          );
+        if (mounted && _loginFormKey.currentState != null && email != null && password != null) {
+          print('Calling autoFillCredentials with: $email, $password');
+          _loginFormKey.currentState!.autoFillCredentials(email, password);
           // Clear pending data
-          setState(() {
-            _pendingAutoFillEmail = null;
-            _pendingAutoFillPassword = null;
-          });
+          if (mounted) {
+            setState(() {
+              _pendingAutoFillEmail = null;
+              _pendingAutoFillPassword = null;
+            });
+          }
           print('Auto-fill completed and pending data cleared');
         } else {
           print('Auto-fill failed - mounted or form state null');
@@ -76,26 +78,14 @@ class _AuthScreenState extends State<AuthScreen>
   void _handleAutoFill(String email, String password) {
     print('Auto-fill handler called with: email=$email, password=$password');
 
+    // Store pending data before switching tabs
+    setState(() {
+      _pendingAutoFillEmail = email;
+      _pendingAutoFillPassword = password;
+    });
+
     // Always switch to login tab and wait for it to complete
     _tab.animateTo(0);
-
-    // Wait for tab animation to complete, then auto-fill
-    Future.delayed(const Duration(milliseconds: 500), () {
-      if (mounted && _loginFormKey.currentState != null) {
-        print('Auto-filling credentials after tab switch');
-        _loginFormKey.currentState!.autoFillCredentials(email, password);
-        print('Auto-fill completed successfully');
-      } else {
-        print('Auto-fill failed - form state not available');
-        // Try one more time with longer delay
-        Future.delayed(const Duration(milliseconds: 500), () {
-          if (mounted && _loginFormKey.currentState != null) {
-            _loginFormKey.currentState!.autoFillCredentials(email, password);
-            print('Auto-fill completed on retry');
-          }
-        });
-      }
-    });
   }
 
   @override

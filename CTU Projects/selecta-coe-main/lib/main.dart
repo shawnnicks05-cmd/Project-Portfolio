@@ -39,7 +39,21 @@ class _BootstrapAppState extends State<_BootstrapApp> {
   Future<void> _runStartup() async {
     try {
       try {
-        await Firebase.initializeApp();
+        // Firebase configuration for web - using portal-a51ee project
+        if (kIsWeb) {
+          await Firebase.initializeApp(
+            options: const FirebaseOptions(
+                apiKey: "AIzaSyCc9XAmBnQADvMHDC-7ToxMGoOBsdNsy2A",
+                authDomain: "portal-a51ee.firebaseapp.com",
+                projectId: "portal-a51ee",
+                storageBucket: "portal-a51ee.firebasestorage.app",
+                messagingSenderId: "725196261038",
+                appId: "1:725196261038:web:b209aaed893be9498bcf3f",
+                measurementId: "G-GKCB23SFXV"),
+          );
+        } else {
+          await Firebase.initializeApp();
+        }
         print('Firebase initialized successfully');
 
         // Initialize Firebase Auth
