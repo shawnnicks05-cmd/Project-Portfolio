@@ -47,7 +47,7 @@ jobs:
         with:
           flutter-version: 'latest'
       - run: flutter pub get
-      - run: flutter build web --release
+      - run: flutter build web --release --base-href "/${{ github.event.repository.name }}/"
       - uses: actions/upload-artifact@v4
         with:
           name: selecta-coe-web
