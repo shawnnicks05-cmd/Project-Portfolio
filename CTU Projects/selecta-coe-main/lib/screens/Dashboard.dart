@@ -828,7 +828,7 @@ class _StatCard extends StatelessWidget {
       required this.label,
       required this.icon,
       required this.color});
-
+//sera
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
@@ -899,7 +899,7 @@ class _SectionHeader extends StatelessWidget {
 class _CompetencyCard extends StatelessWidget {
   final SkillCategory category;
   const _CompetencyCard({required this.category});
-
+//nwash
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;

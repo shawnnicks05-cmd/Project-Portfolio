@@ -1920,6 +1920,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+//sera
   Widget _buildCertificationsSection(UserAccount user) {
     final scheme = Theme.of(context).colorScheme;
     return Container(
