@@ -19,17 +19,17 @@ jobs:
       with:
         channel: 'stable'
         
-    - name: Change to project directory
-      run: cd "CTU Projects/selecta-coe-main"
-      
     - name: Enable web support
+      working-directory: ./CTU Projects/selecta-coe-main
       run: flutter config --enable-web
       
     - name: Get dependencies
+      working-directory: ./CTU Projects/selecta-coe-main
       run: flutter pub get
       
     - name: Build web app
-      run: flutter build web --base-href "/${{ github.event.repository.name }}/"
+      working-directory: ./CTU Projects/selecta-coe-main
+      run: flutter build web --base-href "/${{ github.event.repository.name }}/CTU%20Projects/selecta-coe-main/"
       
     - name: Deploy to GitHub Pages
       uses: peaceiris/actions-gh-pages@v3
