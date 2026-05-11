@@ -19,6 +19,9 @@ jobs:
       with:
         channel: 'stable'
         
+    - name: Change to project directory
+      run: cd "CTU Projects/selecta-coe-main"
+      
     - name: Enable web support
       run: flutter config --enable-web
       
@@ -33,4 +36,4 @@ jobs:
       if: github.ref == 'refs/heads/main'
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: ./build/web
+        publish_dir: ./CTU Projects/selecta-coe-main/build/web
