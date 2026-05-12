@@ -166,13 +166,7 @@ Widget _buildAvatarCircle({
     final isLocal = avatarUrl.startsWith('/') ||
         RegExp(r'^[a-zA-Z]:\\').hasMatch(avatarUrl);
     child = isDataUri
-        ? Image.memory(
-            base64Decode(avatarUrl.split(',').last),
-            fit: BoxFit.cover,
-            width: size,
-            height: size,
-            errorBuilder: (_, __, ___) => _initialsText(initials, fontSize),
-          )
+        ? _buildDataUriImage(avatarUrl, size, fontSize, initials)
         : isLocal
         ? Image.file(
             File(avatarUrl),
@@ -201,6 +195,30 @@ Widget _buildAvatarCircle({
     ),
     child: ClipOval(child: child),
   );
+}
+
+Widget _buildDataUriImage(String avatarUrl, double size, double fontSize, String initials) {
+  try {
+    final base64String = avatarUrl.split(',').last;
+    final imageBytes = base64Decode(base64String);
+    
+    // Check if image is too large for navigation drawer
+    if (imageBytes.length > 1024 * 1024) { // 1MB limit
+      print('Navigation drawer: Image too large, using initials');
+      return _initialsText(initials, fontSize);
+    }
+    
+    return Image.memory(
+      imageBytes,
+      fit: BoxFit.cover,
+      width: size,
+      height: size,
+      errorBuilder: (_, __, ___) => _initialsText(initials, fontSize),
+    );
+  } catch (e) {
+    print('Navigation drawer: Error decoding base64 image: $e');
+    return _initialsText(initials, fontSize);
+  }
 }
 
 Widget _initialsText(String initials, double fontSize) {

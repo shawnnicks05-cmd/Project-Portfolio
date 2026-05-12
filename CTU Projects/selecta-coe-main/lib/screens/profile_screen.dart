@@ -110,30 +110,33 @@ class _ProfileScreenState extends State<ProfileScreen> {
       }
     }
 
-    setState(() {
-      _displayUser = displayUser;
-      // Only allow editing if it's user's own profile and not in viewOnly mode
-      final currentUser = AppStore().currentUser;
-      _canEdit = (widget.userId == null ||
-              (currentUser != null && widget.userId == currentUser.id)) &&
-          !widget.viewOnly;
+    if (mounted) {
+      setState(() {
+        _displayUser = displayUser;
+        // Only allow editing if it's user's own profile and not in viewOnly mode
+        final currentUser = AppStore().currentUser;
+        _canEdit = (widget.userId == null ||
+                (currentUser != null && widget.userId == currentUser.id)) &&
+            !widget.viewOnly;
 
-      if (_displayUser != null) {
-        _name = TextEditingController(text: _displayUser!.name);
-        _email = TextEditingController(text: _displayUser!.email);
-        _phone = TextEditingController(text: _displayUser!.phone);
-        _course = TextEditingController(text: _displayUser!.course);
-        _studentId = TextEditingController(text: _displayUser!.studentId);
-        _location = TextEditingController(text: _displayUser!.address);
-        _bio = TextEditingController(text: _displayUser!.bio);
-        _instagramUrl = TextEditingController(text: _displayUser!.instagramUrl);
-        _facebookUrl = TextEditingController(text: _displayUser!.facebookUrl);
-        _yearLevelController = TextEditingController(
-            text: _years.contains(_displayUser!.yearLevel)
-                ? _displayUser!.yearLevel
-                : '1st Year');
-      }
-    });
+        if (_displayUser != null) {
+          _name = TextEditingController(text: _displayUser!.name);
+          _email = TextEditingController(text: _displayUser!.email);
+          _phone = TextEditingController(text: _displayUser!.phone);
+          _course = TextEditingController(text: _displayUser!.course);
+          _studentId = TextEditingController(text: _displayUser!.studentId);
+          _location = TextEditingController(text: _displayUser!.address);
+          _bio = TextEditingController(text: _displayUser!.bio);
+          _instagramUrl =
+              TextEditingController(text: _displayUser!.instagramUrl);
+          _facebookUrl = TextEditingController(text: _displayUser!.facebookUrl);
+          _yearLevelController = TextEditingController(
+              text: _years.contains(_displayUser!.yearLevel)
+                  ? _displayUser!.yearLevel
+                  : '1st Year');
+        }
+      });
+    }
   }
 
   void _takeSnapshot() {
@@ -161,20 +164,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _instagramUrl?.text = _snapInstagramUrl;
     _facebookUrl?.text = _snapFacebookUrl;
     _yearLevelController?.text = _snapYearLevel;
-    setState(() {
-      _pickedImageFile = _snapPickedImageFile;
-    });
+    if (mounted) {
+      setState(() {
+        _pickedImageFile = _snapPickedImageFile;
+      });
+    }
   }
 
   void _startEditing() {
     if (!_canEdit) return;
     _takeSnapshot();
-    setState(() => _editing = true);
+    if (mounted) {
+      setState(() => _editing = true);
+    }
   }
 
   void _cancelEditing() {
     _restoreSnapshot();
-    setState(() => _editing = false);
+    if (mounted) {
+      setState(() => _editing = false);
+    }
   }
 
   /// Show a bottom sheet to choose camera or gallery
@@ -230,21 +239,33 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     if (source != null) {
       final picked = await _picker.pickImage(source: source);
-      if (picked != null) {
+      if (picked != null && mounted) {
         setState(() => _pickedImageFile = File(picked.path));
       }
     }
   }
 
   void _saveChanges() {
+    if (_displayUser == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Error: No user data available'),
+          backgroundColor: AppTheme.danger,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
     // Persist image data in DB-friendly format (data URI) when a new photo is picked.
-    String newAvatarUrl = _displayUser?.avatarUrl ?? '';
+    String newAvatarUrl = _displayUser!.avatarUrl;
     if (_pickedImageFile != null) {
       try {
         final bytes = _pickedImageFile!.readAsBytesSync();
         final encoded = base64Encode(bytes);
         newAvatarUrl = 'data:image/jpeg;base64,$encoded';
-      } catch (_) {
+      } catch (e) {
+        print('Error encoding image: $e');
         // Fallback to local path if encoding fails.
         newAvatarUrl = _pickedImageFile!.path;
       }
@@ -289,11 +310,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     AppStore().updateCurrentUser(updatedUser);
 
-    setState(() {
-      _displayUser = AppStore().currentUser!;
-      _pickedImageFile = null;
-      _editing = false;
-    });
+    if (mounted) {
+      setState(() {
+        _displayUser = AppStore().currentUser!;
+        _pickedImageFile = null;
+        _editing = false;
+      });
+    }
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(

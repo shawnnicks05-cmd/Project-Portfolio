@@ -152,9 +152,9 @@ class UserAccount {
 
   factory UserAccount.fromJson(Map<String, dynamic> json) {
     return UserAccount(
-      id: json['id'],
-      name: json['name'],
-      email: json['email'],
+      id: json['id']?.toString() ?? '',
+      name: json['name']?.toString() ?? '',
+      email: json['email']?.toString() ?? '',
       phone: json['phone'] ?? '',
       password: json['password']?.toString().trim() ?? '',
       userType: json['userType'] ?? 'Student',
