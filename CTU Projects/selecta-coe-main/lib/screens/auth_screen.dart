@@ -345,8 +345,8 @@ class _LoginFormState extends State<_LoginForm> {
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(_error!,
-                  style: const TextStyle(
-                      color: Color.fromARGB(255, 249, 245, 245), fontSize: 13)),
+                  style: TextStyle(
+                      color: Theme.of(context).colorScheme.error, fontSize: 13)),
             ),
           ],
           const SizedBox(height: 20),
