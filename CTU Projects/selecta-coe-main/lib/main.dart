@@ -39,19 +39,32 @@ class _BootstrapAppState extends State<_BootstrapApp> {
   Future<void> _runStartup() async {
     try {
       try {
-        // Firebase configuration for web - using portal-a51ee project
+        // Use explicit FirebaseOptions for web AND Android so both platforms
+        // always point to the same Firebase project (portal-a51ee).
         if (kIsWeb) {
           await Firebase.initializeApp(
             options: const FirebaseOptions(
-                apiKey: "AIzaSyCc9XAmBnQADvMHDC-7ToxMGoOBsdNsy2A",
-                authDomain: "portal-a51ee.firebaseapp.com",
-                projectId: "portal-a51ee",
-                storageBucket: "portal-a51ee.firebasestorage.app",
-                messagingSenderId: "725196261038",
-                appId: "1:725196261038:web:b209aaed893be9498bcf3f",
-                measurementId: "G-GKCB23SFXV"),
+              apiKey: "AIzaSyCc9XAmBnQADvMHDC-7ToxMGoOBsdNsy2A",
+              authDomain: "portal-a51ee.firebaseapp.com",
+              projectId: "portal-a51ee",
+              storageBucket: "portal-a51ee.firebasestorage.app",
+              messagingSenderId: "725196261038",
+              appId: "1:725196261038:web:b209aaed893be9498bcf3f",
+              measurementId: "G-GKCB23SFXV",
+            ),
+          );
+        } else if (defaultTargetPlatform == TargetPlatform.android) {
+          await Firebase.initializeApp(
+            options: const FirebaseOptions(
+              apiKey: "AIzaSyCc9XAmBnQADvMHDC-7ToxMGoOBsdNsy2A",
+              projectId: "portal-a51ee",
+              storageBucket: "portal-a51ee.firebasestorage.app",
+              messagingSenderId: "725196261038",
+              appId: "1:725196261038:android:1f72525f6322dd978bcf3f",
+            ),
           );
         } else {
+          // iOS/macOS/windows/linux will rely on their platform config.
           await Firebase.initializeApp();
         }
         print('Firebase initialized successfully');
@@ -74,6 +87,9 @@ class _BootstrapAppState extends State<_BootstrapApp> {
             'https://console.cloud.google.com/datastore/setup?project=selecta-coe-main',
           );
         }
+        // If Firebase init fails on startup, stop the app and show the error UI
+        // instead of continuing and crashing later.
+        rethrow;
       }
 
       if (defaultTargetPlatform == TargetPlatform.android) {

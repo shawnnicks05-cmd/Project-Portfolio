@@ -1,6 +1,25 @@
 // lib/models/models.dart
 import 'dart:convert';
 
+List<String> _parseStringList(dynamic value) {
+  if (value == null) return <String>[];
+
+  // Some older data may store arrays as JSON-encoded strings.
+  if (value is String) {
+    try {
+      return _parseStringList(jsonDecode(value));
+    } catch (_) {
+      return <String>[];
+    }
+  }
+
+  if (value is Iterable) {
+    return value.where((e) => e != null).map((e) => e.toString()).toList();
+  }
+
+  return <String>[];
+}
+
 class UserAccount {
   String id;
   String name;
@@ -155,62 +174,54 @@ class UserAccount {
       id: json['id']?.toString() ?? '',
       name: json['name']?.toString() ?? '',
       email: json['email']?.toString() ?? '',
-      phone: json['phone'] ?? '',
+      phone: json['phone']?.toString() ?? '',
       password: json['password']?.toString().trim() ?? '',
-      userType: json['userType'] ?? 'Student',
-      course: json['course'] ?? '',
-      yearLevel: json['yearLevel'] ?? '',
-      studentId: json['studentId'] ?? '',
-      address: json['address'] ?? '',
-      department: json['department'] ?? '',
-      avatarInitials: json['avatarInitials'] ?? '',
-      avatarUrl: json['avatarUrl'] ?? '',
-      bio: json['bio'] ?? '',
-      instagramUrl: json['instagramUrl'] ?? '',
-      facebookUrl: json['facebookUrl'] ?? '',
+      userType: json['userType']?.toString() ?? 'Student',
+      course: json['course']?.toString() ?? '',
+      yearLevel: json['yearLevel']?.toString() ?? '',
+      studentId: json['studentId']?.toString() ?? '',
+      address: json['address']?.toString() ?? '',
+      department: json['department']?.toString() ?? '',
+      avatarInitials: json['avatarInitials']?.toString() ?? '',
+      avatarUrl: json['avatarUrl']?.toString() ?? '',
+      bio: json['bio']?.toString() ?? '',
+      instagramUrl: json['instagramUrl']?.toString() ?? '',
+      facebookUrl: json['facebookUrl']?.toString() ?? '',
       skillCategories: (json['skillCategories'] as List<dynamic>?)
-              ?.map((e) => SkillCategory.fromJson(e))
+              ?.map((e) => SkillCategory.fromJson(Map<String, dynamic>.from(e as Map)))
               .toList() ??
           [],
       projects: (json['projects'] as List<dynamic>?)
-              ?.map((e) => Project.fromJson(e))
+              ?.map((e) => Project.fromJson(Map<String, dynamic>.from(e as Map)))
               .toList() ??
           [],
       certifications: (json['certifications'] as List<dynamic>?)
-              ?.map((e) => Certification.fromJson(e))
+              ?.map((e) => Certification.fromJson(Map<String, dynamic>.from(e as Map)))
               .toList() ??
           [],
       educationalAttainments: (json['educationalAttainments'] as List<dynamic>?)
-              ?.map((e) => EducationalAttainment.fromJson(e))
+              ?.map((e) => EducationalAttainment.fromJson(Map<String, dynamic>.from(e as Map)))
               .toList() ??
           [],
       experiences: (json['experiences'] as List<dynamic>?)
-              ?.map((e) => Experience.fromJson(e))
+              ?.map((e) => Experience.fromJson(Map<String, dynamic>.from(e as Map)))
               .toList() ??
           [],
       achievements: (json['achievements'] as List<dynamic>?)
-              ?.map((a) => Achievement.fromJson(a))
+              ?.map((a) => Achievement.fromJson(Map<String, dynamic>.from(a as Map)))
               .toList() ??
           [],
-      careerObjective: json['careerObjective'] ?? '',
+      careerObjective: json['careerObjective']?.toString() ?? '',
       skillsPrivate: json['skillsPrivate'] ?? false,
       projectsPrivate: json['projectsPrivate'] ?? false,
       certificationsPrivate: json['certificationsPrivate'] ?? false,
       experiencesPrivate: json['experiencesPrivate'] ?? false,
       achievementsPrivate: json['achievementsPrivate'] ?? false,
       careerObjectivePrivate: json['careerObjectivePrivate'] ?? false,
-      approvedViewers: json['approvedViewers'] != null
-          ? json['approvedViewers'] is String
-              ? List<String>.from(jsonDecode(json['approvedViewers']))
-              : List<String>.from(json['approvedViewers'])
-          : <String>[],
+      approvedViewers: _parseStringList(json['approvedViewers']),
       profileViews: (json['profileViews'] as int?) ?? 0,
       profileLikes: (json['profileLikes'] as int?) ?? 0,
-      likedBy: json['likedBy'] != null
-          ? json['likedBy'] is String
-              ? List<String>.from(jsonDecode(json['likedBy']))
-              : List<String>.from(json['likedBy'])
-          : <String>[],
+      likedBy: _parseStringList(json['likedBy']),
     );
   }
 }
@@ -230,10 +241,10 @@ class SkillCategory {
       };
 
   factory SkillCategory.fromJson(Map<String, dynamic> json) => SkillCategory(
-        id: json['id'],
-        name: json['name'],
+        id: json['id']?.toString() ?? '',
+        name: json['name']?.toString() ?? '',
         skills: (json['skills'] as List<dynamic>?)
-                ?.map((e) => Skill.fromJson(e))
+                ?.map((e) => Skill.fromJson(Map<String, dynamic>.from(e as Map)))
                 .toList() ??
             [],
       );
@@ -260,10 +271,11 @@ class Skill {
       };
 
   factory Skill.fromJson(Map<String, dynamic> json) => Skill(
-        id: json['id'],
-        name: json['name'],
-        level: json['level'],
-        proficiencyPercent: (json['proficiencyPercent'] as num).toDouble(),
+        id: json['id']?.toString() ?? '',
+        name: json['name']?.toString() ?? '',
+        level: json['level']?.toString() ?? '',
+        proficiencyPercent:
+            (json['proficiencyPercent'] as num?)?.toDouble() ?? 0.0,
       );
 }
 
@@ -294,12 +306,15 @@ class Project {
       };
 
   factory Project.fromJson(Map<String, dynamic> json) => Project(
-        id: json['id'],
-        title: json['title'],
-        description: json['description'],
-        date: json['date'],
-        memberCount: json['memberCount'],
-        tags: List<String>.from(json['tags'] ?? []),
+        id: json['id']?.toString() ?? '',
+        title: json['title']?.toString() ?? '',
+        description: json['description']?.toString() ?? '',
+        date: json['date']?.toString() ?? '',
+        memberCount: (json['memberCount'] as num?)?.toInt() ?? 0,
+        tags: (json['tags'] as List<dynamic>?)
+                ?.map((t) => t.toString())
+                .toList() ??
+            <String>[],
       );
 }
 
@@ -328,11 +343,11 @@ class EducationalAttainment {
 
   factory EducationalAttainment.fromJson(Map<String, dynamic> json) =>
       EducationalAttainment(
-        id: json['id'],
-        schoolName: json['schoolName'],
-        degree: json['degree'],
-        year: json['year'],
-        address: json['address'],
+        id: json['id']?.toString() ?? '',
+        schoolName: json['schoolName']?.toString() ?? '',
+        degree: json['degree']?.toString() ?? '',
+        year: json['year']?.toString() ?? '',
+        address: json['address']?.toString() ?? '',
       );
 }
 
@@ -365,12 +380,12 @@ class Experience {
       };
 
   factory Experience.fromJson(Map<String, dynamic> json) => Experience(
-        id: json['id'],
-        company: json['company'],
-        position: json['position'],
-        startDate: json['startDate'],
-        endDate: json['endDate'],
-        description: json['description'],
+        id: json['id']?.toString() ?? '',
+        company: json['company']?.toString() ?? '',
+        position: json['position']?.toString() ?? '',
+        startDate: json['startDate']?.toString() ?? '',
+        endDate: json['endDate']?.toString() ?? '',
+        description: json['description']?.toString() ?? '',
         title: '',
         dateRange: '',
       );
@@ -400,11 +415,11 @@ class Achievement {
       };
 
   factory Achievement.fromJson(Map<String, dynamic> json) => Achievement(
-        id: json['id'],
-        title: json['title'],
-        description: json['description'],
-        date: json['date'],
-        category: json['category'],
+        id: json['id']?.toString() ?? '',
+        title: json['title']?.toString() ?? '',
+        description: json['description']?.toString() ?? '',
+        date: json['date']?.toString() ?? '',
+        category: json['category']?.toString() ?? '',
       );
 }
 
@@ -432,10 +447,10 @@ class Certification {
       };
 
   factory Certification.fromJson(Map<String, dynamic> json) => Certification(
-        id: json['id'],
-        title: json['title'],
-        issuer: json['issuer'],
-        date: json['date'],
-        certId: json['certId'],
+        id: json['id']?.toString() ?? '',
+        title: json['title']?.toString() ?? '',
+        issuer: json['issuer']?.toString() ?? '',
+        date: json['date']?.toString() ?? '',
+        certId: json['certId']?.toString() ?? '',
       );
 }
